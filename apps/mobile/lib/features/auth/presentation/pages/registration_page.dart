@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/colors.dart';
+import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/buttons.dart';
+import '../../../../shared/widgets/input_fields.dart';
 
 class RegistrationPage extends ConsumerStatefulWidget {
   const RegistrationPage({super.key});
@@ -20,7 +24,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedRole = 'student';
+  int _currentStep = 0;
+
+  static const _totalSteps = 4;
+  static const _stepLabels = ['Account', 'Campus', 'Role', 'Prefs'];
+  static const _stepIcons = [Icons.person, Icons.school, Icons.badge, Icons.settings];
 
   @override
   void dispose() {
@@ -32,166 +40,105 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_formKey.currentState!.validate()) {
+  void _handleNext() {
+    if (_currentStep < _totalSteps - 1) {
+      setState(() {
+        _currentStep++;
+      });
+    } else if (_formKey.currentState!.validate()) {
       // TODO: Implement registration
       context.go('/home');
     }
   }
 
+  void _handleBack() {
+    if (_currentStep > 0) {
+      setState(() {
+        _currentStep--;
+      });
+    } else {
+      context.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.containerMargin),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Card(
+                elevation: 0,
+                shadowColor: AppColors.primary.withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  side: BorderSide(color: AppColors.outlineVariant),
+                ),
+                child: isWide
+                    ? _buildWideLayout()
+                    : _buildNarrowLayout(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWideLayout() {
+    return Row(
+      children: [
+        // Context & Info Panel
+        Expanded(
+          flex: 2,
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              borderRadius: BorderRadius.horizontal(
+                left: Radius.circular(AppRadius.lg),
+              ),
+              border: Border(
+                right: BorderSide(color: AppColors.outlineVariant),
+              ),
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Join CampusSafe',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create an account to access emergency features',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Full Name
-                TextFormField(
-                  controller: _fullNameController,
-                  validator: (value) => Validators.required(value, 'Full name'),
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Email
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Phone
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  validator: Validators.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Role Selection
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedRole,
-                  decoration: const InputDecoration(
-                    labelText: 'Role',
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'student',
-                      child: Text('Student'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'medical_responder',
-                      child: Text('Medical Responder'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'security_responder',
-                      child: Text('Security Responder'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedRole = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Password
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  validator: Validators.password,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Confirm Password
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  validator: (value) => Validators.confirmPassword(
-                    value,
-                    _passwordController.text,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Register Button
-                ElevatedButton(
-                  onPressed: _handleRegister,
-                  child: const Text('Create Account'),
-                ),
-                const SizedBox(height: 16),
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Already have an account?'),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text('Login'),
+                    Row(
+                      children: [
+                        Icon(Icons.security, color: AppColors.primary, size: 24),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'CampusSafe',
+                          style: AppTypography.headlineMd.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      'Create Account',
+                      style: AppTypography.displayLgMobile.copyWith(
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Secure access to emergency resources and alerts. Your details remain confidential and are only used to verify your affiliation and ensure your safety during critical incidents.',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -199,6 +146,510 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             ),
           ),
         ),
+        // Form Panel
+        Expanded(
+          flex: 3,
+          child: _buildFormPanel(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNarrowLayout() {
+    return Column(
+      children: [
+        // Compact header
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainer,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.lg),
+            ),
+            border: Border(
+              bottom: BorderSide(color: AppColors.outlineVariant),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.security, color: AppColors.primary, size: 24),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'CampusSafe',
+                    style: AppTypography.headlineMd.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Create Account',
+                style: AppTypography.displayLgMobile.copyWith(
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Secure access to emergency resources and alerts.',
+                style: AppTypography.bodyMd.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Form Panel
+        _buildFormPanel(),
+      ],
+    );
+  }
+
+  Widget _buildFormPanel() {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Progress Stepper
+            Row(
+              children: List.generate(_totalSteps, (index) {
+                final isCurrent = index == _currentStep;
+                final isCompleted = index < _currentStep;
+                return Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCurrent
+                                    ? AppColors.primary
+                                    : isCompleted
+                                        ? AppColors.success
+                                        : AppColors.surfaceContainerHigh,
+                                border: Border.all(
+                                  color: isCurrent
+                                      ? AppColors.primary
+                                      : isCompleted
+                                          ? AppColors.success
+                                          : AppColors.outlineVariant,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: isCompleted
+                                    ? Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: AppColors.onPrimary,
+                                      )
+                                    : Text(
+                                        '${index + 1}',
+                                        style: AppTypography.labelMd.copyWith(
+                                          fontSize: 12,
+                                          color: isCurrent
+                                              ? AppColors.onPrimary
+                                              : AppColors.onSurfaceVariant,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              _stepLabels[index],
+                              style: AppTypography.technicalSm.copyWith(
+                                color: isCurrent
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant,
+                                fontWeight: isCurrent
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (index < _totalSteps - 1)
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            margin: const EdgeInsets.only(top: 15),
+                            color: isCompleted
+                                ? AppColors.success
+                                : AppColors.outlineVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            // Form Content
+            _buildStepContent(),
+            const SizedBox(height: AppSpacing.lg),
+            // Navigation Buttons
+            Row(
+              children: [
+                if (_currentStep > 0)
+                  Expanded(
+                    child: SecondaryButton(
+                      label: 'Back',
+                      onPressed: _handleBack,
+                      leadingIcon: Icons.arrow_back,
+                    ),
+                  ),
+                if (_currentStep > 0) const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: PrimaryButton(
+                    label: _currentStep == _totalSteps - 1 ? 'Create Account' : 'Continue',
+                    onPressed: _handleNext,
+                    trailingIcon: _currentStep == _totalSteps - 1 ? null : Icons.arrow_forward,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Already have an account? ',
+                  style: AppTypography.technicalSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                TertiaryButton(
+                  label: 'Sign in',
+                  onPressed: () => context.pop(),
+                  isFullWidth: false,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return _buildAccountStep();
+      case 1:
+        return _buildCampusStep();
+      case 2:
+        return _buildRoleStep();
+      case 3:
+        return _buildPrefsStep();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildAccountStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppTextField(
+          label: 'Full Name',
+          hint: 'Jane Doe',
+          controller: _fullNameController,
+          validator: (value) => Validators.required(value, 'Full name'),
+          prefixIcon: const Icon(Icons.person, size: 20),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'University Email',
+                hint: 'jane@university.edu',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                validator: Validators.email,
+                prefixIcon: const Icon(Icons.mail, size: 20),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppTextField(
+                label: 'Phone Number',
+                hint: '(555) 123-4567',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                validator: Validators.phone,
+                prefixIcon: const Icon(Icons.phone_iphone, size: 20),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppPasswordField(
+          label: 'Password',
+          controller: _passwordController,
+          validator: Validators.password,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppPasswordField(
+          label: 'Confirm Password',
+          controller: _confirmPasswordController,
+          validator: (value) => Validators.confirmPassword(
+            value,
+            _passwordController.text,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCampusStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppTextField(
+          label: 'Campus Block / Building',
+          hint: 'Engineering Block B',
+          prefixIcon: const Icon(Icons.location_on, size: 20),
+          validator: (value) => Validators.required(value, 'Campus location'),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Room / Office Number (Optional)',
+          hint: 'Room 204',
+          prefixIcon: const Icon(Icons.meeting_room, size: 20),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        DropdownButtonFormField<String>(
+          initialValue: 'main_campus',
+          decoration: InputDecoration(
+            labelText: 'Campus',
+            prefixIcon: Icon(Icons.school, color: AppColors.onSurfaceVariant, size: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              borderSide: BorderSide(color: AppColors.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              borderSide: BorderSide(color: AppColors.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            filled: true,
+            fillColor: AppColors.surfaceContainerLowest,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+          ),
+          items: const [
+            DropdownMenuItem(value: 'main_campus', child: Text('Main Campus')),
+            DropdownMenuItem(value: 'north_campus', child: Text('North Campus')),
+            DropdownMenuItem(value: 'south_campus', child: Text('South Campus')),
+          ],
+          onChanged: (value) {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Select your role',
+          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ..._buildRoleOptions(),
+      ],
+    );
+  }
+
+  List<Widget> _buildRoleOptions() {
+    final roles = [
+      {'value': 'student', 'label': 'Student', 'icon': Icons.person, 'color': AppColors.primary},
+      {'value': 'medical_responder', 'label': 'Medical Responder', 'icon': Icons.medical_services, 'color': AppColors.error},
+      {'value': 'security_responder', 'label': 'Security Responder', 'icon': Icons.local_police, 'color': AppColors.secondary},
+      {'value': 'staff', 'label': 'Staff / Faculty', 'icon': Icons.work, 'color': AppColors.success},
+    ];
+
+    return roles.map((role) {
+      final isSelected = _selectedRole == role['value'];
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedRole = role['value'] as String;
+            });
+          },
+          borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? (role['color'] as Color).withValues(alpha: 0.1)
+                  : AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              border: Border.all(
+                color: isSelected
+                    ? role['color'] as Color
+                    : AppColors.outlineVariant,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? (role['color'] as Color).withValues(alpha: 0.1)
+                        : AppColors.surfaceContainerHigh,
+                    border: Border.all(
+                      color: isSelected
+                          ? role['color'] as Color
+                          : AppColors.outlineVariant,
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      role['icon'] as IconData,
+                      color: isSelected
+                          ? role['color'] as Color
+                          : AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    role['label'] as String,
+                    style: AppTypography.labelMd.copyWith(
+                      color: isSelected
+                          ? role['color'] as Color
+                          : AppColors.onSurface,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: role['color'] as Color,
+                    size: 24,
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList();
+    }
+  }
+
+  Widget _buildPrefsStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Notification Preferences',
+          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _buildPreferenceTile(
+          title: 'Push Notifications',
+          subtitle: 'Receive alerts for incidents and emergencies',
+          value: true,
+          onChanged: (value) {},
+        ),
+        _buildPreferenceTile(
+          title: 'SMS Alerts',
+          subtitle: 'Receive SMS for critical alerts only',
+          value: false,
+          onChanged: (value) {},
+        ),
+        _buildPreferenceTile(
+          title: 'Email Updates',
+          subtitle: 'Receive weekly safety summaries',
+          value: true,
+          onChanged: (value) {},
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Location Services',
+          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _buildPreferenceTile(
+          title: 'Share Location',
+          subtitle: 'Allow app to access your location for emergency response',
+          value: true,
+          onChanged: (value) {},
+        ),
+        _buildPreferenceTile(
+          title: 'Nearby Alerts',
+          subtitle: 'Receive alerts for incidents near your location',
+          value: true,
+          onChanged: (value) {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPreferenceTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.labelMd.copyWith(color: AppColors.onSurface),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+        ],
       ),
     );
   }
