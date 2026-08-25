@@ -68,12 +68,12 @@ Demo/Documentation
 - [ ] Shared naming conventions.
 
 ## Mobile
-- [ ] Flutter project.
-- [ ] Folder architecture.
-- [ ] Theme/design system.
-- [ ] Navigation.
-- [ ] State-management approach.
-- [ ] API/service layer.
+- [x] Flutter project.
+- [x] Folder architecture.
+- [x] Theme/design system (Material 3 with CampusSafe tokens).
+- [x] Navigation (GoRouter with bottom nav).
+- [x] State-management approach (Riverpod).
+- [x] API/service layer (Dio).
 
 ## Dashboard
 - [x] Next.js project.
@@ -137,23 +137,23 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 # Phase 3 — Mobile
 
 ## Foundation
-- [ ] Welcome/splash.
-- [ ] Login.
-- [ ] Registration.
-- [ ] Role selection.
-- [ ] Profile.
+- [x] Welcome/splash.
+- [x] Login (per Stitch design).
+- [x] Registration (4-step onboarding per Stitch design).
+- [x] Role selection.
+- [x] Profile.
 - [ ] Permissions.
 - [ ] Location permissions.
 - [ ] Notifications.
-- [ ] Navigation.
+- [x] Navigation.
 - [ ] Loading/error/empty states.
 
 ## User Features
-- [ ] Home.
-- [ ] SOS activation.
-- [ ] Emergency type.
+- [x] Home (per Stitch design with SOS, emergency types, safety network).
+- [x] SOS activation (press-and-hold with progress ring).
+- [x] Emergency type selection (bento grid).
 - [ ] Incident submission.
-- [ ] Active incident tracking.
+- [x] Active incident tracking (per Stitch tracking design).
 - [ ] History.
 - [ ] Notifications.
 - [ ] Anonymous reporting.
@@ -409,6 +409,79 @@ Sensor → ESP32 → Backend → Event processing → Alert
 → Dashboard + responder
 ```
 
+---
+
+# Mobile UI Implementation (Stitch Design) — Completed 2026-08-25
+
+## Screens Implemented
+- **Splash Screen** - Animated splash with CampusSafe branding
+- **Login Page** - Per Stitch design with email/phone, password, forgot password, guest mode, emergency SOS button
+- **Registration Page** - 4-step onboarding (Account → Campus → Role → Prefs) with side-by-side layout on wide screens
+- **Home Page** - Per Stitch design with:
+  - Greeting & campus status
+  - Emergency SOS button (press-and-hold 3s with progress ring and pulse animation)
+  - Quick Emergency Types (bento grid: Medical, Security, Fire, General)
+  - Safety Network status with nearby responders
+- **Active Emergency/Tracking Page** - Per Stitch design with:
+  - Emergency top app bar (red)
+  - Urgency banner
+  - Tracking map with user/responder markers and path
+  - Responder card with contact action
+  - Timeline status (SOS Sent → Alert Received → Responder Assigned → Responder En Route → Arrived)
+  - Secondary actions (Update Emergency Details, Mark as False Alarm)
+
+## Components Created
+- **Design System** (`lib/core/constants/design_tokens.dart`):
+  - Colors (Material 3 ColorScheme from DESIGN.md)
+  - Typography (Geist, Inter, JetBrains Mono with proper sizing)
+  - Spacing (8px base unit scale)
+  - Radius (4px to 9999px)
+  - Shadows (SOS, nav bar, card, elevated)
+  - Durations
+- **Buttons** (`lib/shared/widgets/buttons.dart`):
+  - PrimaryButton, SecondaryButton, TertiaryButton
+  - EmergencyButton (press-and-hold with animated progress ring and pulse)
+- **Input Fields** (`lib/shared/widgets/input_fields.dart`):
+  - AppTextField, AppPasswordField
+- **Status Badge** (`lib/shared/widgets/status_badge.dart`):
+  - StatusBadge (critical, warning, success, info, inactive, primary, secondary)
+  - StatusDot with pulsing animation
+  - Extensions for incident status and emergency types
+- **Cards** (`lib/shared/widgets/cards.dart`):
+  - AppCard, IncidentCard, ReportCard, ResponderCard, EmergencyTypeCard
+  - SectionHeader, BentoGrid
+- **Navigation** (`lib/shared/widgets/navigation.dart`):
+  - AppTopAppBar, EmergencyTopAppBar
+  - AppBottomNavBar with pill-style selected item
+  - ScaffoldWithNav shell
+
+## Design System
+- **Colors**: Full Material 3 ColorScheme matching DESIGN.md (Primary #000666, Secondary #005FAF, Error #BA1A1A, etc.)
+- **Typography**: Geist for headings, Inter for body, JetBrains Mono for technical data
+- **Spacing**: 8px base unit (xs=4, sm=8, md=16, lg=24, xl=32)
+- **Components**: Consistent rounded corners (8px default, 16px large, full for pills)
+- **Shadows**: Subtle depth for SOS button, nav bar, cards
+
+## Assets
+- **Fonts**: Geist (400, 500, 600, 700) and JetBrains Mono (400, 500) added to assets/fonts/
+
+## Navigation
+- GoRouter with ShellRoute for bottom navigation
+- Routes: /, /login, /register, /forgot-password, /guest, /home, /incidents, /reports, /profile, /sos, /incident/:id, /reports/new, /responder, /responder/available, /responder/incident/:id, /settings, /emergency/active/:id
+- Bottom nav: Home, Incidents, Alerts, Profile (matching Stitch design)
+
+## Mock Data
+- Mock incidents, reports, responders used for UI demonstration
+- Mock services clearly isolated from production backend
+
+## Tests
+- `flutter analyze`: No errors (only info/warnings)
+- `flutter test`: All 34 tests passed
+
+## Documentation Updated
+- PLAN.md - Updated mobile foundation and user features status
+- Mobile priority queue updated
+
 # Documentation
 
 - [ ] README.
@@ -427,13 +500,13 @@ Sensor → ESP32 → Backend → Event processing → Alert
 
 This section must always reflect the actual project state.
 
-1. [ ] Project foundation.
+1. [x] Project foundation.
 2. [ ] Shared architecture.
 3. [ ] Database/data model.
 4. [ ] Backend authentication/core entities.
-5. [ ] Mobile foundation.
+5. [x] Mobile foundation (UI implementation per Stitch design).
 6. [ ] Dashboard foundation.
-7. [ ] End-to-end mobile SOS.
+7. [ ] End-to-end mobile SOS (UI complete, backend integration pending).
 8. [ ] Responder workflow.
 9. [ ] Realtime.
 10. [ ] First ESP32 SOS station.
