@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/constants/design_tokens.dart';
+import '../../../../shared/widgets/buttons.dart';
+import '../../../../shared/widgets/cards.dart';
+import '../../../../shared/widgets/status_badge.dart';
 
 class HomePage extends ConsumerWidget {
   final bool isGuest;
@@ -17,199 +21,323 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CampusSafe'),
-        actions: [
-          if (!isGuest)
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () {},
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // SOS Button
-            Card(
-              color: AppColors.sosRed,
-              child: InkWell(
-                onTap: () => context.push('/sos'),
-                borderRadius: BorderRadius.circular(12),
-                child: const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.emergency,
-                        size: 64,
-                        color: Colors.white,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'SOS',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Tap for Emergency',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: AppSpacing.containerMargin,
+            right: AppSpacing.containerMargin,
+            top: AppSpacing.lg,
+            bottom: 104 + AppSpacing.safeAreaBottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Greeting & Campus Status
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hello, Alex',
+                    style: AppTypography.displayLgMobile.copyWith(
+                      color: AppColors.onSurface,
+                    ),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLow,
+                      border: Border.all(color: AppColors.outlineVariant),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: AppColors.primary,
+                          size: 18,
+                          fill: 1.0,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Campus: Secure',
+                          style: AppTypography.labelMd.copyWith(
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              // EMERGENCY SOS ACTION (Dominant Element)
+              Center(
+                child: Column(
+                  children: [
+                    EmergencyButton(
+                      onTriggered: () => _showSOSConfirmation(context),
+                      size: 180,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'Press and hold for 3 seconds to request immediate help.',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            // Quick Actions
-            const Text(
-              'Quick Actions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: AppSpacing.xl),
+              // Quick Emergency Types (Bento Grid Style)
+              SectionHeader(
+                title: 'Quick Emergency Types',
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickActionCard(
-                    icon: Icons.warning_amber,
-                    label: 'Report Issue',
-                    onTap: () {
-                      if (isGuest) {
-                        context.push('/reports/new');
-                      } else {
-                        context.push('/reports/new');
-                      }
-                    },
-                  ),
+              const SizedBox(height: AppSpacing.md),
+              BentoGrid(
+                crossAxisCount: 2,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                childAspectRatio: 1.2,
+                children: [
+                  _buildEmergencyTypeCard('Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
+                  _buildEmergencyTypeCard('Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
+                  _buildEmergencyTypeCard('Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
+                  _buildEmergencyTypeCard('General', Icons.support, AppColors.information, AppColors.informationContainer),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              // Status Card (Safety Network)
+              AppCard(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cell_tower,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Safety Network',
+                          style: AppTypography.labelMd.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Row(
+                            children: [
+                              StatusDot(
+                                color: AppColors.primary,
+                                size: 8,
+                                isPulsing: true,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                'Connected',
+                                style: AppTypography.technicalSm.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.secondaryContainer,
+                              child: Text(
+                                '1',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: -8),
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.tertiaryContainer,
+                              child: Text(
+                                '2',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.onTertiaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '2 ',
+                                style: AppTypography.bodyMd.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Nearby Responders',
+                                style: AppTypography.bodyMd.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickActionCard(
-                    icon: Icons.location_on,
-                    label: 'My Location',
-                    onTap: () {},
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickActionCard(
-                    icon: Icons.phone,
-                    label: 'Emergency\nContacts',
-                    onTap: () {},
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _QuickActionCard(
-                    icon: Icons.person,
-                    label: 'Profile',
-                    onTap: () {
-                      if (isGuest && onLoginPressed != null) {
-                        onLoginPressed!();
-                      } else {
-                        context.push('/profile');
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            if (isGuest) ...[
-              const SizedBox(height: 24),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+              ),
+              if (isGuest) ...[
+                const SizedBox(height: AppSpacing.xl),
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'Login for Full Access',
-                        style: TextStyle(
+                        style: AppTypography.labelMd.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: AppColors.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
                         'Login to send SOS alerts and track incidents',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
+                        style: AppTypography.bodyMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: onLoginPressed ?? () => context.go('/login'),
-                          child: const Text('Login'),
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      PrimaryButton(
+                        label: 'Login',
+                        onPressed: onLoginPressed ?? () => context.go('/login'),
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyTypeCard(
+    String label,
+    IconData icon,
+    Color color,
+    Color containerColor,
+  ) {
+    return InkWell(
+      onTap: () => context.push('/sos'),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: containerColor,
+              ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              label,
+              style: AppTypography.labelMd.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-class _QuickActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 32,
-                color: AppColors.primary,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+  void _showSOSConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Confirm Emergency',
+          style: AppTypography.headlineMd.copyWith(color: AppColors.onSurface),
         ),
+        content: Text(
+          'Are you sure you want to send an SOS alert? Emergency services will be notified immediately.',
+          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          PrimaryButton(
+            label: 'Yes, Send SOS',
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/sos');
+            },
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.onError,
+          ),
+        ],
       ),
     );
   }
