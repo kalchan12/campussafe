@@ -7,6 +7,7 @@ import '../../features/auth/presentation/pages/registration_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/sos/presentation/pages/sos_page.dart';
+import '../../features/sos/presentation/pages/active_emergency_page.dart';
 import '../../features/incidents/presentation/pages/incidents_page.dart';
 import '../../features/incidents/presentation/pages/incident_detail_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
@@ -18,6 +19,7 @@ import '../../features/responder/presentation/pages/incident_details_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../shared/widgets/splash_screen.dart';
 import '../../shared/widgets/guest_mode_wrapper.dart';
+import '../../shared/widgets/navigation.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -50,7 +52,57 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const GuestModeWrapper(),
       ),
       ShellRoute(
-        builder: (context, state, child) => ScaffoldWithNav(child: child),
+        builder: (context, state, child) {
+          int currentIndex = 0;
+          final location = state.uri.toString();
+          if (location.startsWith('/home')) currentIndex = 0;
+          else if (location.startsWith('/incidents')) currentIndex = 1;
+          else if (location.startsWith('/reports')) currentIndex = 2;
+          else if (location.startsWith('/profile')) currentIndex = 3;
+
+          return ScaffoldWithNav(
+            currentIndex: currentIndex,
+            onDestinationSelected: (index) {
+              switch (index) {
+                case 0:
+                  context.go('/home');
+                  break;
+                case 1:
+                  context.go('/incidents');
+                  break;
+                case 2:
+                  context.go('/reports');
+                  break;
+                case 3:
+                  context.go('/profile');
+                  break;
+              }
+            },
+            destinations: const [
+              BottomNavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home,
+                label: 'Home',
+              ),
+              BottomNavItem(
+                icon: Icons.warning_amber_outlined,
+                selectedIcon: Icons.warning_amber,
+                label: 'Incidents',
+              ),
+              BottomNavItem(
+                icon: Icons.notifications_outlined,
+                selectedIcon: Icons.notifications,
+                label: 'Alerts',
+              ),
+              BottomNavItem(
+                icon: Icons.person_outline,
+                selectedIcon: Icons.person,
+                label: 'Profile',
+              ),
+            ],
+            child: child,
+          );
+        },
         routes: [
           GoRoute(
             path: '/home',
@@ -121,66 +173,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'settings',
         builder: (context, state) => const SettingsPage(),
       ),
+      GoRoute(
+        path: '/emergency/active/:id',
+        name: 'activeEmergency',
+        builder: (context, state) => ActiveEmergencyPage(
+          incidentId: state.pathParameters['id']!,
+        ),
+      ),
     ],
   );
 });
-
-class ScaffoldWithNav extends StatelessWidget {
-  final Widget child;
-  const ScaffoldWithNav({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _calculateSelectedIndex(context),
-        onDestinationSelected: (index) => _onItemTapped(index, context),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.warning_amber_outlined),
-            selectedIcon: Icon(Icons.warning_amber),
-            label: 'Incidents',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assessment_outlined),
-            selectedIcon: Icon(Icons.assessment),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _calculateSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/incidents')) return 1;
-    if (location.startsWith('/reports')) return 2;
-    if (location.startsWith('/profile')) return 3;
-    return 0;
-  }
-
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/home');
-      case 1:
-        context.go('/incidents');
-      case 2:
-        context.go('/reports');
-      case 3:
-        context.go('/profile');
-    }
-  }
-}
