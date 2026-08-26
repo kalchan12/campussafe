@@ -1,11 +1,9 @@
 'use client';
 
-import type { Incident, IncidentStatus, EmergencyType } from '@/types/incident';
+import type { Incident } from '@/types/incident';
 import {
   INCIDENT_STATUS_LABELS,
-  INCIDENT_STATUS_COLORS,
   EMERGENCY_TYPE_LABELS,
-  EMERGENCY_TYPE_COLORS,
 } from '@/types/incident';
 import { Badge } from '@/components/ui/badge';
 import { timeAgo } from '@/lib/utils';
@@ -20,14 +18,14 @@ export function IncidentTable({ incidents, onRowClick }: IncidentTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ID</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Type</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Priority</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Location</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Responder</th>
-            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Time</th>
+          <tr className="border-b border-outline-variant">
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">ID</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Type</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Severity</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Status</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Location</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Responder</th>
+            <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Time</th>
           </tr>
         </thead>
         <tbody>
@@ -35,31 +33,33 @@ export function IncidentTable({ incidents, onRowClick }: IncidentTableProps) {
             <tr
               key={incident.id}
               onClick={() => onRowClick?.(incident)}
-              className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+              className="border-b border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors"
             >
-              <td className="py-3 px-4 text-sm font-mono text-gray-600">
-                {incident.id.slice(0, 8)}
+              <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface">
+                {incident.id.toUpperCase()}
               </td>
               <td className="py-3 px-4">
-                <Badge className={EMERGENCY_TYPE_COLORS[incident.type]}>
+                <span className="font-body-md text-body-md text-on-surface">
                   {EMERGENCY_TYPE_LABELS[incident.type]}
+                </span>
+              </td>
+              <td className="py-3 px-4">
+                <Badge variant={incident.priority === 1 ? 'critical' : incident.priority === 2 ? 'high' : 'medium'}>
+                  {incident.priority === 1 ? 'Critical' : incident.priority === 2 ? 'High' : 'Medium'}
                 </Badge>
               </td>
               <td className="py-3 px-4">
-                <Badge className={INCIDENT_STATUS_COLORS[incident.status]}>
+                <Badge variant={['responding', 'created'].includes(incident.status) ? 'error' : 'info'}>
                   {INCIDENT_STATUS_LABELS[incident.status]}
                 </Badge>
               </td>
-              <td className="py-3 px-4 text-sm text-gray-600">
-                {incident.priority}
-              </td>
-              <td className="py-3 px-4 text-sm text-gray-600 max-w-[200px] truncate">
+              <td className="py-3 px-4 font-body-md text-body-md text-on-surface max-w-[200px] truncate">
                 {incident.location_description || '-'}
               </td>
-              <td className="py-3 px-4 text-sm text-gray-600">
+              <td className="py-3 px-4 font-body-md text-body-md text-on-surface">
                 {incident.assigned_responder_name || '-'}
               </td>
-              <td className="py-3 px-4 text-sm text-gray-500">
+              <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface-variant">
                 {timeAgo(incident.created_at)}
               </td>
             </tr>
