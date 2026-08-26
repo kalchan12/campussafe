@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { signIn, saveUser } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,65 +29,128 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">CampusSafe</h1>
-          <p className="text-gray-600 mt-2">Emergency Operations Dashboard</p>
+    <div className="bg-surface min-h-screen flex flex-col items-center justify-center font-body-md text-body-md antialiased">
+      <div className="w-full max-w-md px-margin-mobile md:px-0">
+        {/* Brand Header */}
+        <div className="text-center mb-8 flex flex-col items-center justify-center space-y-2">
+          <span
+            className="material-symbols-outlined text-primary text-5xl mb-2"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            shield_person
+          </span>
+          <h1 className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">
+            CampusSafe
+          </h1>
+          <p className="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest font-semibold">
+            Emergency Operations Center
+          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign In</h2>
+        {/* Login Card */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative overflow-hidden">
+          {/* Top Accent Bar */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-primary opacity-80" />
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <div className="mb-6 p-3 bg-error-container border border-error/20 rounded text-on-error-container font-label-md text-label-md">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Input */}
+            <div className="space-y-2">
+              <label className="font-label-md text-label-md text-on-surface block" htmlFor="email">
+                Email Address
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="operator@campus.edu"
-                required
-              />
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">
+                  mail
+                </span>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-3 py-3 border border-outline-variant rounded bg-surface-container-lowest text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-technical-sm text-technical-sm"
+                  placeholder="officer@campus.edu"
+                  autoComplete="email"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="••••••••"
-                required
-              />
+            {/* Password Input */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="font-label-md text-label-md text-on-surface block" htmlFor="password">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="font-label-md text-label-md text-primary hover:text-primary-container hover:underline transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">
+                  lock
+                </span>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-3 border border-outline-variant rounded bg-surface-container-lowest text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-technical-sm text-technical-sm tracking-widest"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors focus:outline-none focus:text-primary"
+                  aria-label="Toggle password visibility"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    {showPassword ? 'visibility' : 'visibility_off'}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            <Button
+            {/* Submit Button */}
+            <button
               type="submit"
-              className="w-full"
               disabled={isLoading}
+              className="w-full min-h-[44px] bg-primary text-on-primary rounded font-label-md text-label-md flex items-center justify-center space-x-2 hover:bg-primary-container hover:text-on-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface active:scale-[0.98] mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
+              <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
+              {!isLoading && (
+                <span className="material-symbols-outlined text-sm">login</span>
+              )}
+            </button>
           </form>
 
-          <div className="mt-6 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-            <p className="font-medium">Demo Credentials:</p>
-            <p>Email: operator@campus.edu</p>
-            <p>Password: password</p>
+          {/* Demo Credentials */}
+          <div className="mt-6 p-3 bg-surface-container rounded border border-outline-variant/50">
+            <p className="font-label-md text-label-md text-on-surface-variant font-semibold mb-1">Demo Credentials</p>
+            <p className="font-technical-sm text-technical-sm text-outline">Email: operator@campus.edu</p>
+            <p className="font-technical-sm text-technical-sm text-outline">Password: password</p>
           </div>
+        </div>
+
+        {/* Security Footer */}
+        <div className="mt-8 flex flex-col items-center space-y-3">
+          <div className="flex items-center space-x-1.5 text-on-surface-variant bg-surface-container py-1.5 px-3 rounded-full border border-outline-variant/50">
+            <span className="material-symbols-outlined text-[16px] text-emerald-600">gpp_good</span>
+            <span className="font-technical-sm text-technical-sm font-medium tracking-tight">Secure Connection Established</span>
+          </div>
+          <p className="font-technical-sm text-technical-sm text-outline text-center uppercase tracking-wider max-w-[280px]">
+            Authorized Personnel Only. Access attempts are logged.
+          </p>
         </div>
       </div>
     </div>
