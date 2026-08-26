@@ -174,36 +174,36 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 # Phase 4 — Web Dashboard
 
 ## Foundation
-- [x] Authentication.
+- [x] Authentication (Stitch EOC login UI implemented 2026-08-26).
 - [~] Role-based access.
-- [x] Sidebar.
-- [x] Overview.
+- [x] Sidebar (Stitch Material Design 3 light layout with Material Symbols).
+- [x] Overview (Stitch Operations Center KPI metrics, live preview, incident/responder summary).
 - [x] System status.
 
 ## Operations
-- [x] Live incidents.
-- [~] Incident detail.
-- [~] Live campus map.
-- [x] Responder management.
+- [x] Live incidents (Stitch incident management table with severity badges, filters, pagination).
+- [x] Incident detail (Stitch live map drawer & incident cards).
+- [x] Live campus map (Dedicated interactive map with layer toggles, marker pulses, and detail drawer).
+- [x] Responder management (Responder directory with status indicators and search filters).
 - [~] Assignment.
 - [~] Escalation.
 - [~] Resolution.
 - [~] Notifications.
 
 ## Infrastructure
-- [x] Device management.
+- [x] Device management (IoT node monitoring grid with type and status filters).
 - [x] Device status.
 - [~] Telemetry.
 - [~] Device events.
 
 ## Administration
 - [~] User management.
-- [x] Reports.
+- [x] Reports (Safety report review table with anonymous flags).
 - [~] Analytics.
 - [~] Audit logs.
-- [x] Settings.
+- [x] Settings (Configurable audio alerts, map display, refresh interval).
 
-**Milestone:** Operator can monitor, assign, follow, and resolve incidents.
+**Milestone:** Operator can monitor, assign, follow, and resolve incidents (Stitch UI foundation fully integrated).
 
 # Phase 5 — Core Emergency Workflow
 
