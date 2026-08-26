@@ -9,42 +9,47 @@ interface ResponderCardProps {
 }
 
 export function ResponderCard({ responder, onClick }: ResponderCardProps) {
+  const statusVariant = responder.status === 'available' ? 'success' as const
+    : responder.status === 'responding' ? 'error' as const
+    : responder.status === 'offline' ? 'default' as const
+    : 'warning' as const;
+
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+      className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-blue-600">
+          <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center">
+            <span className="font-label-md text-label-md text-primary font-bold">
               {responder.name.split(' ').map(n => n[0]).join('')}
             </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{responder.name}</p>
-            <p className="text-xs text-gray-500">{responder.email}</p>
+            <p className="font-body-md text-body-md text-on-surface font-medium">{responder.name}</p>
+            <p className="font-technical-sm text-technical-sm text-on-surface-variant">{responder.email}</p>
           </div>
         </div>
-        <Badge className={RESPONDER_STATUS_COLORS[responder.status]}>
+        <Badge variant={statusVariant}>
           {RESPONDER_STATUS_LABELS[responder.status]}
         </Badge>
       </div>
 
-      <div className="space-y-2 text-xs text-gray-500">
+      <div className="space-y-2 font-technical-sm text-technical-sm text-on-surface-variant">
         <div className="flex items-center justify-between">
           <span>Role</span>
-          <span className="font-medium text-gray-700 capitalize">{responder.role}</span>
+          <span className="font-medium text-on-surface capitalize">{responder.role}</span>
         </div>
         {responder.current_incident_type && (
           <div className="flex items-center justify-between">
             <span>Current Incident</span>
-            <span className="font-medium text-gray-700">{responder.current_incident_type}</span>
+            <span className="font-medium text-on-surface capitalize">{responder.current_incident_type}</span>
           </div>
         )}
         <div className="flex items-center justify-between">
           <span>Last Active</span>
-          <span className="font-medium text-gray-700">{timeAgo(responder.last_active)}</span>
+          <span className="font-medium text-on-surface">{timeAgo(responder.last_active)}</span>
         </div>
       </div>
     </div>

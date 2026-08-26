@@ -1,129 +1,112 @@
 'use client';
 
 import { Sidebar } from '@/components/layout/sidebar';
+import { TopNav } from '@/components/layout/top-nav';
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-sm text-gray-500 mt-1">Configure dashboard preferences</p>
-        </header>
-
-        <div className="p-6">
-          <div className="max-w-2xl space-y-6">
-            {/* General Settings */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">General</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dashboard Name
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="CampusSafe Operations"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Refresh Interval (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={30}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
+      <div className="flex-1 flex flex-col ml-64 h-screen">
+        <TopNav />
+        <main className="flex-1 overflow-y-auto bg-background p-6">
+          <div className="max-w-[1280px] mx-auto space-y-6">
+            {/* Header */}
+            <div>
+              <h1 className="font-headline-lg text-headline-lg text-on-surface">Settings</h1>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">Configure dashboard preferences</p>
             </div>
 
-            {/* Notification Settings */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Sound Alerts</p>
-                    <p className="text-sm text-gray-500">Play sound for new incidents</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
+            <div className="max-w-2xl space-y-6">
+              {/* General Settings */}
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-lg">
+                <div className="px-6 py-4 border-b border-outline-variant">
+                  <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">General</h2>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="p-6 space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Desktop Notifications</p>
-                    <p className="text-sm text-gray-500">Show system notifications</p>
+                    <label className="block font-label-md text-label-md text-on-surface mb-1">
+                      Dashboard Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="CampusSafe Operations"
+                      className="w-full px-4 py-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
-                </div>
-                <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Critical Incident Alerts</p>
-                    <p className="text-sm text-gray-500">Alert for priority 1 incidents</p>
+                    <label className="block font-label-md text-label-md text-on-surface mb-1">
+                      Refresh Interval (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      defaultValue={30}
+                      className="w-full px-4 py-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
                 </div>
               </div>
-            </div>
 
-            {/* Map Settings */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Map</h2>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Show Responder Locations</p>
-                    <p className="text-sm text-gray-500">Display responder positions on map</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
+              {/* Notification Settings */}
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-lg">
+                <div className="px-6 py-4 border-b border-outline-variant">
+                  <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Notifications</h2>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Show Device Locations</p>
-                    <p className="text-sm text-gray-500">Display IoT devices on map</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
+                <div className="p-6 space-y-4">
+                  {[
+                    { title: 'Sound Alerts', desc: 'Play sound for new incidents' },
+                    { title: 'Desktop Notifications', desc: 'Show system notifications' },
+                    { title: 'Critical Incident Alerts', desc: 'Alert for priority 1 incidents' },
+                  ].map((setting) => (
+                    <div key={setting.title} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-body-md text-body-md text-on-surface font-medium">{setting.title}</p>
+                        <p className="font-technical-sm text-technical-sm text-on-surface-variant">{setting.desc}</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        defaultChecked
+                        className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-4">
-              <Button variant="secondary">Cancel</Button>
-              <Button>Save Settings</Button>
+              {/* Map Settings */}
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-lg">
+                <div className="px-6 py-4 border-b border-outline-variant">
+                  <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Map</h2>
+                </div>
+                <div className="p-6 space-y-4">
+                  {[
+                    { title: 'Show Responder Locations', desc: 'Display responder positions on map' },
+                    { title: 'Show Device Locations', desc: 'Display IoT devices on map' },
+                  ].map((setting) => (
+                    <div key={setting.title} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-body-md text-body-md text-on-surface font-medium">{setting.title}</p>
+                        <p className="font-technical-sm text-technical-sm text-on-surface-variant">{setting.desc}</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        defaultChecked
+                        className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4">
+                <Button variant="secondary">Cancel</Button>
+                <Button>Save Settings</Button>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

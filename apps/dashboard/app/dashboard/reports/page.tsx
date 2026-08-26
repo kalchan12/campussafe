@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
+import { TopNav } from '@/components/layout/top-nav';
 import { Badge } from '@/components/ui/badge';
 import { getReports } from '@/lib/mock';
-import { REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, REPORT_STATUS_COLORS } from '@/types/report';
+import { REPORT_TYPE_LABELS, REPORT_STATUS_LABELS } from '@/types/report';
 import type { SafetyReport, ReportFilter } from '@/types/report';
 import { formatDateTime } from '@/lib/utils';
 
@@ -21,107 +22,120 @@ export default function ReportsPage() {
     load();
   }, [filter, search]);
 
+  const getReportStatusVariant = (status: SafetyReport['status']) => {
+    switch (status) {
+      case 'submitted': return 'info' as const;
+      case 'under_review': return 'warning' as const;
+      case 'resolved': return 'success' as const;
+      case 'dismissed': return 'default' as const;
+      default: return 'default' as const;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
+      <div className="flex-1 flex flex-col ml-64 h-screen">
+        <TopNav showSearch searchPlaceholder="Search reports..." onSearch={setSearch} />
+        <main className="flex-1 overflow-y-auto bg-background p-6">
+          <div className="max-w-[1280px] mx-auto space-y-6">
+            {/* Header */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Safety Reports</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="font-headline-lg text-headline-lg text-on-surface">Safety Reports</h1>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">
                 {reports.length} total reports
               </p>
             </div>
-          </div>
-        </header>
 
-        <div className="p-6">
-          {/* Filters */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
-            <div className="flex items-center gap-4">
-              <input
-                type="text"
-                placeholder="Search reports..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <select
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-                onChange={(e) =>
-                  setFilter({ ...filter, status: e.target.value ? [e.target.value as SafetyReport['status']] : undefined })
-                }
-              >
-                <option value="">All Status</option>
-                <option value="submitted">Submitted</option>
-                <option value="under_review">Under Review</option>
-                <option value="resolved">Resolved</option>
-                <option value="dismissed">Dismissed</option>
-              </select>
-              <select
-                className="px-4 py-2 border border-gray-300 rounded-lg"
-                onChange={(e) =>
-                  setFilter({ ...filter, is_anonymous: e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined })
-                }
-              >
-                <option value="">All Reports</option>
-                <option value="true">Anonymous</option>
-                <option value="false">Named</option>
-              </select>
+            {/* Filters */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-lg">tune</span>
+                  <span className="font-label-md text-label-md">Filters:</span>
+                </div>
+                <select
+                  className="px-4 py-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface font-label-md text-label-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  onChange={(e) =>
+                    setFilter({ ...filter, status: e.target.value ? [e.target.value as SafetyReport['status']] : undefined })
+                  }
+                >
+                  <option value="">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="under_review">Under Review</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="dismissed">Dismissed</option>
+                </select>
+                <select
+                  className="px-4 py-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface font-label-md text-label-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  onChange={(e) =>
+                    setFilter({ ...filter, is_anonymous: e.target.value === 'true' ? true : e.target.value === 'false' ? false : undefined })
+                  }
+                >
+                  <option value="">All Reports</option>
+                  <option value="true">Anonymous</option>
+                  <option value="false">Named</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-outline-variant bg-surface-container-low">
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">ID</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Type</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Status</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Description</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Location</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Anonymous</th>
+                    <th className="text-left py-3 px-4 font-label-md text-label-md text-on-surface-variant">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reports.map((report) => (
+                    <tr
+                      key={report.id}
+                      className="border-b border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors"
+                    >
+                      <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface">
+                        {report.id.toUpperCase()}
+                      </td>
+                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface">
+                        {REPORT_TYPE_LABELS[report.type]}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={getReportStatusVariant(report.status)}>
+                          {REPORT_STATUS_LABELS[report.status]}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface max-w-[200px] truncate">
+                        {report.description}
+                      </td>
+                      <td className="py-3 px-4 font-body-md text-body-md text-on-surface">
+                        {report.location_description || '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        {report.is_anonymous ? (
+                          <span className="inline-flex items-center gap-1 font-technical-sm text-technical-sm text-on-surface-variant">
+                            <span className="material-symbols-outlined text-sm">lock</span> Yes
+                          </span>
+                        ) : (
+                          <span className="font-technical-sm text-technical-sm text-on-surface-variant">No</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface-variant">
+                        {formatDateTime(report.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-
-          {/* Table */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ID</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Type</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Description</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Location</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Anonymous</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report) => (
-                  <tr
-                    key={report.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <td className="py-3 px-4 text-sm font-mono text-gray-600">
-                      {report.id.slice(0, 8)}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {REPORT_TYPE_LABELS[report.type]}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge className={REPORT_STATUS_COLORS[report.status]}>
-                        {REPORT_STATUS_LABELS[report.status]}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 max-w-[200px] truncate">
-                      {report.description}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {report.location_description || '-'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {report.is_anonymous ? '🔒 Yes' : 'No'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-500">
-                      {formatDateTime(report.created_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
