@@ -3,7 +3,8 @@ import { cn } from '@/lib/utils';
 interface StatCardProps {
   title: string;
   value: number | string;
-  icon?: React.ReactNode;
+  icon?: string; // Material Symbols icon name
+  variant?: 'default' | 'critical';
   trend?: {
     value: number;
     isPositive: boolean;
@@ -11,34 +12,58 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ title, value, icon, trend, className }: StatCardProps) {
+export function StatCard({ title, value, icon, variant = 'default', trend, className }: StatCardProps) {
+  const isCritical = variant === 'critical';
+
   return (
     <div
       className={cn(
-        'bg-white rounded-xl border border-gray-200 p-6 shadow-sm',
+        'bg-surface-container-lowest border border-outline-variant rounded-lg p-6 flex flex-col gap-2 relative overflow-hidden',
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-        </div>
+      {isCritical && (
+        <div className="absolute inset-0 bg-error/10 pointer-events-none" />
+      )}
+      <div className="flex justify-between items-center relative z-10">
+        <span
+          className={cn(
+            'font-label-md text-label-md',
+            isCritical ? 'text-error font-bold' : 'text-on-surface-variant'
+          )}
+        >
+          {title}
+        </span>
         {icon && (
-          <div className="p-3 bg-blue-50 rounded-lg text-blue-600">{icon}</div>
+          <span
+            className={cn(
+              'material-symbols-outlined',
+              isCritical ? 'text-error' : 'text-primary'
+            )}
+          >
+            {icon}
+          </span>
         )}
       </div>
+      <span
+        className={cn(
+          'font-display-lg text-display-lg relative z-10',
+          isCritical ? 'text-error' : 'text-on-surface'
+        )}
+      >
+        {value}
+      </span>
       {trend && (
-        <div className="mt-4 flex items-center text-sm">
+        <div className="mt-2 flex items-center font-technical-sm text-technical-sm relative z-10">
           <span
             className={cn(
               'font-medium',
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
+              trend.isPositive ? 'text-emerald-600' : 'text-error'
             )}
           >
             {trend.isPositive ? '+' : ''}{trend.value}%
           </span>
-          <span className="text-gray-500 ml-2">from last hour</span>
+          <span className="text-on-surface-variant ml-2">from last hour</span>
         </div>
       )}
     </div>

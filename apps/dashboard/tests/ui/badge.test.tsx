@@ -10,18 +10,18 @@ describe('Badge', () => {
   it('applies default variant', () => {
     render(<Badge>Default</Badge>);
     const badge = screen.getByText('Default');
-    expect(badge).toHaveClass('bg-gray-100');
+    expect(badge).toHaveClass('bg-surface-variant');
   });
 
   it('applies success variant', () => {
     render(<Badge variant="success">Success</Badge>);
     const badge = screen.getByText('Success');
-    expect(badge).toHaveClass('bg-green-100');
+    expect(badge).toHaveClass('bg-emerald-50');
   });
 
   it('applies error variant', () => {
     render(<Badge variant="error">Error</Badge>);
     const badge = screen.getByText('Error');
-    expect(badge).toHaveClass('bg-red-100');
+    expect(badge).toHaveClass('bg-error-container');
   });
 });
