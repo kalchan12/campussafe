@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/input_fields.dart';
 
@@ -29,10 +28,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement authentication logic
-      context.go('/home');
-    }
+    // Dev Mode: Allow logging in without requiring email or password until backend auth is connected
+    context.go('/home');
   }
 
   @override
@@ -104,7 +101,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       hint: 'student@campus.edu',
                       controller: _identifierController,
                       keyboardType: TextInputType.text,
-                      validator: Validators.email,
                       prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -112,7 +108,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       label: 'Password',
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      validator: Validators.password,
                       onSuffixTap: () {
                         setState(() {
                           _obscurePassword = !_obscurePassword;

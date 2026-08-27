@@ -74,6 +74,16 @@ class _AppTextFieldState extends State<AppTextField> {
   }
 
   @override
+  void didUpdateWidget(AppTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.obscureText != widget.obscureText) {
+      setState(() {
+        _obscureText = widget.obscureText;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     if (widget.focusNode == null) {
       _focusNode.dispose();
@@ -102,9 +112,7 @@ class _AppTextFieldState extends State<AppTextField> {
         if (effectiveLabel != null) ...[
           Text(
             effectiveLabel,
-            style: AppTypography.labelMd.copyWith(
-              color: hasError ? AppColors.error : AppColors.onSurface,
-            ),
+            style: AppTypography.labelMd.copyWith(color: AppColors.onSurface),
           ),
           const SizedBox(height: AppSpacing.xs),
         ],
@@ -138,27 +146,19 @@ class _AppTextFieldState extends State<AppTextField> {
                   )
                 : null,
             prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            suffixIcon: widget.obscureText
+            suffixIcon: widget.suffixIcon != null
                 ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.onSurfaceVariant,
-                      size: 20,
-                    ),
+                    icon: widget.suffixIcon!,
                     onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
+                      if (widget.obscureText) {
+                        setState(() {
+                          _obscureText = !_obscureText;
+                        });
+                      }
+                      widget.onSuffixTap?.call();
                     },
-                    tooltip: _obscureText ? 'Show password' : 'Hide password',
                   )
-                : widget.suffixIcon != null
-                    ? IconButton(
-                        icon: widget.suffixIcon!,
-                        onPressed: widget.onSuffixTap,
-                        color: AppColors.onSurfaceVariant,
-                      )
-                    : null,
+                : null,
             filled: true,
             fillColor: widget.enabled
                 ? (_hasFocus ? AppColors.surfaceContainerLowest : AppColors.surfaceContainerLowest)
@@ -169,16 +169,11 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(
-                color: hasError ? AppColors.error : AppColors.outline,
-              ),
+              borderSide: const BorderSide(color: AppColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(
-                color: hasError ? AppColors.error : AppColors.primary,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
@@ -190,21 +185,16 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(color: AppColors.outlineVariant),
+              borderSide: const BorderSide(color: AppColors.outlineVariant),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
             hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.outline),
-            helperStyle: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
-            errorStyle: AppTypography.bodyMd.copyWith(color: AppColors.error),
-            labelStyle: AppTypography.labelMd.copyWith(
-              color: hasError ? AppColors.error : AppColors.onSurface,
-            ),
-            floatingLabelStyle: AppTypography.labelMd.copyWith(
-              color: hasError ? AppColors.error : AppColors.primary,
-            ),
+            errorStyle: hasError
+                ? AppTypography.technicalSm.copyWith(color: AppColors.error)
+                : null,
           ),
         ),
       ],
@@ -258,6 +248,16 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
   }
 
   @override
+  void didUpdateWidget(AppPasswordField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.obscureText != widget.obscureText) {
+      setState(() {
+        _obscureText = widget.obscureText;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     if (widget.focusNode == null) {
       _focusNode.dispose();
@@ -300,8 +300,8 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
           decoration: InputDecoration(
             hintText: widget.hint ?? '••••••••',
             counterText: '',
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.sm),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.sm),
               child: Icon(Icons.lock_outline, color: AppColors.onSurfaceVariant, size: 20),
             ),
             prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -311,10 +311,11 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
                 color: AppColors.onSurfaceVariant,
                 size: 20,
               ),
-              onPressed: widget.onSuffixTap ?? () {
+              onPressed: () {
                 setState(() {
                   _obscureText = !_obscureText;
                 });
+                widget.onSuffixTap?.call();
               },
               tooltip: _obscureText ? 'Show password' : 'Hide password',
             ),
@@ -344,7 +345,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(color: AppColors.outlineVariant),
+              borderSide: const BorderSide(color: AppColors.outlineVariant),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
