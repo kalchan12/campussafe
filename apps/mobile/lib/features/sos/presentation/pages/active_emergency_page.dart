@@ -7,6 +7,7 @@ import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/cards.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../../../shared/widgets/navigation.dart';
 
 class ActiveEmergencyPage extends ConsumerStatefulWidget {
   final String incidentId;

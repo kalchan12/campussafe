@@ -25,6 +25,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _currentStep = 0;
+  String? _selectedRole;
 
   static const _totalSteps = 4;
   static const _stepLabels = ['Account', 'Campus', 'Role', 'Prefs'];
@@ -433,7 +434,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         ),
         const SizedBox(height: AppSpacing.md),
         DropdownButtonFormField<String>(
-          initialValue: 'main_campus',
+          value: 'main_campus',
           decoration: InputDecoration(
             labelText: 'Campus',
             prefixIcon: Icon(Icons.school, color: AppColors.onSurfaceVariant, size: 20),
@@ -561,9 +562,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               ],
             ),
           ),
-        );
-      }).toList();
-    }
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildPrefsStep() {

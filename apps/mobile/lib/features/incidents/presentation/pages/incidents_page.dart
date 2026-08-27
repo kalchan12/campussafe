@@ -90,7 +90,13 @@ class IncidentsPage extends ConsumerWidget {
       itemBuilder: (context, index) {
         final incident = incidents[index];
         return IncidentCard(
-          incident: incident,
+          id: incident.id,
+          type: incident.type.value,
+          status: incident.status.value,
+          description: incident.description,
+          location: incident.campusBlock,
+          createdAt: incident.createdAt,
+          priority: incident.priority,
           onTap: () => context.push('/incident/${incident.id}'),
         );
       },

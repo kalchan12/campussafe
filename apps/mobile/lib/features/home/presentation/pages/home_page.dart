@@ -106,10 +106,10 @@ class HomePage extends ConsumerWidget {
                 runSpacing: AppSpacing.sm,
                 childAspectRatio: 1.2,
                 children: [
-                  _buildEmergencyTypeCard('Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
-                  _buildEmergencyTypeCard('Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
-                  _buildEmergencyTypeCard('Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
-                  _buildEmergencyTypeCard('General', Icons.support, AppColors.information, AppColors.informationContainer),
+                  _buildEmergencyTypeCard(context, 'Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
+                  _buildEmergencyTypeCard(context, 'Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
+                  _buildEmergencyTypeCard(context, 'Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
+                  _buildEmergencyTypeCard(context, 'General', Icons.support, AppColors.information, AppColors.informationContainer),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -264,6 +264,7 @@ class HomePage extends ConsumerWidget {
   }
 
   Widget _buildEmergencyTypeCard(
+    BuildContext context,
     String label,
     IconData icon,
     Color color,
