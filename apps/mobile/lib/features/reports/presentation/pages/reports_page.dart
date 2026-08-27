@@ -87,7 +87,12 @@ class ReportsPage extends ConsumerWidget {
       itemBuilder: (context, index) {
         final report = reports[index];
         return ReportCard(
-          report: report,
+          id: report.id,
+          type: report.type.value,
+          status: report.status.value,
+          description: report.description,
+          createdAt: report.createdAt,
+          isAnonymous: report.isAnonymous,
         );
       },
     );
