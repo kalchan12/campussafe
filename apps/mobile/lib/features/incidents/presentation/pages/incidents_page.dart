@@ -44,16 +44,38 @@ class IncidentsPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: SegmentedButton<IncidentsViewMode>(
-              segments: const [
+              segments: [
                 ButtonSegment<IncidentsViewMode>(
                   value: IncidentsViewMode.list,
-                  icon: Icon(Icons.view_list_rounded, size: 18),
-                  label: Text('List', style: TextStyle(fontSize: 12)),
+                  icon: Icon(
+                    Icons.view_list_rounded,
+                    size: 18,
+                    color: viewMode == IncidentsViewMode.list ? Colors.white : AppColors.onSurfaceVariant,
+                  ),
+                  label: Text(
+                    'List',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: viewMode == IncidentsViewMode.list ? FontWeight.bold : FontWeight.w500,
+                      color: viewMode == IncidentsViewMode.list ? Colors.white : AppColors.onSurfaceVariant,
+                    ),
+                  ),
                 ),
                 ButtonSegment<IncidentsViewMode>(
                   value: IncidentsViewMode.map,
-                  icon: Icon(Icons.map_rounded, size: 18),
-                  label: Text('Map', style: TextStyle(fontSize: 12)),
+                  icon: Icon(
+                    Icons.map_rounded,
+                    size: 18,
+                    color: viewMode == IncidentsViewMode.map ? Colors.white : AppColors.onSurfaceVariant,
+                  ),
+                  label: Text(
+                    'Map',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: viewMode == IncidentsViewMode.map ? FontWeight.bold : FontWeight.w500,
+                      color: viewMode == IncidentsViewMode.map ? Colors.white : AppColors.onSurfaceVariant,
+                    ),
+                  ),
                 ),
               ],
               selected: {viewMode},
@@ -61,11 +83,20 @@ class IncidentsPage extends ConsumerWidget {
                 ref.read(incidentsViewModeProvider.notifier).state =
                     newSelection.first;
               },
-              style: SegmentedButton.styleFrom(
-                selectedBackgroundColor: AppColors.primary,
-                selectedForegroundColor: Colors.white,
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppColors.primary;
+                  }
+                  return AppColors.surfaceContainerLow;
+                }),
+                foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Colors.white;
+                  }
+                  return AppColors.onSurfaceVariant;
+                }),
                 visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
             ),
           ),
@@ -105,22 +136,54 @@ class IncidentsPage extends ConsumerWidget {
             child: Row(
               children: [
                 FilterChip(
-                  label: Text('All (${allIncidents.length})'),
+                  label: Text(
+                    'All (${allIncidents.length})',
+                    style: TextStyle(
+                      color: selectedFilter == null ? Colors.white : AppColors.onSurface,
+                      fontWeight: selectedFilter == null ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
                   selected: selectedFilter == null,
+                  selectedColor: AppColors.primary,
+                  checkmarkColor: Colors.white,
+                  backgroundColor: AppColors.surfaceContainerLow,
+                  side: BorderSide(
+                    color: selectedFilter == null
+                        ? AppColors.primary
+                        : AppColors.outlineVariant.withValues(alpha: 0.6),
+                  ),
                   onSelected: (_) {
                     ref.read(selectedEmergencyTypeFilterProvider.notifier).state = null;
                   },
                 ),
-                const SizedBox(width: AppSpacing.xs),
+                const SizedBox(width: 8),
                 ...EmergencyType.values.map((type) {
                   final count = allIncidents.where((i) => i.type == type).length;
                   if (count == 0) return const SizedBox.shrink();
 
+                  final isSelected = selectedFilter == type;
+
                   return Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.xs),
+                    padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      label: Text('${type.displayName} ($count)'),
-                      selected: selectedFilter == type,
+                      label: Text(
+                        '${type.displayName} ($count)',
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.onSurface,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppColors.primary,
+                      checkmarkColor: Colors.white,
+                      backgroundColor: AppColors.surfaceContainerLow,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.outlineVariant.withValues(alpha: 0.6),
+                      ),
                       onSelected: (_) {
                         ref.read(selectedEmergencyTypeFilterProvider.notifier).state =
                             selectedFilter == type ? null : type;
