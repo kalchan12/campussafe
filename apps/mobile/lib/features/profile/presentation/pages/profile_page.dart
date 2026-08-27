@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/models/user.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -11,175 +13,150 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = User(
-      id: '1',
+      id: 'usr_882914',
       email: 'john.doe@university.edu',
       fullName: 'John Doe',
-      phone: '+1234567890',
+      phone: '+1 (555) 123-4567',
       role: UserRole.student,
-      campusBlock: 'Engineering Block',
-      emergencyInfo: 'Blood type O+, allergic to penicillin',
-      createdAt: DateTime.now().subtract(const Duration(days: 365)),
+      campusBlock: 'Engineering Block, Room 204',
+      emergencyInfo: 'Blood Type: O+ | Allergies: Penicillin, Peanuts | Asthmatic (Carries Inhaler)',
+      createdAt: DateTime.now().subtract(const Duration(days: 180)),
       updatedAt: DateTime.now(),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text(
+          'Profile & Safety ID',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings & Security',
             onPressed: () => context.push('/settings'),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.containerMargin,
+          AppSpacing.sm,
+          AppSpacing.containerMargin,
+          88 + AppSpacing.safeAreaBottom,
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Header
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      child: Text(
-                        user.fullName[0],
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      user.fullName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.email,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        user.role.value.replaceAll('_', ' ').toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
+            // 1. Compact Profile Header Card
+            _buildProfileHeaderCard(context, user),
+            const SizedBox(height: AppSpacing.md),
+
+            // 2. Emergency & Medical Information Section (Safety Critical)
+            _buildEmergencyInfoSection(context),
+            const SizedBox(height: AppSpacing.md),
+
+            // 3. Identity & Campus Location Section
+            _buildCampusInfoSection(context, user),
+            const SizedBox(height: AppSpacing.md),
+
+            // 4. Account Settings & Security Section
+            _buildAccountActionsSection(context),
+            const SizedBox(height: AppSpacing.lg),
+
+            // 5. Logout Button
+            _buildLogoutButton(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeaderCard(BuildContext context, User user) {
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppColors.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            // Compact Profile Avatar (32px radius)
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+              ),
+              child: Center(
+                child: Text(
+                  user.fullName.isNotEmpty ? user.fullName[0] : 'U',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Profile Info
-            Card(
+            const SizedBox(width: AppSpacing.md),
+
+            // Identity Hierarchy: Name -> Email -> Role Pill
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ProfileTile(
-                    icon: Icons.phone_outlined,
-                    title: 'Phone',
-                    subtitle: user.phone ?? 'Not provided',
+                  Text(
+                    user.fullName,
+                    style: AppTypography.headlineMd.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
                   ),
-                  const Divider(height: 1),
-                  _ProfileTile(
-                    icon: Icons.location_on_outlined,
-                    title: 'Campus Block',
-                    subtitle: user.campusBlock ?? 'Not provided',
+                  const SizedBox(height: 2),
+                  Text(
+                    user.email,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
-                  const Divider(height: 1),
-                  _ProfileTile(
-                    icon: Icons.medical_information_outlined,
-                    title: 'Emergency Info',
-                    subtitle: user.emergencyInfo ?? 'Not provided',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Actions
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Edit Profile'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.lock_outlined),
-                    title: const Text('Change Password'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Notifications'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Logout
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Logout'),
-                      content: const Text('Are you sure you want to logout?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            context.go('/login');
-                          },
-                          child: const Text(
-                            'Logout',
-                            style: TextStyle(color: AppColors.error),
+                        child: Text(
+                          user.role.value.replaceAll('_', ' ').toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
-                ),
-                child: const Text('Logout'),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'ID: STU-882914',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -187,27 +164,369 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _ProfileTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  Widget _buildEmergencyInfoSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Row(
+          children: [
+            const Icon(Icons.medical_services_outlined, size: 16, color: AppColors.critical),
+            const SizedBox(width: 6),
+            Text(
+              'EMERGENCY & MEDICAL INFO',
+              style: AppTypography.labelMd.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                color: AppColors.critical,
+              ),
+            ),
+            const Spacer(),
+            const Text(
+              'Responder Visible',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
 
-  const _ProfileTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
+        Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            side: BorderSide(color: AppColors.critical.withValues(alpha: 0.25), width: 1.2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Blood Type & Allergies Grid
+                Row(
+                  children: [
+                    // Blood Type Tile
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.critical.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.critical.withValues(alpha: 0.15)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.bloodtype_outlined, size: 15, color: AppColors.critical),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'BLOOD TYPE',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.critical.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'O+',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
 
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.grey),
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: Colors.black87),
+                    // Allergies Tile
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, size: 15, color: AppColors.warning),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'ALLERGIES / CONDITIONS',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.warning.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Penicillin, Peanuts',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Emergency Contact Row
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.outlineVariant),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.contact_phone_outlined, size: 18, color: AppColors.primary),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Emergency Contact (Mother)',
+                              style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Jane Doe • +1 (555) 987-6543',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.phone, size: 18, color: AppColors.primary),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () async {
+                          final uri = Uri.parse('tel:+15559876543');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCampusInfoSection(BuildContext context, User user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CAMPUS & IDENTITY DETAILS',
+          style: AppTypography.labelMd.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            side: const BorderSide(color: AppColors.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              _buildInfoRow(
+                icon: Icons.phone_outlined,
+                label: 'Phone Number',
+                value: user.phone ?? 'Not provided',
+              ),
+              const Divider(height: 1, color: AppColors.outlineVariant),
+              _buildInfoRow(
+                icon: Icons.domain_rounded,
+                label: 'Assigned Campus Block',
+                value: user.campusBlock ?? 'Not provided',
+              ),
+              const Divider(height: 1, color: AppColors.outlineVariant),
+              _buildInfoRow(
+                icon: Icons.wifi_tethering_rounded,
+                label: 'Campus Safety Network',
+                value: 'Active & Connected (Zone 3)',
+                valueColor: AppColors.success,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccountActionsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ACCOUNT & PREFERENCES',
+          style: AppTypography.labelMd.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Card(
+          elevation: 1.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            side: const BorderSide(color: AppColors.outlineVariant),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 20),
+                title: const Text('Notification Preferences', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
+                onTap: () => context.push('/settings'),
+              ),
+              const Divider(height: 1, color: AppColors.outlineVariant),
+              ListTile(
+                leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
+                title: const Text('Security & Passcode', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
+                onTap: () => context.push('/settings'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? AppColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Logout Confirmation'),
+              content: const Text(
+                'Are you sure you want to sign out from CampusSafe? You will stop receiving high-priority campus safety broadcasts until you log back in.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.go('/login');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.error,
+          side: const BorderSide(color: AppColors.error),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+          ),
+        ),
+        icon: const Icon(Icons.logout_rounded, size: 18),
+        label: const Text(
+          'Sign Out',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

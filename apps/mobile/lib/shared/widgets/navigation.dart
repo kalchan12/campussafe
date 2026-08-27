@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/colors.dart';
 import '../../core/constants/design_tokens.dart';
-import 'buttons.dart';
 
 class AppTopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -122,7 +121,7 @@ class AppBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           top: BorderSide(color: AppColors.outlineVariant, width: 1),
@@ -133,7 +132,7 @@ class AppBottomNavBar extends StatelessWidget {
         top: false,
         child: Container(
           height: 72,
-          padding: EdgeInsets.only(bottom: AppSpacing.safeAreaBottom),
+          padding: const EdgeInsets.only(bottom: AppSpacing.safeAreaBottom),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: items.asMap().entries.map((entry) {
@@ -188,8 +187,8 @@ class _NavBarItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.full),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
+              horizontal: AppSpacing.xs,
+              vertical: 4,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -198,22 +197,31 @@ class _NavBarItem extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(
-                      isSelected && item.selectedIcon != null
-                          ? item.selectedIcon!
-                          : item.icon,
-                      size: 24,
-                      color: isSelected
-                          ? AppColors.onPrimaryContainer
-                          : AppColors.onSurfaceVariant,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.12)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Icon(
+                        isSelected && item.selectedIcon != null
+                            ? item.selectedIcon!
+                            : item.icon,
+                        size: 22,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant,
+                      ),
                     ),
                     if (item.badge != null)
                       Positioned(
-                        right: -6,
-                        top: -6,
+                        right: 8,
+                        top: -2,
                         child: Container(
                           padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.error,
                             shape: BoxShape.circle,
                           ),
@@ -224,7 +232,7 @@ class _NavBarItem extends StatelessWidget {
                           child: Center(
                             child: Text(
                               item.badge!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 8,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.onError,
@@ -235,14 +243,14 @@ class _NavBarItem extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   item.label,
                   style: AppTypography.labelMd.copyWith(
-                    fontSize: 10,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected
-                        ? AppColors.onPrimaryContainer
+                        ? AppColors.primary
                         : AppColors.onSurfaceVariant,
                   ),
                 ),

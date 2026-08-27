@@ -141,7 +141,7 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] Login (per Stitch design).
 - [x] Registration (4-step onboarding per Stitch design).
 - [x] Role selection.
-- [x] Profile.
+- [x] Profile (Compact safety header, medical emergency card, campus identity details, accessible scroll padding).
 - [ ] Permissions.
 - [ ] Location permissions.
 - [ ] Notifications.
