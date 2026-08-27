@@ -30,7 +30,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement login
+      // TODO: Implement authentication logic
       context.go('/home');
     }
   }
@@ -39,34 +39,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.containerMargin,
-            AppSpacing.lg,
-            AppSpacing.containerMargin,
-            AppSpacing.containerMargin,
-          ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header Section
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.containerMargin,
+              vertical: AppSpacing.md,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Brand Header
                     Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                           ),
                           child: const Icon(
-                            Icons.security,
-                            size: 24,
+                            Icons.shield_rounded,
+                            size: 22,
                             color: AppColors.onPrimary,
                           ),
                         ),
@@ -76,6 +75,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           style: AppTypography.headlineMd.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
+                            fontSize: 20,
                           ),
                         ),
                       ],
@@ -85,31 +85,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       'Welcome back',
                       style: AppTypography.displayLgMobile.copyWith(
                         color: AppColors.onSurface,
+                        fontSize: 26,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: 2),
                     Text(
-                      'Sign in to access campus safety services.',
+                      'Sign in to access safety services & alerts.',
                       style: AppTypography.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // Form Section
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Inputs
                     AppTextField(
                       label: 'Email or Phone',
                       hint: 'student@campus.edu',
                       controller: _identifierController,
                       keyboardType: TextInputType.text,
                       validator: Validators.email,
-                      prefixIcon: const Icon(Icons.person_outline, size: 20),
+                      prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.sm),
                     AppPasswordField(
                       label: 'Password',
                       controller: _passwordController,
@@ -121,7 +119,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         });
                       },
                     ),
-                    const SizedBox(height: AppSpacing.xs),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TertiaryButton(
@@ -130,118 +127,140 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         isFullWidth: false,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.xs),
+
+                    // Sign In Action
                     PrimaryButton(
                       label: 'Sign In',
                       onPressed: _handleLogin,
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: 2),
+
+                    // Register Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "New here?",
+                          "Don't have an account?",
                           style: AppTypography.bodyMd.copyWith(
                             color: AppColors.onSurfaceVariant,
+                            fontSize: 13,
                           ),
                         ),
                         TertiaryButton(
-                          label: 'Create account',
+                          label: 'Register',
                           onPressed: () => context.push('/register'),
                           isFullWidth: false,
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Separator
-                Row(
-                  children: [
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.outlineVariant,
-                        thickness: 1,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      child: Text(
-                        'Or',
-                        style: AppTypography.technicalSm.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
+                    const SizedBox(height: AppSpacing.xs),
+
+                    // Separator
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Divider(
+                            color: AppColors.outlineVariant,
+                            thickness: 1,
+                          ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          child: Text(
+                            'or',
+                            style: AppTypography.technicalSm.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                          child: Divider(
+                            color: AppColors.outlineVariant,
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: Divider(
-                        color: AppColors.outlineVariant,
-                        thickness: 1,
-                      ),
+                    const SizedBox(height: AppSpacing.sm),
+
+                    // Guest Button
+                    SecondaryButton(
+                      label: 'Continue as Guest',
+                      onPressed: () => context.go('/guest'),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SecondaryButton(
-                  label: 'Continue as Guest',
-                  onPressed: () => context.go('/guest'),
-                ),
-                // Emergency Action - Fixed at bottom
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.errorContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Compact Emergency Action Banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.errorContainer.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
                         children: [
-                          Icon(
-                            Icons.warning,
+                          const Icon(
+                            Icons.emergency_outlined,
                             color: AppColors.error,
-                            size: 28,
-                            fill: 1.0,
+                            size: 24,
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'Need emergency help?',
+                                  'Immediate Emergency?',
                                   style: AppTypography.labelMd.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.onErrorContainer,
+                                    fontSize: 13,
                                   ),
                                 ),
                                 Text(
-                                  'Bypass login for immediate assistance.',
+                                  'Bypass login for SOS dispatch',
                                   style: AppTypography.bodyMd.copyWith(
-                                    color: AppColors.onErrorContainer.withValues(alpha: 0.8),
-                                    fontSize: 12,
+                                    color: AppColors.onErrorContainer.withValues(alpha: 0.85),
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: AppColors.onError,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.xs,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.full),
+                              ),
+                            ),
+                            onPressed: () => context.push('/sos'),
+                            child: const Text(
+                              'SOS',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      PrimaryButton(
-                        label: 'Send SOS',
-                        onPressed: () => context.push('/sos'),
-                        backgroundColor: AppColors.error,
-                        foregroundColor: AppColors.onError,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

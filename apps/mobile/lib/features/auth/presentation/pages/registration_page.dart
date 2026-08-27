@@ -22,14 +22,17 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _buildingController = TextEditingController();
+  final _roomController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _currentStep = 0;
-  String? _selectedRole;
+  String? _selectedRole = 'student';
+  String _selectedCampus = 'main_campus';
 
   static const _totalSteps = 4;
   static const _stepLabels = ['Account', 'Campus', 'Role', 'Prefs'];
-  static const _stepIcons = [Icons.person, Icons.school, Icons.badge, Icons.settings];
 
   @override
   void dispose() {
@@ -38,18 +41,31 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _buildingController.dispose();
+    _roomController.dispose();
     super.dispose();
   }
 
   void _handleNext() {
     if (_currentStep < _totalSteps - 1) {
-      setState(() {
-        _currentStep++;
-      });
-    } else if (_formKey.currentState!.validate()) {
-      // TODO: Implement registration
-      context.go('/home');
+      if (_validateCurrentStep()) {
+        setState(() {
+          _currentStep++;
+        });
+      }
+    } else {
+      if (_formKey.currentState!.validate()) {
+        // TODO: Implement registration submission logic
+        context.go('/home');
+      }
     }
+  }
+
+  bool _validateCurrentStep() {
+    if (_currentStep == 0) {
+      return _formKey.currentState?.validate() ?? true;
+    }
+    return true;
   }
 
   void _handleBack() {
@@ -58,31 +74,143 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         _currentStep--;
       });
     } else {
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/login');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 600;
-
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.containerMargin),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.containerMargin,
+              vertical: AppSpacing.md,
+            ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Card(
-                elevation: 0,
-                shadowColor: AppColors.primary.withValues(alpha: 0.08),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  side: BorderSide(color: AppColors.outlineVariant),
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Brand Header
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: _handleBack,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                          ),
+                          child: const Icon(
+                            Icons.shield_rounded,
+                            size: 18,
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'CampusSafe',
+                          style: AppTypography.headlineMd.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Title & Description
+                    Text(
+                      'Create Account',
+                      style: AppTypography.displayLgMobile.copyWith(
+                        color: AppColors.onSurface,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Join the campus safety network for instant emergency response.',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Stepper Indicator
+                    _buildStepper(),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Step Form Content
+                    _buildStepContent(),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Navigation Buttons
+                    Row(
+                      children: [
+                        if (_currentStep > 0) ...[
+                          Expanded(
+                            child: SecondaryButton(
+                              label: 'Back',
+                              onPressed: _handleBack,
+                              leadingIcon: Icons.arrow_back,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                        ],
+                        Expanded(
+                          child: PrimaryButton(
+                            label: _currentStep == _totalSteps - 1 ? 'Create Account' : 'Continue',
+                            onPressed: _handleNext,
+                            trailingIcon: _currentStep == _totalSteps - 1 ? null : Icons.arrow_forward,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Return to Login Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Already have an account?',
+                          style: AppTypography.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                        TertiaryButton(
+                          label: 'Sign in',
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/login');
+                            }
+                          },
+                          isFullWidth: false,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: isWide
-                    ? _buildWideLayout()
-                    : _buildNarrowLayout(),
               ),
             ),
           ),
@@ -91,256 +219,99 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     );
   }
 
-  Widget _buildWideLayout() {
-    return Row(
-      children: [
-        // Context & Info Panel
-        Expanded(
-          flex: 2,
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.horizontal(
-                left: Radius.circular(AppRadius.lg),
-              ),
-              border: Border(
-                right: BorderSide(color: AppColors.outlineVariant),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildStepper() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Row(
+        children: List.generate(_totalSteps, (index) {
+          final isCurrent = index == _currentStep;
+          final isCompleted = index < _currentStep;
+
+          return Expanded(
+            child: Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.security, color: AppColors.primary, size: 24),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'CampusSafe',
-                          style: AppTypography.headlineMd.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    Text(
-                      'Create Account',
-                      style: AppTypography.displayLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Secure access to emergency resources and alerts. Your details remain confidential and are only used to verify your affiliation and ensure your safety during critical incidents.',
-                      style: AppTypography.bodyMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Form Panel
-        Expanded(
-          flex: 3,
-          child: _buildFormPanel(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNarrowLayout() {
-    return Column(
-      children: [
-        // Compact header
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainer,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.lg),
-            ),
-            border: Border(
-              bottom: BorderSide(color: AppColors.outlineVariant),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.security, color: AppColors.primary, size: 24),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    'CampusSafe',
-                    style: AppTypography.headlineMd.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Create Account',
-                style: AppTypography.displayLgMobile.copyWith(
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Secure access to emergency resources and alerts.',
-                style: AppTypography.bodyMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Form Panel
-        _buildFormPanel(),
-      ],
-    );
-  }
-
-  Widget _buildFormPanel() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Progress Stepper
-            Row(
-              children: List.generate(_totalSteps, (index) {
-                final isCurrent = index == _currentStep;
-                final isCompleted = index < _currentStep;
-                return Expanded(
-                  child: Row(
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isCurrent
-                                    ? AppColors.primary
-                                    : isCompleted
-                                        ? AppColors.success
-                                        : AppColors.surfaceContainerHigh,
-                                border: Border.all(
-                                  color: isCurrent
-                                      ? AppColors.primary
-                                      : isCompleted
-                                          ? AppColors.success
-                                          : AppColors.outlineVariant,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Center(
-                                child: isCompleted
-                                    ? Icon(
-                                        Icons.check,
-                                        size: 16,
-                                        color: AppColors.onPrimary,
-                                      )
-                                    : Text(
-                                        '${index + 1}',
-                                        style: AppTypography.labelMd.copyWith(
-                                          fontSize: 12,
-                                          color: isCurrent
-                                              ? AppColors.onPrimary
-                                              : AppColors.onSurfaceVariant,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              _stepLabels[index],
-                              style: AppTypography.technicalSm.copyWith(
-                                color: isCurrent
-                                    ? AppColors.primary
-                                    : AppColors.onSurfaceVariant,
-                                fontWeight: isCurrent
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (index < _totalSteps - 1)
-                        Expanded(
-                          child: Container(
-                            height: 2,
-                            margin: const EdgeInsets.only(top: 15),
-                            color: isCompleted
-                                ? AppColors.success
-                                : AppColors.outlineVariant,
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCurrent
+                              ? AppColors.primary
+                              : isCompleted
+                                  ? AppColors.success
+                                  : AppColors.surfaceContainerHigh,
+                          border: Border.all(
+                            color: isCurrent
+                                ? AppColors.primary
+                                : isCompleted
+                                    ? AppColors.success
+                                    : AppColors.outlineVariant,
+                            width: 1.5,
                           ),
                         ),
+                        child: Center(
+                          child: isCompleted
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 14,
+                                  color: AppColors.onPrimary,
+                                )
+                              : Text(
+                                  '${index + 1}',
+                                  style: AppTypography.labelMd.copyWith(
+                                    fontSize: 11,
+                                    color: isCurrent
+                                        ? AppColors.onPrimary
+                                        : AppColors.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _stepLabels[index],
+                        style: AppTypography.technicalSm.copyWith(
+                          fontSize: 11,
+                          color: isCurrent
+                              ? AppColors.primary
+                              : AppColors.onSurfaceVariant,
+                          fontWeight: isCurrent
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
-                );
-              }),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            // Form Content
-            _buildStepContent(),
-            const SizedBox(height: AppSpacing.lg),
-            // Navigation Buttons
-            Row(
-              children: [
-                if (_currentStep > 0)
-                  Expanded(
-                    child: SecondaryButton(
-                      label: 'Back',
-                      onPressed: _handleBack,
-                      leadingIcon: Icons.arrow_back,
-                    ),
-                  ),
-                if (_currentStep > 0) const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: PrimaryButton(
-                    label: _currentStep == _totalSteps - 1 ? 'Create Account' : 'Continue',
-                    onPressed: _handleNext,
-                    trailingIcon: _currentStep == _totalSteps - 1 ? null : Icons.arrow_forward,
-                  ),
                 ),
+                if (index < _totalSteps - 1)
+                  Container(
+                    width: 16,
+                    height: 2,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    color: isCompleted
+                        ? AppColors.success
+                        : AppColors.outlineVariant,
+                  ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Already have an account? ',
-                  style: AppTypography.technicalSm.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-                TertiaryButton(
-                  label: 'Sign in',
-                  onPressed: () => context.pop(),
-                  isFullWidth: false,
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
@@ -369,48 +340,52 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           hint: 'Jane Doe',
           controller: _fullNameController,
           validator: (value) => Validators.required(value, 'Full name'),
-          prefixIcon: const Icon(Icons.person, size: 20),
+          prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
         ),
         const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                label: 'University Email',
-                hint: 'jane@university.edu',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                validator: Validators.email,
-                prefixIcon: const Icon(Icons.mail, size: 20),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: AppTextField(
-                label: 'Phone Number',
-                hint: '(555) 123-4567',
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                validator: Validators.phone,
-                prefixIcon: const Icon(Icons.phone_iphone, size: 20),
-              ),
-            ),
-          ],
+        AppTextField(
+          label: 'University Email',
+          hint: 'jane@university.edu',
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          validator: Validators.email,
+          prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Phone Number',
+          hint: '(555) 123-4567',
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          validator: Validators.phone,
+          prefixIcon: const Icon(Icons.phone_outlined, size: 20),
         ),
         const SizedBox(height: AppSpacing.md),
         AppPasswordField(
           label: 'Password',
           controller: _passwordController,
+          obscureText: _obscurePassword,
           validator: Validators.password,
+          onSuffixTap: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         AppPasswordField(
           label: 'Confirm Password',
           controller: _confirmPasswordController,
+          obscureText: _obscureConfirmPassword,
           validator: (value) => Validators.confirmPassword(
             value,
             _passwordController.text,
           ),
+          onSuffixTap: () {
+            setState(() {
+              _obscureConfirmPassword = !_obscureConfirmPassword;
+            });
+          },
         ),
       ],
     );
@@ -420,35 +395,22 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppTextField(
-          label: 'Campus Block / Building',
-          hint: 'Engineering Block B',
-          prefixIcon: const Icon(Icons.location_on, size: 20),
-          validator: (value) => Validators.required(value, 'Campus location'),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppTextField(
-          label: 'Room / Office Number (Optional)',
-          hint: 'Room 204',
-          prefixIcon: const Icon(Icons.meeting_room, size: 20),
-        ),
-        const SizedBox(height: AppSpacing.md),
         DropdownButtonFormField<String>(
-          value: 'main_campus',
+          initialValue: _selectedCampus,
           decoration: InputDecoration(
-            labelText: 'Campus',
-            prefixIcon: Icon(Icons.school, color: AppColors.onSurfaceVariant, size: 20),
+            labelText: 'Campus Location',
+            prefixIcon: const Icon(Icons.school_outlined, color: AppColors.onSurfaceVariant, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(color: AppColors.outline),
+              borderSide: const BorderSide(color: AppColors.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(color: AppColors.outline),
+              borderSide: const BorderSide(color: AppColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             filled: true,
             fillColor: AppColors.surfaceContainerLowest,
@@ -462,7 +424,28 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             DropdownMenuItem(value: 'north_campus', child: Text('North Campus')),
             DropdownMenuItem(value: 'south_campus', child: Text('South Campus')),
           ],
-          onChanged: (value) {},
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedCampus = value;
+              });
+            }
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Campus Block / Building',
+          hint: 'e.g. Engineering Block B',
+          controller: _buildingController,
+          prefixIcon: const Icon(Icons.business_outlined, size: 20),
+          validator: (value) => Validators.required(value, 'Campus building'),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Room / Office Number (Optional)',
+          hint: 'e.g. Room 204',
+          controller: _roomController,
+          prefixIcon: const Icon(Icons.meeting_room_outlined, size: 20),
         ),
       ],
     );
@@ -473,8 +456,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Select your role',
-          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+          'Select your primary affiliation:',
+          style: AppTypography.bodyMd.copyWith(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         ..._buildRoleOptions(),
@@ -484,14 +470,16 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
   List<Widget> _buildRoleOptions() {
     final roles = [
-      {'value': 'student', 'label': 'Student', 'icon': Icons.person, 'color': AppColors.primary},
-      {'value': 'medical_responder', 'label': 'Medical Responder', 'icon': Icons.medical_services, 'color': AppColors.error},
-      {'value': 'security_responder', 'label': 'Security Responder', 'icon': Icons.local_police, 'color': AppColors.secondary},
-      {'value': 'staff', 'label': 'Staff / Faculty', 'icon': Icons.work, 'color': AppColors.success},
+      {'value': 'student', 'label': 'Student', 'icon': Icons.school_outlined, 'color': AppColors.primary},
+      {'value': 'medical_responder', 'label': 'Medical Responder', 'icon': Icons.medical_services_outlined, 'color': AppColors.error},
+      {'value': 'security_responder', 'label': 'Security Responder', 'icon': Icons.local_police_outlined, 'color': AppColors.secondary},
+      {'value': 'staff', 'label': 'Staff / Faculty', 'icon': Icons.badge_outlined, 'color': AppColors.success},
     ];
 
     return roles.map((role) {
       final isSelected = _selectedRole == role['value'];
+      final roleColor = role['color'] as Color;
+
       return Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: InkWell(
@@ -505,12 +493,12 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: isSelected
-                  ? (role['color'] as Color).withValues(alpha: 0.1)
+                  ? roleColor.withValues(alpha: 0.08)
                   : AppColors.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
               border: Border.all(
                 color: isSelected
-                    ? role['color'] as Color
+                    ? roleColor
                     : AppColors.outlineVariant,
                 width: isSelected ? 2 : 1,
               ),
@@ -523,11 +511,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isSelected
-                        ? (role['color'] as Color).withValues(alpha: 0.1)
+                        ? roleColor.withValues(alpha: 0.15)
                         : AppColors.surfaceContainerHigh,
                     border: Border.all(
                       color: isSelected
-                          ? role['color'] as Color
+                          ? roleColor
                           : AppColors.outlineVariant,
                     ),
                   ),
@@ -535,7 +523,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                     child: Icon(
                       role['icon'] as IconData,
                       color: isSelected
-                          ? role['color'] as Color
+                          ? roleColor
                           : AppColors.onSurfaceVariant,
                       size: 20,
                     ),
@@ -547,7 +535,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                     role['label'] as String,
                     style: AppTypography.labelMd.copyWith(
                       color: isSelected
-                          ? role['color'] as Color
+                          ? roleColor
                           : AppColors.onSurface,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -555,9 +543,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                 ),
                 if (isSelected)
                   Icon(
-                    Icons.check_circle,
-                    color: role['color'] as Color,
-                    size: 24,
+                    Icons.check_circle_rounded,
+                    color: roleColor,
+                    size: 22,
                   ),
               ],
             ),
@@ -572,43 +560,43 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Notification Preferences',
-          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+          'Notification Settings',
+          style: AppTypography.labelMd.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurface,
+          ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.sm),
         _buildPreferenceTile(
           title: 'Push Notifications',
-          subtitle: 'Receive alerts for incidents and emergencies',
+          subtitle: 'Receive real-time alerts for emergencies',
           value: true,
           onChanged: (value) {},
         ),
         _buildPreferenceTile(
           title: 'SMS Alerts',
-          subtitle: 'Receive SMS for critical alerts only',
+          subtitle: 'Receive SMS for high-priority campus incidents',
           value: false,
           onChanged: (value) {},
         ),
-        _buildPreferenceTile(
-          title: 'Email Updates',
-          subtitle: 'Receive weekly safety summaries',
-          value: true,
-          onChanged: (value) {},
-        ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Location Services',
-          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+          style: AppTypography.labelMd.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurface,
+          ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.sm),
         _buildPreferenceTile(
-          title: 'Share Location',
-          subtitle: 'Allow app to access your location for emergency response',
+          title: 'Share Location during SOS',
+          subtitle: 'Allow responders to track your GPS during active alerts',
           value: true,
           onChanged: (value) {},
         ),
         _buildPreferenceTile(
-          title: 'Nearby Alerts',
-          subtitle: 'Receive alerts for incidents near your location',
+          title: 'Nearby Incidents Alert',
+          subtitle: 'Get notified of safety incidents near your current area',
           value: true,
           onChanged: (value) {},
         ),
@@ -622,8 +610,17 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -632,7 +629,10 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
               children: [
                 Text(
                   title,
-                  style: AppTypography.labelMd.copyWith(color: AppColors.onSurface),
+                  style: AppTypography.labelMd.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -648,7 +648,8 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeTrackColor: AppColors.primary,
+            activeThumbColor: AppColors.onPrimary,
           ),
         ],
       ),
