@@ -37,7 +37,7 @@ class HomePage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hello, Alex',
+                    'Hello, Psycho',
                     style: AppTypography.displayLgMobile.copyWith(
                       color: AppColors.onSurface,
                     ),
