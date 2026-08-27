@@ -39,30 +39,31 @@ class ProfilePage extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.containerMargin,
-          AppSpacing.sm,
+          AppSpacing.xs,
           AppSpacing.containerMargin,
-          88 + AppSpacing.safeAreaBottom,
+          96 + AppSpacing.safeAreaBottom,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Compact Profile Header Card
+            // 1. Compact Profile Header Card (Zero Overflow Guaranteed)
             _buildProfileHeaderCard(context, user),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 14),
 
             // 2. Emergency & Medical Information Section (Safety Critical)
             _buildEmergencyInfoSection(context),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 14),
 
             // 3. Identity & Campus Location Section
             _buildCampusInfoSection(context, user),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 14),
 
             // 4. Account Settings & Security Section
             _buildAccountActionsSection(context),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 20),
 
             // 5. Logout Button
             _buildLogoutButton(context),
@@ -80,13 +81,14 @@ class ProfilePage extends ConsumerWidget {
         side: const BorderSide(color: AppColors.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(14),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Compact Profile Avatar (32px radius)
+            // Compact Profile Avatar (54px diameter)
             Container(
-              width: 60,
-              height: 60,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
@@ -96,27 +98,30 @@ class ProfilePage extends ConsumerWidget {
                 child: Text(
                   user.fullName.isNotEmpty ? user.fullName[0] : 'U',
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: 12),
 
-            // Identity Hierarchy: Name -> Email -> Role Pill
+            // Identity Hierarchy with Auto-wrapping Tags
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     user.fullName,
                     style: AppTypography.headlineMd.copyWith(
-                      fontSize: 18,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: AppColors.onSurface,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -125,9 +130,14 @@ class ProfilePage extends ConsumerWidget {
                       fontSize: 12,
                       color: AppColors.onSurfaceVariant,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Row(
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -139,13 +149,12 @@ class ProfilePage extends ConsumerWidget {
                         child: Text(
                           user.role.value.replaceAll('_', ' ').toUpperCase(),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
                       const Text(
                         'ID: STU-882914',
                         style: TextStyle(
@@ -169,27 +178,36 @@ class ProfilePage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header
+        // Section Header (Responsive Row)
         Row(
           children: [
-            const Icon(Icons.medical_services_outlined, size: 16, color: AppColors.critical),
+            const Icon(Icons.medical_services_outlined, size: 15, color: AppColors.critical),
             const SizedBox(width: 6),
-            Text(
-              'EMERGENCY & MEDICAL INFO',
-              style: AppTypography.labelMd.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-                color: AppColors.critical,
+            const Expanded(
+              child: Text(
+                'EMERGENCY & MEDICAL INFO',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: AppColors.critical,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Spacer(),
-            const Text(
-              'Responder Visible',
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: const Text(
+                'Responder Visible',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -203,91 +221,92 @@ class ProfilePage extends ConsumerWidget {
             side: BorderSide(color: AppColors.critical.withValues(alpha: 0.25), width: 1.2),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Blood Type & Allergies Grid
+                // Blood Type & Allergies Responsive Row
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Blood Type Tile
-                    Expanded(
-                      flex: 1,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.critical.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.critical.withValues(alpha: 0.15)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.bloodtype_outlined, size: 15, color: AppColors.critical),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'BLOOD TYPE',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.critical.withValues(alpha: 0.9),
-                                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.critical.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: AppColors.critical.withValues(alpha: 0.2)),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.bloodtype_outlined, size: 13, color: AppColors.critical),
+                              SizedBox(width: 3),
+                              Text(
+                                'BLOOD',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.critical,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'O+',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.onSurface,
                               ),
+                            ],
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'O+',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onSurface,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: 8),
 
-                    // Allergies Tile
+                    // Allergies & Conditions Tile (Expands and wraps text)
                     Expanded(
-                      flex: 2,
                       child: Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.06),
+                          color: AppColors.warning.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.25)),
                         ),
-                        child: Column(
+                        child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.warning_amber_rounded, size: 15, color: AppColors.warning),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'ALLERGIES / CONDITIONS',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.warning.withValues(alpha: 0.9),
+                                Icon(Icons.warning_amber_rounded, size: 13, color: AppColors.warning),
+                                SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'ALLERGIES / CONDITIONS',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.warning,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Penicillin, Peanuts',
+                            SizedBox(height: 2),
+                            Text(
+                              'Penicillin, Peanuts • Asthmatic',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.onSurface,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -296,11 +315,11 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // Emergency Contact Row
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -309,7 +328,7 @@ class ProfilePage extends ConsumerWidget {
                   child: Row(
                     children: [
                       const Icon(Icons.contact_phone_outlined, size: 18, color: AppColors.primary),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,11 +336,15 @@ class ProfilePage extends ConsumerWidget {
                             Text(
                               'Emergency Contact (Mother)',
                               style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 2),
+                            SizedBox(height: 1),
                             Text(
                               'Jane Doe • +1 (555) 987-6543',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -329,6 +352,8 @@ class ProfilePage extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.phone, size: 18, color: AppColors.primary),
                         visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                         onPressed: () async {
                           final uri = Uri.parse('tel:+15559876543');
                           if (await canLaunchUrl(uri)) {
@@ -351,10 +376,10 @@ class ProfilePage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'CAMPUS & IDENTITY DETAILS',
-          style: AppTypography.labelMd.copyWith(
-            fontSize: 12,
+          style: TextStyle(
+            fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
             color: AppColors.onSurfaceVariant,
@@ -399,10 +424,10 @@ class ProfilePage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'ACCOUNT & PREFERENCES',
-          style: AppTypography.labelMd.copyWith(
-            fontSize: 12,
+          style: TextStyle(
+            fontSize: 11,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
             color: AppColors.onSurfaceVariant,
@@ -419,6 +444,8 @@ class ProfilePage extends ConsumerWidget {
           child: Column(
             children: [
               ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 leading: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 20),
                 title: const Text('Notification Preferences', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
@@ -426,6 +453,8 @@ class ProfilePage extends ConsumerWidget {
               ),
               const Divider(height: 1, color: AppColors.outlineVariant),
               ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
                 title: const Text('Security & Passcode', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
@@ -445,7 +474,7 @@ class ProfilePage extends ConsumerWidget {
     Color? valueColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
           Icon(icon, size: 18, color: AppColors.primary),
@@ -462,7 +491,7 @@ class ProfilePage extends ConsumerWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   value,
                   style: TextStyle(
@@ -470,6 +499,7 @@ class ProfilePage extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                     color: valueColor ?? AppColors.onSurface,
                   ),
+                  softWrap: true,
                 ),
               ],
             ),
