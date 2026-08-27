@@ -15,12 +15,15 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
     project.evaluationDependsOn(":app")
+}
 
-    // Force all Flutter plugin subprojects to compile against SDK 36.
-    // Without this, plugins like geocoding_android default to compileSdk 33
-    // and fail AAR metadata checks against newer AndroidX dependencies.
-    project.plugins.withType<com.android.build.gradle.LibraryPlugin> {
-        project.extensions.configure<com.android.build.gradle.LibraryExtension> {
+// Override compileSdk on all Android library subprojects (Flutter plugins).
+// Uses gradle.afterProject so the override applies AFTER each plugin's own
+// build.gradle has been evaluated — this guarantees our value wins over
+// whatever the plugin originally set (e.g. compileSdk 33).
+gradle.afterProject {
+    if (plugins.hasPlugin("com.android.library")) {
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
             compileSdk = 36
         }
     }
