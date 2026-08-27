@@ -30,9 +30,8 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
+    Widget cardContent = Container(
       padding: padding ?? const EdgeInsets.all(AppSpacing.md),
-      margin: margin,
       decoration: BoxDecoration(
         color: color ?? AppColors.surfaceContainerLowest,
         borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.defaultRadius),
@@ -43,14 +42,23 @@ class AppCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.defaultRadius),
-        child: card,
+      return Padding(
+        padding: margin ?? EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.defaultRadius),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.defaultRadius),
+            child: cardContent,
+          ),
+        ),
       );
     }
 
-    return card;
+    return margin != null
+        ? Padding(padding: margin!, child: cardContent)
+        : cardContent;
   }
 }
 
@@ -81,78 +89,90 @@ class IncidentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusVariant = status.statusBadgeVariant;
-    final typeVariant = type.typeBadgeVariant;
     final typeIcon = type.typeIcon;
     final typeContainerColor = type.typeContainerColor;
     final typeOnContainerColor = type.typeOnContainerColor;
 
     return AppCard(
       onTap: onTap,
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.containerMargin,
-        vertical: AppSpacing.xs,
-      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              StatusBadge(
-                label: status.statusDisplayName,
-                variant: statusVariant,
-                isSmall: true,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: typeContainerColor,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(typeIcon, size: 12, color: typeOnContainerColor),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      type.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: typeOnContainerColor,
-                        fontFamily: AppTypography.inter,
+                    StatusBadge(
+                      label: status.statusDisplayName,
+                      variant: statusVariant,
+                      isSmall: true,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: typeContainerColor,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(typeIcon, size: 12, color: typeOnContainerColor),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            type.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: typeOnContainerColor,
+                              fontFamily: AppTypography.inter,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const Spacer(),
-              if (showPriority)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Text(
-                    'P$priority',
+              const SizedBox(width: AppSpacing.xs),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showPriority) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Text(
+                        'P$priority',
+                        style: AppTypography.technicalSm.copyWith(
+                          color: AppColors.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  Text(
+                    _formatTime(createdAt),
                     style: AppTypography.technicalSm.copyWith(
-                      color: AppColors.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
-                ),
-              Text(
-                _formatTime(createdAt),
-                style: AppTypography.technicalSm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+                ],
               ),
             ],
           ),
@@ -228,10 +248,7 @@ class ReportCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.containerMargin,
-        vertical: AppSpacing.xs,
-      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

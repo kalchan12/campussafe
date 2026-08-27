@@ -167,38 +167,43 @@ class HomePage extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     Row(
                       children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.secondaryContainer,
-                              child: Text(
-                                '1',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.onSecondaryContainer,
+                        SizedBox(
+                          width: 52,
+                          height: 32,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: 0,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppColors.secondaryContainer,
+                                  child: Text(
+                                    '1',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.onSecondaryContainer,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: -8),
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.tertiaryContainer,
-                              child: Text(
-                                '2',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.onTertiaryContainer,
+                              Positioned(
+                                left: 20,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppColors.tertiaryContainer,
+                                  child: Text(
+                                    '2',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.onTertiaryContainer,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Text.rich(
