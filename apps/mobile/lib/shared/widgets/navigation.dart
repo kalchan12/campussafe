@@ -130,9 +130,8 @@ class AppBottomNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Container(
-          height: 72,
-          padding: const EdgeInsets.only(bottom: AppSpacing.safeAreaBottom),
+        child: SizedBox(
+          height: 62,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: items.asMap().entries.map((entry) {
@@ -185,11 +184,8 @@ class _NavBarItem extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.full),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xs,
-              vertical: 4,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -198,7 +194,7 @@ class _NavBarItem extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.primary.withValues(alpha: 0.12)
@@ -217,7 +213,7 @@ class _NavBarItem extends StatelessWidget {
                     ),
                     if (item.badge != null)
                       Positioned(
-                        right: 8,
+                        right: 4,
                         top: -2,
                         child: Container(
                           padding: const EdgeInsets.all(2),
@@ -243,9 +239,11 @@ class _NavBarItem extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.labelMd.copyWith(
                     fontSize: 11,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
