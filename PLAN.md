@@ -137,15 +137,15 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 # Phase 3 — Mobile
 
 ## Foundation
-- [x] Welcome/splash.
-- [x] Login (per Stitch design).
-- [x] Registration (4-step onboarding per Stitch design).
+- [x] Welcome/splash (Animated splash screen with router transition).
+- [x] Login (Dev bypass, toggle password visibility, improved vertical spacing).
+- [x] Registration (4-step onboarding, dedicated full-width input rows, form validation).
 - [x] Role selection.
-- [x] Profile (Compact safety header, medical emergency card, campus identity details, accessible scroll padding).
+- [x] Profile (Compact safety header, medical emergency card, campus identity details, overflow-resilient layout, accessible bottom scroll padding).
 - [ ] Permissions.
-- [ ] Location permissions.
+- [x] Location permissions & GPS capture (Geolocator position stream and live permission checks).
 - [ ] Notifications.
-- [x] Navigation.
+- [x] Navigation (AppBottomNavBar with Material 3 pill indicators, overflow prevention, and high contrast styling).
 - [ ] Loading/error/empty states.
 
 ## User Features
@@ -154,9 +154,11 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] Emergency type selection (bento grid).
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
+- [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
 - [ ] History.
-- [ ] Notifications.
-- [ ] Anonymous reporting.
+- [x] Alerts & Campus Broadcasts Hub (Live broadcasts, severity color badges, acknowledge flow, filter chips, and interactive advisory details).
+- [x] Safety Action Protocols & 24/7 Escort Guide (Expandable emergency guidelines and night safety escort helpline quick dial).
+- [x] Anonymous reporting & hazard submission (Confidential safety concern form with category selection, anonymous switch, and live state integration).
 - [ ] Settings.
 
 ## Responder Features
@@ -250,11 +252,12 @@ Resolution
 
 - [ ] Campus buildings.
 - [ ] Responder work/base locations.
-- [ ] GPS capture.
+- [x] GPS capture (Live mobile Geolocator position stream and permission checks).
 - [ ] Coordinate normalization.
 - [ ] Role filtering.
 - [ ] Availability filtering.
-- [ ] Distance calculation.
+- [x] Distance calculation (Haversine formula distance computation and formatting in meters/km).
+- [x] External Map & Turn-by-Turn Navigation (Google Maps URL launcher for turn-by-turn directions).
 - [ ] Responder ranking.
 - [ ] Configurable rules.
 - [ ] Missing-location handling.
