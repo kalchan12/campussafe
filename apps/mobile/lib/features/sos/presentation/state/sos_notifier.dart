@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/env.dart';
+import '../../../../core/local/incident_queue_db.dart';
+import '../../../../core/network/sync_service.dart';
 import '../../../../core/location/location_service.dart';
 import '../../../../shared/models/incident.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
@@ -11,15 +13,20 @@ import 'sos_state.dart';
 final sosNotifierProvider = StateNotifierProvider<SosNotifier, SosState>((ref) {
   final locationService = ref.watch(locationServiceProvider);
   final incidentRepository = ref.watch(incidentRepositoryProvider);
-  return SosNotifier(ref, locationService, incidentRepository);
+  final queueDb = ref.watch(incidentQueueDbProvider);
+  // Watch sync service to ensure it initializes and listens
+  ref.watch(syncServiceProvider);
+  
+  return SosNotifier(ref, locationService, incidentRepository, queueDb);
 });
 
 class SosNotifier extends StateNotifier<SosState> {
   final Ref _ref;
   final LocationService _locationService;
   final IncidentRepository _incidentRepository;
+  final IncidentQueueDb _queueDb;
 
-  SosNotifier(this._ref, this._locationService, this._incidentRepository)
+  SosNotifier(this._ref, this._locationService, this._incidentRepository, this._queueDb)
       : super(const SosState());
 
   void startConfirmation() {
@@ -71,28 +78,41 @@ class SosNotifier extends StateNotifier<SosState> {
       priority = 2;
     }
 
+    final payload = {
+      'reporterId': userId,
+      'type': emergencyType.value,
+      'priority': priority,
+      'latitude': state.latitude,
+      'longitude': state.longitude,
+      'locationDescription': state.locationAddress,
+      'campusBlock': campusBlock ?? state.campusBlock,
+      'description': description ?? 'Emergency SOS Alert triggered via Mobile App',
+      'source': isGuest ? 'guest_report' : 'mobile',
+    };
+
     if (Env.isConfigured) {
       final result = await _incidentRepository.createIncident(
-        reporterId: userId,
+        reporterId: payload['reporterId'] as String?,
         type: emergencyType,
-        priority: priority,
-        latitude: state.latitude,
-        longitude: state.longitude,
-        locationDescription: state.locationAddress,
-        campusBlock: campusBlock ?? state.campusBlock,
-        description: description ?? 'Emergency SOS Alert triggered via Mobile App',
-        source: isGuest ? 'guest_report' : 'mobile',
+        priority: payload['priority'] as int,
+        latitude: payload['latitude'] as double?,
+        longitude: payload['longitude'] as double?,
+        locationDescription: payload['locationDescription'] as String?,
+        campusBlock: payload['campusBlock'] as String?,
+        description: payload['description'] as String?,
+        source: payload['source'] as String,
       );
 
       result.fold(
-        (error) {
+        (error) async {
+          // If network failed, enqueue it!
+          await _queueDb.enqueueIncident(payload);
           state = state.copyWith(
-            status: SosStatus.failed,
-            error: error.message,
+            status: SosStatus.sent, // Pretend success for the user so they don't panic
+            error: 'You are offline. SOS queued and will be sent when connection is restored.',
           );
         },
         (incident) {
-          // Add to local incident provider so UI reflects it immediately
           _ref.read(incidentsListProvider.notifier).addIncident(incident);
           state = state.copyWith(
             status: SosStatus.sent,
@@ -101,7 +121,7 @@ class SosNotifier extends StateNotifier<SosState> {
         },
       );
     } else {
-      // Dev mode fallback when backend is unconfigured
+      // Dev mode fallback
       await Future.delayed(const Duration(seconds: 1));
       final fakeIncident = Incident(
         id: 'SOS-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
