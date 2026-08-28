@@ -1,48 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../../incidents/presentation/state/incidents_provider.dart';
 
 class AvailableIncidentsPage extends ConsumerWidget {
   const AvailableIncidentsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final incidents = [
-      Incident(
-        id: '1',
-        type: EmergencyType.medical,
-        status: IncidentStatus.received,
-        priority: 1,
-        reporterId: 'user1',
-        latitude: 0.0,
-        longitude: 0.0,
-        campusBlock: 'Engineering Block',
-        description: 'Student with chest pain',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-        updatedAt: DateTime.now(),
-      ),
-      Incident(
-        id: '2',
-        type: EmergencyType.security,
-        status: IncidentStatus.received,
-        priority: 2,
-        reporterId: 'user2',
-        latitude: 0.0,
-        longitude: 0.0,
-        campusBlock: 'Library',
-        description: 'Unauthorized access attempt',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-        updatedAt: DateTime.now(),
-      ),
-    ];
+    final allIncidents = ref.watch(incidentsListProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final userId = authState.userId;
+
+    final availableIncidents = allIncidents.where((i) =>
+        i.status == IncidentStatus.received ||
+        i.status == IncidentStatus.created ||
+        (!i.isAssigned && i.isActive)).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Available Incidents'),
       ),
-      body: incidents.isEmpty
+      body: availableIncidents.isEmpty
           ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -62,7 +45,7 @@ class AvailableIncidentsPage extends ConsumerWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'All incidents have been assigned',
+                    'All incidents have been assigned or resolved',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
@@ -70,17 +53,22 @@ class AvailableIncidentsPage extends ConsumerWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: incidents.length,
+              itemCount: availableIncidents.length,
               itemBuilder: (context, index) {
-                final incident = incidents[index];
+                final incident = availableIncidents[index];
                 return _AvailableIncidentCard(
                   incident: incident,
-                  onAccept: () {
-                    // TODO: Accept incident
+                  onAccept: () async {
+                    await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
+                          incidentId: incident.id,
+                          status: IncidentStatus.assigned,
+                          responderId: userId,
+                        );
+                    if (context.mounted) {
+                      context.push('/responder/incident/${incident.id}');
+                    }
                   },
-                  onDecline: () {
-                    // TODO: Decline incident
-                  },
+                  onDecline: () {},
                 );
               },
             ),
@@ -130,7 +118,7 @@ class _AvailableIncidentCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${incident.createdAt.minute} min ago',
+                  '${DateTime.now().difference(incident.createdAt).inMinutes.abs()}m ago',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -155,11 +143,13 @@ class _AvailableIncidentCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  incident.campusBlock ?? 'Unknown',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                Expanded(
+                  child: Text(
+                    incident.campusBlock ?? incident.locationDescription ?? 'Campus Location',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ],
@@ -169,11 +159,11 @@ class _AvailableIncidentCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onDecline,
+                    onPressed: () => context.push('/incident/${incident.id}'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey,
+                      foregroundColor: Colors.grey.shade700,
                     ),
-                    child: const Text('Decline'),
+                    child: const Text('Details'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -182,6 +172,7 @@ class _AvailableIncidentCard extends StatelessWidget {
                     onPressed: onAccept,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Text('Accept'),
                   ),

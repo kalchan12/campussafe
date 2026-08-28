@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../incidents/presentation/state/incidents_provider.dart';
 
 class IncidentDetailsPage extends ConsumerWidget {
   final String incidentId;
@@ -14,19 +16,22 @@ class IncidentDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final incident = Incident(
-      id: incidentId,
-      type: EmergencyType.medical,
-      status: IncidentStatus.assigned,
-      priority: 1,
-      reporterId: 'user1',
-      assignedResponderId: 'responder1',
-      latitude: 0.0,
-      longitude: 0.0,
-      campusBlock: 'Engineering Block',
-      description: 'Student with chest pain and shortness of breath',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-      updatedAt: DateTime.now(),
+    final allIncidents = ref.watch(incidentsListProvider);
+    final incident = allIncidents.firstWhere(
+      (i) => i.id == incidentId,
+      orElse: () => Incident(
+        id: incidentId,
+        type: EmergencyType.medical,
+        status: IncidentStatus.assigned,
+        priority: 1,
+        reporterId: 'user',
+        latitude: 37.4282,
+        longitude: -122.1688,
+        campusBlock: 'Engineering Block',
+        description: 'Active emergency dispatch assignment',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
     );
 
     return Scaffold(
@@ -53,14 +58,14 @@ class IncidentDetailsPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.statusAssigned.withValues(alpha: 0.1),
+                            color: _getStatusColor(incident.status).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text(
-                            'Assigned to You',
+                          child: Text(
+                            incident.status.displayName,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.statusAssigned,
+                              color: _getStatusColor(incident.status),
                             ),
                           ),
                         ),
@@ -69,6 +74,7 @@ class IncidentDetailsPage extends ConsumerWidget {
                           'Priority ${incident.priority}',
                           style: const TextStyle(
                             color: Colors.grey,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -83,7 +89,7 @@ class IncidentDetailsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      incident.description ?? '',
+                      incident.description ?? 'Emergency dispatched on campus',
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -118,22 +124,11 @@ class IncidentDetailsPage extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            incident.campusBlock ?? 'Unknown Location',
+                            incident.campusBlock ?? incident.locationDescription ?? 'Main Campus',
                             style: const TextStyle(fontSize: 16),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Text('Map View'),
-                      ),
                     ),
                   ],
                 ),
@@ -148,7 +143,7 @@ class IncidentDetailsPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Actions',
+                      'Status Progression',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -156,35 +151,68 @@ class IncidentDetailsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Mark as responding
-                      },
+                      onPressed: incident.status != IncidentStatus.responding && incident.status != IncidentStatus.arrived && incident.status != IncidentStatus.resolved
+                          ? () async {
+                              await ref
+                                  .read(incidentsListProvider.notifier)
+                                  .updateIncidentStatus(
+                                    incidentId: incident.id,
+                                    status: IncidentStatus.responding,
+                                  );
+                            }
+                          : null,
                       icon: const Icon(Icons.directions_car),
                       label: const Text('Mark as En Route'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.statusResponding,
+                        foregroundColor: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Mark as arrived
-                      },
+                      onPressed: incident.status == IncidentStatus.responding
+                          ? () async {
+                              await ref
+                                  .read(incidentsListProvider.notifier)
+                                  .updateIncidentStatus(
+                                    incidentId: incident.id,
+                                    status: IncidentStatus.arrived,
+                                  );
+                            }
+                          : null,
                       icon: const Icon(Icons.location_on),
                       label: const Text('Mark as Arrived'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.statusArrived,
+                        foregroundColor: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Mark as resolved
-                      },
+                      onPressed: incident.status != IncidentStatus.resolved
+                          ? () async {
+                              await ref
+                                  .read(incidentsListProvider.notifier)
+                                  .updateIncidentStatus(
+                                    incidentId: incident.id,
+                                    status: IncidentStatus.resolved,
+                                  );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Incident marked as resolved!'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                                context.pop();
+                              }
+                            }
+                          : null,
                       icon: const Icon(Icons.check_circle),
                       label: const Text('Mark as Resolved'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
                       ),
                     ),
                   ],
@@ -195,5 +223,24 @@ class IncidentDetailsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(IncidentStatus status) {
+    switch (status) {
+      case IncidentStatus.created:
+      case IncidentStatus.received:
+        return AppColors.warning;
+      case IncidentStatus.assigned:
+        return AppColors.statusAssigned;
+      case IncidentStatus.responding:
+        return AppColors.statusResponding;
+      case IncidentStatus.arrived:
+        return AppColors.statusArrived;
+      case IncidentStatus.resolved:
+        return AppColors.success;
+      case IncidentStatus.cancelled:
+      case IncidentStatus.failed:
+        return AppColors.error;
+    }
   }
 }

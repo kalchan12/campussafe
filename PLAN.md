@@ -504,9 +504,9 @@ Sensor → ESP32 → Backend → Event processing → Alert
 This section must always reflect the actual project state.
 
 ### Top 3 Immediate Next Steps
-1. **Responder workflow** — connect responder pages (available incidents, incident details, accept/decline actions) to `IncidentRepository.updateStatus()`.
-2. **Dashboard Supabase wiring** — connect Next.js Dashboard to Supabase client using environment variables and live queries.
-3. **FlutterFire configure** — run `flutterfire configure` to generate `google-services.json` and `firebase_options.dart` for your Firebase project.
+1. **Dashboard Supabase wiring** — connect Next.js Dashboard to Supabase client using environment variables and live queries.
+2. **FlutterFire configure** — run `flutterfire configure` to generate `google-services.json` and `firebase_options.dart` for your Firebase project.
+3. **ESP32 SOS station** — define MQTT/HTTP contracts and firmware architecture for physical IoT nodes.
 
 ### Overall Queue
 1. [x] Project foundation.
@@ -518,7 +518,7 @@ This section must always reflect the actual project state.
 7. [x] End-to-end mobile SOS (connected SOS page & home page emergency types to IncidentRepository.createIncident and location service).
 8. [x] Replace mock incidents/reports list pages with real Supabase data streams (connected IncidentsNotifier to watchActiveIncidents and SafetyReportsNotifier to SafetyReportRepository).
 9. [x] Anonymous reporting (connected SubmitReportPage to SafetyReportRepository).
-10. [ ] Responder workflow (connect available incidents, accept/decline to IncidentRepository).
+10. [x] Responder workflow (connected available incidents, accept/decline actions, and status progression to IncidentRepository).
 11. [ ] First ESP32 SOS station.
 12. [ ] Location-aware routing.
 13. [ ] Environmental IoT.

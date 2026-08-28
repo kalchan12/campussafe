@@ -4,21 +4,37 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../../incidents/presentation/state/incidents_provider.dart';
 
 class ResponderHomePage extends ConsumerWidget {
   const ResponderHomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final incidents = ref.watch(incidentsListProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final userId = authState.userId;
+
+    final availableIncidents = incidents.where((i) =>
+        i.status == IncidentStatus.received ||
+        i.status == IncidentStatus.created ||
+        (!i.isAssigned && i.isActive)).toList();
+
+    final assignedToMeCount = incidents.where((i) =>
+        i.assignedResponderId == userId ||
+        (userId == null && i.status == IncidentStatus.assigned)).length;
+
+    final completedCount = incidents.where((i) => i.status == IncidentStatus.resolved).length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Responder Dashboard'),
         actions: [
           Switch(
             value: true,
-            onChanged: (value) {
-              // TODO: Toggle availability
-            },
+            activeTrackColor: AppColors.success,
+            onChanged: (value) {},
           ),
         ],
       ),
@@ -60,7 +76,7 @@ class ResponderHomePage extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          'Ready to respond',
+                          'Ready to respond on campus',
                           style: TextStyle(
                             color: Colors.white70,
                           ),
@@ -86,7 +102,7 @@ class ResponderHomePage extends ConsumerWidget {
                 Expanded(
                   child: _StatCard(
                     label: 'Assigned',
-                    value: '3',
+                    value: '$assignedToMeCount',
                     color: AppColors.statusAssigned,
                   ),
                 ),
@@ -94,7 +110,7 @@ class ResponderHomePage extends ConsumerWidget {
                 Expanded(
                   child: _StatCard(
                     label: 'Completed',
-                    value: '5',
+                    value: '$completedCount',
                     color: AppColors.success,
                   ),
                 ),
@@ -119,27 +135,41 @@ class ResponderHomePage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _AvailableIncidentCard(
-              incident: Incident(
-                id: '1',
-                type: EmergencyType.medical,
-                status: IncidentStatus.received,
-                priority: 1,
-                reporterId: 'user1',
-                latitude: 0.0,
-                longitude: 0.0,
-                campusBlock: 'Engineering Block',
-                description: 'Student with chest pain',
-                createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-                updatedAt: DateTime.now(),
-              ),
-              onAccept: () {
-                // TODO: Accept incident
-              },
-              onDecline: () {
-                // TODO: Decline incident
-              },
-            ),
+            if (availableIncidents.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.done_all, size: 36, color: Colors.green.shade400),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'No pending incidents to accept',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...availableIncidents.take(3).map((incident) {
+                return _AvailableIncidentCard(
+                  incident: incident,
+                  onAccept: () async {
+                    await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
+                          incidentId: incident.id,
+                          status: IncidentStatus.assigned,
+                          responderId: userId,
+                        );
+                    if (context.mounted) {
+                      context.push('/responder/incident/${incident.id}');
+                    }
+                  },
+                  onDecline: () {},
+                );
+              }),
           ],
         ),
       ),
@@ -229,7 +259,7 @@ class _AvailableIncidentCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${incident.createdAt.minute} min ago',
+                  '${DateTime.now().difference(incident.createdAt).inMinutes.abs()}m ago',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -254,11 +284,13 @@ class _AvailableIncidentCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  incident.campusBlock ?? 'Unknown',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                Expanded(
+                  child: Text(
+                    incident.campusBlock ?? incident.locationDescription ?? 'Campus Zone',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ],
@@ -268,11 +300,11 @@ class _AvailableIncidentCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: onDecline,
+                    onPressed: () => context.push('/incident/${incident.id}'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey,
+                      foregroundColor: Colors.grey.shade700,
                     ),
-                    child: const Text('Decline'),
+                    child: const Text('Details'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -281,6 +313,7 @@ class _AvailableIncidentCard extends StatelessWidget {
                     onPressed: onAccept,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Text('Accept'),
                   ),
