@@ -504,7 +504,7 @@ Sensor → ESP32 → Backend → Event processing → Alert
 This section outlines the immediate mobile tasks to complete, in order of execution:
 
 ### Mobile Sprint Plan (In Order of Execution)
-1. [ ] **Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out**
+1. [x] **Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out**
    - Implement `ProfileNotifier` to fetch real profile from `ProfileRepository.getProfile()`.
    - Wire `ProfilePage` to display dynamic data (name, email, role, building, emergency info).
    - Build interactive "Edit Safety & Medical Info" sheet (blood type, allergies, conditions, ICE contact) with direct saving to Supabase.

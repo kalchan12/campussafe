@@ -6,23 +6,26 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/models/user.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
+import '../state/profile_notifier.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = User(
-      id: 'usr_882914',
-      email: 'john.doe@university.edu',
-      fullName: 'John Doe',
-      phone: '+1 (555) 123-4567',
-      role: UserRole.student,
-      campusBlock: 'Engineering Block, Room 204',
-      emergencyInfo: 'Blood Type: O+ | Allergies: Penicillin, Peanuts | Asthmatic (Carries Inhaler)',
-      createdAt: DateTime.now().subtract(const Duration(days: 180)),
-      updatedAt: DateTime.now(),
-    );
+    final profileState = ref.watch(profileNotifierProvider);
+    final user = profileState.user ??
+        User(
+          id: 'usr_guest',
+          email: 'student@campus.edu',
+          fullName: 'Campus User',
+          role: UserRole.student,
+          campusBlock: 'Main Campus Quad',
+          emergencyInfo: 'Blood: O+ • Allergies: None • ICE: Campus Police (+1 555-911-0000)',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -32,48 +35,58 @@ class ProfilePage extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_note_outlined),
+            tooltip: 'Edit Profile & Safety Info',
+            onPressed: () => _showEditProfileModal(context, ref, user),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings & Security',
             onPressed: () => context.push('/settings'),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.containerMargin,
-          AppSpacing.xs,
-          AppSpacing.containerMargin,
-          96 + AppSpacing.safeAreaBottom,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Compact Profile Header Card (Zero Overflow Guaranteed)
-            _buildProfileHeaderCard(context, user),
-            const SizedBox(height: 14),
+      body: profileState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () => ref.read(profileNotifierProvider.notifier).loadProfile(),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.containerMargin,
+                  AppSpacing.xs,
+                  AppSpacing.containerMargin,
+                  96 + AppSpacing.safeAreaBottom,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Compact Profile Header Card
+                    _buildProfileHeaderCard(context, ref, user),
+                    const SizedBox(height: 14),
 
-            // 2. Emergency & Medical Information Section (Safety Critical)
-            _buildEmergencyInfoSection(context),
-            const SizedBox(height: 14),
+                    // 2. Emergency & Medical Information Section (Safety Critical)
+                    _buildEmergencyInfoSection(context, ref, user),
+                    const SizedBox(height: 14),
 
-            // 3. Identity & Campus Location Section
-            _buildCampusInfoSection(context, user),
-            const SizedBox(height: 14),
+                    // 3. Identity & Campus Location Section
+                    _buildCampusInfoSection(context, user),
+                    const SizedBox(height: 14),
 
-            // 4. Account Settings & Security Section
-            _buildAccountActionsSection(context),
-            const SizedBox(height: 20),
+                    // 4. Account Settings & Security Section
+                    _buildAccountActionsSection(context),
+                    const SizedBox(height: 20),
 
-            // 5. Logout Button
-            _buildLogoutButton(context),
-          ],
-        ),
-      ),
+                    // 5. Logout Button
+                    _buildLogoutButton(context, ref),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
-  Widget _buildProfileHeaderCard(BuildContext context, User user) {
+  Widget _buildProfileHeaderCard(BuildContext context, WidgetRef ref, User user) {
     return Card(
       elevation: 1.5,
       shape: RoundedRectangleBorder(
@@ -85,7 +98,7 @@ class ProfilePage extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Compact Profile Avatar (54px diameter)
+            // Compact Profile Avatar
             Container(
               width: 54,
               height: 54,
@@ -96,7 +109,7 @@ class ProfilePage extends ConsumerWidget {
               ),
               child: Center(
                 child: Text(
-                  user.fullName.isNotEmpty ? user.fullName[0] : 'U',
+                  user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -114,7 +127,7 @@ class ProfilePage extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    user.fullName,
+                    user.fullName.isNotEmpty ? user.fullName : 'Campus Member',
                     style: AppTypography.headlineMd.copyWith(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -147,7 +160,7 @@ class ProfilePage extends ConsumerWidget {
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                         ),
                         child: Text(
-                          user.role.value.replaceAll('_', ' ').toUpperCase(),
+                          user.role.displayName.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -155,9 +168,9 @@ class ProfilePage extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      const Text(
-                        'ID: STU-882914',
-                        style: TextStyle(
+                      Text(
+                        'ID: ${user.id.length > 8 ? user.id.substring(0, 8) : user.id}',
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.onSurfaceVariant,
                           fontWeight: FontWeight.w500,
@@ -174,11 +187,13 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmergencyInfoSection(BuildContext context) {
+  Widget _buildEmergencyInfoSection(BuildContext context, WidgetRef ref, User user) {
+    final infoText = user.emergencyInfo ?? 'No emergency medical notes recorded. Tap edit to add blood group, allergies, or emergency contact.';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header (Responsive Row)
+        // Section Header
         Row(
           children: [
             const Icon(Icons.medical_services_outlined, size: 15, color: AppColors.critical),
@@ -195,18 +210,28 @@ class ProfilePage extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Text(
-                'Responder Visible',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+            InkWell(
+              onTap: () => _showEditProfileModal(context, ref, user),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.edit, size: 12, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -225,95 +250,23 @@ class ProfilePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Blood Type & Allergies Responsive Row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Blood Type Tile
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.critical.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(color: AppColors.critical.withValues(alpha: 0.2)),
-                      ),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.bloodtype_outlined, size: 13, color: AppColors.critical),
-                              SizedBox(width: 3),
-                              Text(
-                                'BLOOD',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.critical,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'O+',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.critical.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.critical.withValues(alpha: 0.15)),
+                  ),
+                  child: Text(
+                    infoText,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.onSurface,
                     ),
-                    const SizedBox(width: 8),
-
-                    // Allergies & Conditions Tile (Expands and wraps text)
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.25)),
-                        ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.warning_amber_rounded, size: 13, color: AppColors.warning),
-                                SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    'ALLERGIES / CONDITIONS',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.warning,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Penicillin, Peanuts • Asthmatic',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.onSurface,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -334,17 +287,13 @@ class ProfilePage extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Emergency Contact (Mother)',
+                              'Campus Emergency Dispatch',
                               style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 1),
                             Text(
-                              'Jane Doe • +1 (555) 987-6543',
+                              'Campus Police & First Aid • 911 / Direct',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -355,7 +304,7 @@ class ProfilePage extends ConsumerWidget {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () async {
-                          final uri = Uri.parse('tel:+15559876543');
+                          final uri = Uri.parse('tel:911');
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(uri);
                           }
@@ -398,19 +347,19 @@ class ProfilePage extends ConsumerWidget {
               _buildInfoRow(
                 icon: Icons.phone_outlined,
                 label: 'Phone Number',
-                value: user.phone ?? 'Not provided',
+                value: user.phone != null && user.phone!.isNotEmpty ? user.phone! : 'Not provided',
               ),
               const Divider(height: 1, color: AppColors.outlineVariant),
               _buildInfoRow(
                 icon: Icons.domain_rounded,
-                label: 'Assigned Campus Block',
-                value: user.campusBlock ?? 'Not provided',
+                label: 'Assigned Campus Block / Room',
+                value: user.campusBlock != null && user.campusBlock!.isNotEmpty ? user.campusBlock! : 'Main Campus Quad',
               ),
               const Divider(height: 1, color: AppColors.outlineVariant),
               _buildInfoRow(
                 icon: Icons.wifi_tethering_rounded,
                 label: 'Campus Safety Network',
-                value: 'Active & Connected (Zone 3)',
+                value: 'Active & Connected',
                 valueColor: AppColors.success,
               ),
             ],
@@ -456,7 +405,7 @@ class ProfilePage extends ConsumerWidget {
                 dense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
-                title: const Text('Security & Passcode', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                title: const Text('Security & Password', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
                 onTap: () => context.push('/settings'),
               ),
@@ -509,7 +458,7 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -527,9 +476,12 @@ class ProfilePage extends ConsumerWidget {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(context);
-                    context.go('/login');
+                    await ref.read(authNotifierProvider.notifier).signOut();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
@@ -558,6 +510,123 @@ class ProfilePage extends ConsumerWidget {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ),
+    );
+  }
+
+  void _showEditProfileModal(BuildContext context, WidgetRef ref, User user) {
+    final nameController = TextEditingController(text: user.fullName);
+    final phoneController = TextEditingController(text: user.phone ?? '');
+    final campusBlockController = TextEditingController(text: user.campusBlock ?? '');
+    final emergencyInfoController = TextEditingController(text: user.emergencyInfo ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (modalContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(modalContext).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Edit Safety Profile',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(modalContext),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: campusBlockController,
+                  decoration: const InputDecoration(
+                    labelText: 'Campus Block / Room',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.domain),
+                    hintText: 'e.g. Science Complex, Lab 204',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emergencyInfoController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Medical & Emergency Info (Allergies, Blood, ICE)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.medical_information_outlined),
+                    hintText: 'Blood: O+ | Allergies: Penicillin | Asthmatic | ICE: Mom (+1 555-1234)',
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final success = await ref.read(profileNotifierProvider.notifier).updateProfile(
+                            fullName: nameController.text.trim(),
+                            phone: phoneController.text.trim(),
+                            campusBlock: campusBlockController.text.trim(),
+                            emergencyInfo: emergencyInfoController.text.trim(),
+                          );
+                      if (modalContext.mounted) {
+                        Navigator.pop(modalContext);
+                      }
+                      if (context.mounted && success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Safety Profile updated successfully!'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

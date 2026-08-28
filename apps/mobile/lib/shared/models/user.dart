@@ -94,7 +94,8 @@ enum UserRole {
   medicalResponder('medical_responder'),
   securityResponder('security_responder'),
   operator('operator'),
-  administrator('administrator');
+  administrator('administrator'),
+  staff('staff');
 
   const UserRole(this.value);
   final String value;
@@ -111,4 +112,21 @@ enum UserRole {
 
   bool get isOperator =>
       this == UserRole.operator || this == UserRole.administrator;
+
+  String get displayName {
+    switch (this) {
+      case UserRole.student:
+        return 'Student';
+      case UserRole.medicalResponder:
+        return 'Medical Responder';
+      case UserRole.securityResponder:
+        return 'Security Responder';
+      case UserRole.operator:
+        return 'Campus Operator';
+      case UserRole.administrator:
+        return 'Administrator';
+      case UserRole.staff:
+        return 'University Staff';
+    }
+  }
 }
