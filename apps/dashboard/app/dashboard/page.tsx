@@ -6,7 +6,12 @@ import { StatCard } from '@/components/ui/stat-card';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CampusMap } from '@/components/maps/campus-map';
-import { getIncidents, getResponders, getDevices, getDashboardStats } from '@/lib/mock';
+import {
+  fetchIncidents,
+  fetchResponders,
+  fetchDevices,
+  fetchDashboardStats,
+} from '@/lib/data-service';
 import { getIncidentMarkers, getResponderMarkers } from '@/lib/maps';
 import { useEffect, useState } from 'react';
 import { timeAgo, formatTime } from '@/lib/utils';
@@ -16,7 +21,7 @@ import type { Device } from '@/types/device';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchDashboardStats>> | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [responders, setResponders] = useState<Responder[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
@@ -24,10 +29,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       const [statsData, incidentsData, respondersData, devicesData] = await Promise.all([
-        getDashboardStats(),
-        getIncidents(),
-        getResponders(),
-        getDevices(),
+        fetchDashboardStats(),
+        fetchIncidents(),
+        fetchResponders(),
+        fetchDevices(),
       ]);
       setStats(statsData);
       setIncidents(incidentsData);

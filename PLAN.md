@@ -504,7 +504,7 @@ Sensor → ESP32 → Backend → Event processing → Alert
 This section outlines the immediate Dashboard operations tasks to complete, in order of execution:
 
 ### Dashboard Sprint Plan (In Order of Execution)
-1. [ ] **Step 1: Live Backend Data Binding & Supabase Integration**
+1. [x] **Step 1: Live Backend Data Binding & Supabase Integration**
    - Connect `DashboardPage` (`/dashboard`), `IncidentsPage` (`/dashboard/incidents`), `RespondersPage` (`/dashboard/responders`), `DevicesPage` (`/dashboard/devices`), and `ReportsPage` (`/dashboard/reports`) to load from `@/lib/backend/` with robust fallback to mock data when in dev/offline mode.
 
 2. [ ] **Step 2: Realtime Live Stream Integration on UI Views**

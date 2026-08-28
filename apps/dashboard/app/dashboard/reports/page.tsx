@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { Badge } from '@/components/ui/badge';
-import { getReports } from '@/lib/mock';
+import { fetchReports } from '@/lib/data-service';
 import { REPORT_TYPE_LABELS, REPORT_STATUS_LABELS } from '@/types/report';
 import type { SafetyReport, ReportFilter } from '@/types/report';
 import { formatDateTime } from '@/lib/utils';
@@ -16,7 +16,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await getReports({ ...filter, search });
+      const data = await fetchReports({ ...filter, search });
       setReports(data);
     }
     load();

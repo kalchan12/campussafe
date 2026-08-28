@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { DeviceCard } from '@/components/devices/device-card';
-import { getDevices } from '@/lib/mock';
+import { fetchDevices } from '@/lib/data-service';
 import type { Device, DeviceFilter } from '@/types/device';
 
 export default function DevicesPage() {
@@ -14,7 +14,7 @@ export default function DevicesPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await getDevices({ ...filter, search });
+      const data = await fetchDevices({ ...filter, search });
       setDevices(data);
     }
     load();

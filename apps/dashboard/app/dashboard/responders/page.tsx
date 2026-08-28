@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { ResponderCard } from '@/components/responders/responder-card';
-import { getResponders } from '@/lib/mock';
+import { fetchResponders } from '@/lib/data-service';
 import type { Responder, ResponderFilter } from '@/types/responder';
 
 export default function RespondersPage() {
@@ -14,7 +14,7 @@ export default function RespondersPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await getResponders({ ...filter, search });
+      const data = await fetchResponders({ ...filter, search });
       setResponders(data);
     }
     load();

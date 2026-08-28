@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getIncidents } from '@/lib/mock';
+import { fetchIncidents } from '@/lib/data-service';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident, IncidentFilter } from '@/types/incident';
 import { formatTime } from '@/lib/utils';
@@ -25,7 +25,7 @@ export default function IncidentsPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await getIncidents({ ...filter, search });
+      const data = await fetchIncidents({ ...filter, search });
       setIncidents(data);
       setCurrentPage(1);
     }
