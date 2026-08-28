@@ -499,30 +499,29 @@ Sensor → ESP32 → Backend → Event processing → Alert
 - [ ] Testing guide.
 - [ ] Demo guide.
 
-# Current Priority Queue — Mobile Sprint Focus
+# Current Priority Queue — Dashboard Sprint Focus
 
-This section outlines the immediate mobile tasks to complete, in order of execution:
+This section outlines the immediate Dashboard operations tasks to complete, in order of execution:
 
-### Mobile Sprint Plan (In Order of Execution)
-1. [x] **Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out**
-   - Implement `ProfileNotifier` to fetch real profile from `ProfileRepository.getProfile()`.
-   - Wire `ProfilePage` to display dynamic data (name, email, role, building, emergency info).
-   - Build interactive "Edit Safety & Medical Info" sheet (blood type, allergies, conditions, ICE contact) with direct saving to Supabase.
-   - Connect Profile sign-out button to `AuthNotifier.signOut()`.
+### Dashboard Sprint Plan (In Order of Execution)
+1. [ ] **Step 1: Live Backend Data Binding & Supabase Integration**
+   - Connect `DashboardPage` (`/dashboard`), `IncidentsPage` (`/dashboard/incidents`), `RespondersPage` (`/dashboard/responders`), `DevicesPage` (`/dashboard/devices`), and `ReportsPage` (`/dashboard/reports`) to load from `@/lib/backend/` with robust fallback to mock data when in dev/offline mode.
 
-2. [x] **Step 2: Direct Emergency Dialing & Campus Helpline Integration**
-   - Wire direct telephone dialer (`tel:911`, `tel:+1...`) for Campus Security, Health Center, and Night Safety Escort across SOS Page and Safety Guide views using `url_launcher`.
-   - Add one-tap emergency call triggers with confirmation dialogs.
+2. [ ] **Step 2: Realtime Live Stream Integration on UI Views**
+   - Connect `RealtimeService` inside `DashboardPage` and `IncidentsPage` to automatically append new SOS alerts, update status badges on responder progression, and show live device events without refreshing.
 
-3. [x] **Step 3: Responder Live Duty & Availability Synchronization**
-   - Connect the availability switch in `ResponderHomePage` to persist `is_active` / on-duty status in Supabase.
-   - Add status banner ("On Duty — Receiving Dispatch" vs "Off Duty") and auto-toggle when responder goes online.
+3. [ ] **Step 3: Operator Actions & Dispatch Controls**
+   - Add "Assign Responder" dialog in the incidents table calling `assignResponder()` in Supabase.
+   - Add status progression override controls (En Route / Arrived / Resolved / Cancelled) with live audit history logging.
 
-4. [x] **Step 4: App Settings, Password Reset & Security Controls**
-   - Wire `SettingsPage` to show authenticated user email and role.
-   - Connect "Reset Password" to `AuthNotifier.sendPasswordReset()`.
-   - Connect push notification and location service toggle preferences.
-   - Wire Terms of Service, Privacy Policy, and Sign Out dialogs.
+4. [ ] **Step 4: Interactive Campus OpenStreetMap Web Component**
+   - Upgrade `campus-map.tsx` to an interactive OpenStreetMap component with live zoom/pan, custom SVG pins, pulsing SOS beacons, and responder coordinates.
+
+### Completed Mobile Sprint
+- [x] Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out (`e12437da`)
+- [x] Step 2: Direct Emergency Dialing & Campus Helpline Integration (`c82f706f`)
+- [x] Step 3: Responder Live Duty & Availability Synchronization (`5a5f201d`)
+- [x] Step 4: App Settings, Password Reset & Security Controls (`accbdc1c`)
 
 ### Overall Long-Term Queue
 1. [x] Project foundation.
@@ -530,16 +529,14 @@ This section outlines the immediate mobile tasks to complete, in order of execut
 3. [x] Database/data model (migrations created, schema implemented).
 4. [x] Backend authentication/core entities (Supabase Auth, AuthRepository, ProfileRepository, IncidentRepository, SafetyReportRepository).
 5. [x] Mobile foundation (UI implementation per Stitch design + Supabase + FCM integration).
-6. [x] Dashboard foundation & Supabase wiring (UI complete, Supabase client connected, Realtime Postgres channel subscribed).
-7. [x] End-to-end mobile SOS (connected SOS page & home page emergency types to IncidentRepository.createIncident and location service).
-8. [x] Replace mock incidents/reports list pages with real Supabase data streams (connected IncidentsNotifier to watchActiveIncidents and SafetyReportsNotifier to SafetyReportRepository).
-9. [x] Anonymous reporting (connected SubmitReportPage to SafetyReportRepository).
-10. [x] Responder workflow (connected available incidents, accept/decline actions, and status progression to IncidentRepository).
-11. [ ] First ESP32 SOS station firmware.
-12. [ ] Location-aware proximity auto-dispatch.
-13. [ ] Environmental IoT nodes.
-14. [ ] Security/access IoT nodes.
-15. [ ] Security hardening & production checklist.
+6. [x] Mobile end-to-end flows (SOS, live map, responder duty, profile, emergency dialers).
+7. [x] Dashboard foundation & Supabase client setup.
+8. [ ] Dashboard live data & realtime operations (Current Sprint).
+9. [ ] First ESP32 SOS station firmware.
+10. [ ] Location-aware proximity auto-dispatch.
+11. [ ] Environmental IoT nodes.
+12. [ ] Security/access IoT nodes.
+13. [ ] Security hardening & production checklist.
 
 # Plan Update Rules
 
