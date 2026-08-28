@@ -531,12 +531,21 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 5. [x] Mobile foundation (UI implementation per Stitch design + Supabase + FCM integration).
 6. [x] Mobile end-to-end flows (SOS, live map, responder duty, profile, emergency dialers).
 7. [x] Dashboard foundation & Supabase client setup.
-8. [ ] Dashboard live data & realtime operations (Current Sprint).
-9. [ ] First ESP32 SOS station firmware.
-10. [ ] Location-aware proximity auto-dispatch.
-11. [ ] Environmental IoT nodes.
-12. [ ] Security/access IoT nodes.
-13. [ ] Security hardening & production checklist.
+8. [x] Dashboard live data & realtime operations.
+
+### Architecture Hardening Sprint (Current)
+1. [ ] **Phase 1: Dashboard Security Hardening:** Implement Next.js `middleware.ts` to protect `/dashboard/*` routes and redirect unauthenticated users to `/login`.
+2. [ ] **Phase 2: Proximity Dispatch Engine:** Enable PostGIS in Supabase, update `latitude`/`longitude` to `GEOGRAPHY(Point)`, and write an edge function/trigger (`handle_new_incident`) to automatically assign the closest responder via Haversine distance.
+3. [ ] **Phase 3: Mobile Offline Resilience & Background Location:** Queue failed SOS requests in SQLite (`sqflite`) for retry, and track responder background locations.
+
+### Hardware & IoT Sprint (Next Week)
+- [ ] Prepare backend IoT connection APIs (REST/MQTT endpoints).
+- [ ] First ESP32 SOS station firmware.
+- [ ] Environmental IoT nodes.
+- [ ] Security/access IoT nodes.
+
+### Finalization
+- [ ] Security hardening & production checklist.
 
 # Plan Update Rules
 
