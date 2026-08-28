@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/models/incident.dart';
 import '../../../incidents/presentation/state/incidents_provider.dart';
+import '../../../incidents/presentation/widgets/incident_map_view.dart';
 
 class IncidentDetailsPage extends ConsumerWidget {
   final String incidentId;
@@ -100,7 +102,7 @@ class IncidentDetailsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Location Card
+            // Location Card with Real Interactive OpenStreetMap
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -108,7 +110,7 @@ class IncidentDetailsPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Location',
+                      'Live GPS Location',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -125,11 +127,43 @@ class IncidentDetailsPage extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             incident.campusBlock ?? incident.locationDescription ?? 'Main Campus',
-                            style: const TextStyle(fontSize: 16),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: IncidentMapView(
+                          incidents: [incident],
+                          initialSelectedIncident: incident,
+                          isCompact: true,
+                        ),
+                      ),
+                    ),
+                    if (incident.latitude != null && incident.longitude != null) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            MapLauncherUtil.openGoogleMapsDirections(
+                              latitude: incident.latitude!,
+                              longitude: incident.longitude!,
+                            );
+                          },
+                          icon: const Icon(Icons.navigation, color: AppColors.primary, size: 18),
+                          label: const Text('Open Turn-by-Turn in Google Maps'),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
