@@ -6,6 +6,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../shared/models/incident.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../incidents/presentation/state/incidents_provider.dart';
+import '../state/responder_duty_provider.dart';
 
 class ResponderHomePage extends ConsumerWidget {
   const ResponderHomePage({super.key});
@@ -14,6 +15,7 @@ class ResponderHomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final incidents = ref.watch(incidentsListProvider);
     final authState = ref.watch(authNotifierProvider);
+    final isOnDuty = ref.watch(responderDutyProvider);
     final userId = authState.userId;
 
     final availableIncidents = incidents.where((i) =>
@@ -31,146 +33,184 @@ class ResponderHomePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Responder Dashboard'),
         actions: [
-          Switch(
-            value: true,
-            activeTrackColor: AppColors.success,
-            onChanged: (value) {},
+          Row(
+            children: [
+              Text(
+                isOnDuty ? 'ON DUTY' : 'OFF DUTY',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isOnDuty ? AppColors.success : Colors.grey,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: isOnDuty,
+                activeTrackColor: AppColors.success,
+                onChanged: (value) {
+                  ref.read(responderDutyProvider.notifier).toggleDuty(value);
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status Card
-            Card(
-              color: AppColors.success,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.check_circle,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Available',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Ready to respond on campus',
-                          style: TextStyle(
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Quick Stats
-            const Text(
-              'Today\'s Stats',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Assigned',
-                    value: '$assignedToMeCount',
-                    color: AppColors.statusAssigned,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    label: 'Completed',
-                    value: '$completedCount',
-                    color: AppColors.success,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Available Incidents
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Available Incidents',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.push('/responder/available'),
-                  child: const Text('View All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (availableIncidents.isEmpty)
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(incidentsListProvider.notifier).refresh(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Status Card
               Card(
+                color: isOnDuty ? AppColors.success : AppColors.surfaceContainerHigh,
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.done_all, size: 36, color: Colors.green.shade400),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'No pending incidents to accept',
-                          style: TextStyle(color: Colors.grey),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: isOnDuty
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : Colors.grey.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
-                    ),
+                        child: Icon(
+                          isOnDuty ? Icons.check_circle : Icons.pause_circle_outline,
+                          color: isOnDuty ? Colors.white : AppColors.onSurfaceVariant,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isOnDuty ? 'On Duty & Available' : 'Off Duty / Standby',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isOnDuty ? Colors.white : AppColors.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isOnDuty
+                                  ? 'Live dispatch beacon active • Ready for response'
+                                  : 'Toggle switch above to receive live campus dispatch alerts',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isOnDuty ? Colors.white70 : AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              )
-            else
-              ...availableIncidents.take(3).map((incident) {
-                return _AvailableIncidentCard(
-                  incident: incident,
-                  onAccept: () async {
-                    await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
-                          incidentId: incident.id,
-                          status: IncidentStatus.assigned,
-                          responderId: userId,
+              ),
+              const SizedBox(height: 24),
+              // Quick Stats
+              const Text(
+                'Today\'s Stats',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      label: 'Assigned',
+                      value: '$assignedToMeCount',
+                      color: AppColors.statusAssigned,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _StatCard(
+                      label: 'Completed',
+                      value: '$completedCount',
+                      color: AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Available Incidents
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Available Incidents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push('/responder/available'),
+                    child: const Text('View All'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (availableIncidents.isEmpty)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.done_all, size: 36, color: Colors.green.shade400),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'No pending incidents to accept',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...availableIncidents.take(3).map((incident) {
+                  return _AvailableIncidentCard(
+                    incident: incident,
+                    onAccept: () async {
+                      if (!isOnDuty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please switch ON DUTY before accepting incidents.'),
+                            backgroundColor: AppColors.warning,
+                          ),
                         );
-                    if (context.mounted) {
-                      context.push('/responder/incident/${incident.id}');
-                    }
-                  },
-                  onDecline: () {},
-                );
-              }),
-          ],
+                        return;
+                      }
+
+                      await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
+                            incidentId: incident.id,
+                            status: IncidentStatus.assigned,
+                            responderId: userId,
+                          );
+                      if (context.mounted) {
+                        context.push('/responder/incident/${incident.id}');
+                      }
+                    },
+                    onDecline: () {},
+                  );
+                }),
+            ],
+          ),
         ),
       ),
     );
@@ -239,72 +279,63 @@ class _AvailableIncidentCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                _getEmergencyIcon(incident.type),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        incident.type.displayName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        incident.campusBlock ?? incident.locationDescription ?? 'Campus Location',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.sosRed.withValues(alpha: 0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    incident.type.displayName,
+                    'P${incident.priority}',
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.sosRed,
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${DateTime.now().difference(incident.createdAt).inMinutes.abs()}m ago',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              incident.description ?? incident.type.displayName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            if (incident.description != null && incident.description!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                incident.description!,
+                style: const TextStyle(color: Colors.grey),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 16,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    incident.campusBlock ?? incident.locationDescription ?? 'Campus Zone',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => context.push('/incident/${incident.id}'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                    ),
-                    child: const Text('Details'),
+                    onPressed: onDecline,
+                    child: const Text('Decline'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -312,7 +343,7 @@ class _AvailableIncidentCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onAccept,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Accept'),
@@ -323,6 +354,43 @@ class _AvailableIncidentCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _getEmergencyIcon(EmergencyType type) {
+    IconData icon;
+    Color color;
+
+    switch (type) {
+      case EmergencyType.medical:
+        icon = Icons.medical_services;
+        color = AppColors.error;
+        break;
+      case EmergencyType.security:
+        icon = Icons.local_police;
+        color = const Color(0xFF1E88E5);
+        break;
+      case EmergencyType.fire:
+        icon = Icons.local_fire_department;
+        color = const Color(0xFFFF6D00);
+        break;
+      case EmergencyType.accident:
+        icon = Icons.car_crash;
+        color = const Color(0xFFFFB300);
+        break;
+      case EmergencyType.other:
+        icon = Icons.warning;
+        color = AppColors.primary;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, color: color),
     );
   }
 }

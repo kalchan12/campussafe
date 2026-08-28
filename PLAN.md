@@ -514,7 +514,7 @@ This section outlines the immediate mobile tasks to complete, in order of execut
    - Wire direct telephone dialer (`tel:911`, `tel:+1...`) for Campus Security, Health Center, and Night Safety Escort across SOS Page and Safety Guide views using `url_launcher`.
    - Add one-tap emergency call triggers with confirmation dialogs.
 
-3. [ ] **Step 3: Responder Live Duty & Availability Synchronization**
+3. [x] **Step 3: Responder Live Duty & Availability Synchronization**
    - Connect the availability switch in `ResponderHomePage` to persist `is_active` / on-duty status in Supabase.
    - Add status banner ("On Duty — Receiving Dispatch" vs "Off Duty") and auto-toggle when responder goes online.
 
