@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/utils/phone_launcher.dart';
 
 class SafetyGuideView extends StatelessWidget {
   const SafetyGuideView({super.key});
@@ -17,7 +17,7 @@ class SafetyGuideView extends StatelessWidget {
         80 + AppSpacing.safeAreaBottom,
       ),
       children: [
-        // 24/7 Campus Escort Service Card
+        // 1. 24/7 Campus Emergency Helplines Card
         Card(
           elevation: 2,
           color: AppColors.primaryContainer,
@@ -26,59 +26,65 @@ class SafetyGuideView extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.shield_moon_rounded, color: Colors.white, size: 24),
+                const Row(
+                  children: [
+                    Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      '24/7 Campus Emergency Helplines',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Tap any service below to place a direct phone call to campus responders.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Night Safety Escort',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Request a security officer to walk with you across campus after dark (6 PM – 6 AM).',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        onPressed: () async {
-                          final uri = Uri.parse('tel:911');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri);
-                          }
-                        },
-                        icon: const Icon(Icons.phone, size: 14),
-                        label: const Text('Call Escort Line', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildHelplineChip(
+                      context,
+                      label: 'Campus Police (911)',
+                      icon: Icons.local_police_rounded,
+                      phone: '911',
+                      isEmergency: true,
+                    ),
+                    _buildHelplineChip(
+                      context,
+                      label: 'Night Escort (+1 555-0188)',
+                      icon: Icons.shield_moon_rounded,
+                      phone: '+15550188',
+                      isEmergency: false,
+                    ),
+                    _buildHelplineChip(
+                      context,
+                      label: 'Campus First Aid (+1 555-0199)',
+                      icon: Icons.medical_services_rounded,
+                      phone: '+15550199',
+                      isEmergency: false,
+                    ),
+                    _buildHelplineChip(
+                      context,
+                      label: 'Crisis Line (988)',
+                      icon: Icons.support_agent_rounded,
+                      phone: '988',
+                      isEmergency: false,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -143,6 +149,44 @@ class SafetyGuideView extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildHelplineChip(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required String phone,
+    required bool isEmergency,
+  }) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: isEmergency ? AppColors.critical : AppColors.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        visualDensity: VisualDensity.compact,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.full),
+        ),
+      ),
+      onPressed: () {
+        PhoneLauncherUtil.launchCall(
+          context: context,
+          phoneNumber: phone,
+          contactName: label,
+          isEmergency: isEmergency,
+        );
+      },
+      icon: Icon(icon, size: 15, color: isEmergency ? AppColors.critical : AppColors.primary),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+          color: isEmergency ? AppColors.critical : AppColors.onSurface,
+        ),
+      ),
     );
   }
 

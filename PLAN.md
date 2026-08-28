@@ -510,7 +510,7 @@ This section outlines the immediate mobile tasks to complete, in order of execut
    - Build interactive "Edit Safety & Medical Info" sheet (blood type, allergies, conditions, ICE contact) with direct saving to Supabase.
    - Connect Profile sign-out button to `AuthNotifier.signOut()`.
 
-2. [ ] **Step 2: Direct Emergency Dialing & Campus Helpline Integration**
+2. [x] **Step 2: Direct Emergency Dialing & Campus Helpline Integration**
    - Wire direct telephone dialer (`tel:911`, `tel:+1...`) for Campus Security, Health Center, and Night Safety Escort across SOS Page and Safety Guide views using `url_launcher`.
    - Add one-tap emergency call triggers with confirmation dialogs.
 

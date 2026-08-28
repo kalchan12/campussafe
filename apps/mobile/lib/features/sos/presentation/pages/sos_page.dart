@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/phone_launcher.dart';
 import '../../../../shared/widgets/emergency_button.dart';
 import '../state/sos_notifier.dart';
 import '../state/sos_state.dart';
@@ -91,6 +92,22 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 40),
+          OutlinedButton.icon(
+            onPressed: () {
+              PhoneLauncherUtil.launchCall(
+                context: context,
+                phoneNumber: '911',
+                contactName: 'Campus Police (Emergency)',
+                isEmergency: true,
+              );
+            },
+            icon: const Icon(Icons.phone_in_talk, size: 16, color: AppColors.sosRed),
+            label: const Text(
+              'Direct Dial Campus Police (911)',
+              style: TextStyle(color: AppColors.sosRed, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -538,22 +555,42 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             const Spacer(),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: () {
-                  ref.read(sosNotifierProvider.notifier).fetchLocation();
-                  ref.read(sosNotifierProvider.notifier).sendSOS();
+                  PhoneLauncherUtil.launchCall(
+                    context: context,
+                    phoneNumber: '911',
+                    contactName: 'Campus Police (Emergency)',
+                    isEmergency: true,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
+                  backgroundColor: AppColors.critical,
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Retry SOS'),
+                icon: const Icon(Icons.phone_in_talk, size: 20),
+                label: const Text(
+                  'Call Campus Police Now (911)',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
+                onPressed: () {
+                  ref.read(sosNotifierProvider.notifier).fetchLocation();
+                  ref.read(sosNotifierProvider.notifier).sendSOS();
+                },
+                child: const Text('Retry App SOS Dispatch'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
                 onPressed: () {
                   ref.read(sosNotifierProvider.notifier).reset();
                   context.go('/home');
