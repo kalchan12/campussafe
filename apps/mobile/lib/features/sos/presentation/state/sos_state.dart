@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../shared/models/incident.dart';
+
 enum SosStatus {
   ready,
   confirming,
@@ -17,8 +19,10 @@ class SosState extends Equatable {
   final double? latitude;
   final double? longitude;
   final String? locationAddress;
+  final String? campusBlock;
   final String? error;
   final bool isLocationLoading;
+  final Incident? createdIncident;
 
   const SosState({
     this.status = SosStatus.ready,
@@ -26,8 +30,10 @@ class SosState extends Equatable {
     this.latitude,
     this.longitude,
     this.locationAddress,
+    this.campusBlock,
     this.error,
     this.isLocationLoading = false,
+    this.createdIncident,
   });
 
   SosState copyWith({
@@ -36,8 +42,10 @@ class SosState extends Equatable {
     double? latitude,
     double? longitude,
     String? locationAddress,
+    String? campusBlock,
     String? error,
     bool? isLocationLoading,
+    Incident? createdIncident,
   }) {
     return SosState(
       status: status ?? this.status,
@@ -45,8 +53,10 @@ class SosState extends Equatable {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       locationAddress: locationAddress ?? this.locationAddress,
+      campusBlock: campusBlock ?? this.campusBlock,
       error: error,
       isLocationLoading: isLocationLoading ?? this.isLocationLoading,
+      createdIncident: createdIncident ?? this.createdIncident,
     );
   }
 
@@ -57,7 +67,10 @@ class SosState extends Equatable {
         latitude,
         longitude,
         locationAddress,
+        campusBlock,
         error,
         isLocationLoading,
+        createdIncident,
       ];
 }
+

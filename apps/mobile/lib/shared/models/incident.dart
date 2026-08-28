@@ -5,7 +5,7 @@ class Incident extends Equatable {
   final EmergencyType type;
   final IncidentStatus status;
   final int priority;
-  final String reporterId;
+  final String? reporterId;
   final String? assignedResponderId;
   final double? latitude;
   final double? longitude;
@@ -24,7 +24,7 @@ class Incident extends Equatable {
     required this.type,
     required this.status,
     required this.priority,
-    required this.reporterId,
+    this.reporterId,
     this.assignedResponderId,
     this.latitude,
     this.longitude,
@@ -45,7 +45,7 @@ class Incident extends Equatable {
       type: EmergencyType.fromString(json['type'] as String),
       status: IncidentStatus.fromString(json['status'] as String),
       priority: json['priority'] as int,
-      reporterId: json['reporter_id'] as String,
+      reporterId: json['reporter_id'] as String?,
       assignedResponderId: json['assigned_responder_id'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),

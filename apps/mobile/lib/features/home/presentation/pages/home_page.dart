@@ -7,6 +7,8 @@ import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/cards.dart';
 import '../../../../shared/widgets/status_badge.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../../sos/presentation/state/sos_notifier.dart';
 
 class HomePage extends ConsumerWidget {
   final bool isGuest;
@@ -36,11 +38,19 @@ class HomePage extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Hello, Psycho',
-                    style: AppTypography.displayLgMobile.copyWith(
-                      color: AppColors.onSurface,
-                    ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final authState = ref.watch(authNotifierProvider);
+                      final displayName = authState.email != null
+                          ? authState.email!.split('@').first
+                          : (isGuest ? 'Guest' : 'Student');
+                      return Text(
+                        'Hello, $displayName',
+                        style: AppTypography.displayLgMobile.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Container(
@@ -80,7 +90,7 @@ class HomePage extends ConsumerWidget {
                 child: Column(
                   children: [
                     EmergencyButton(
-                      onTriggered: () => _showSOSConfirmation(context),
+                      onTriggered: () => _showSOSConfirmation(context, ref),
                       size: 180,
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -106,10 +116,10 @@ class HomePage extends ConsumerWidget {
                 runSpacing: AppSpacing.sm,
                 childAspectRatio: 1.2,
                 children: [
-                  _buildEmergencyTypeCard(context, 'Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
-                  _buildEmergencyTypeCard(context, 'Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
-                  _buildEmergencyTypeCard(context, 'Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
-                  _buildEmergencyTypeCard(context, 'General', Icons.support, AppColors.information, AppColors.informationContainer),
+                  _buildEmergencyTypeCard(context, ref, 'Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
+                  _buildEmergencyTypeCard(context, ref, 'Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
+                  _buildEmergencyTypeCard(context, ref, 'Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
+                  _buildEmergencyTypeCard(context, ref, 'General', Icons.support, AppColors.information, AppColors.informationContainer),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -270,13 +280,17 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildEmergencyTypeCard(
     BuildContext context,
+    WidgetRef ref,
     String label,
     IconData icon,
     Color color,
     Color containerColor,
   ) {
     return InkWell(
-      onTap: () => context.push('/sos'),
+      onTap: () {
+        ref.read(sosNotifierProvider.notifier).selectType(label);
+        context.push('/sos');
+      },
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -317,7 +331,7 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  void _showSOSConfirmation(BuildContext context) {
+  void _showSOSConfirmation(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -338,6 +352,7 @@ class HomePage extends ConsumerWidget {
             label: 'Yes, Send SOS',
             onPressed: () {
               Navigator.pop(context);
+              ref.read(sosNotifierProvider.notifier).startConfirmation();
               context.push('/sos');
             },
             backgroundColor: AppColors.error,

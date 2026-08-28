@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../shared/widgets/emergency_button.dart';
+import '../state/sos_notifier.dart';
 import '../state/sos_state.dart';
 
 class SOSPage extends ConsumerStatefulWidget {
@@ -14,7 +15,6 @@ class SOSPage extends ConsumerStatefulWidget {
 }
 
 class _SOSPageState extends ConsumerState<SOSPage> {
-  SosState _sosState = const SosState();
   int _selectedTypeIndex = -1;
 
   final List<Map<String, dynamic>> _emergencyTypes = [
@@ -27,18 +27,27 @@ class _SOSPageState extends ConsumerState<SOSPage> {
 
   @override
   Widget build(BuildContext context) {
+    final sosState = ref.watch(sosNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Emergency SOS'),
         backgroundColor: AppColors.sosRed,
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            ref.read(sosNotifierProvider.notifier).reset();
+            context.go('/home');
+          },
+        ),
       ),
-      body: _buildBody(),
+      body: _buildBody(sosState),
     );
   }
 
-  Widget _buildBody() {
-    switch (_sosState.status) {
+  Widget _buildBody(SosState sosState) {
+    switch (sosState.status) {
       case SosStatus.ready:
         return _buildReadyView();
       case SosStatus.confirming:
@@ -46,15 +55,15 @@ class _SOSPageState extends ConsumerState<SOSPage> {
       case SosStatus.selectingType:
         return _buildTypeSelectionView();
       case SosStatus.confirmingLocation:
-        return _buildLocationConfirmView();
+        return _buildLocationConfirmView(sosState);
       case SosStatus.sending:
         return _buildSendingView();
       case SosStatus.sent:
-        return _buildSentView();
+        return _buildSentView(sosState);
       case SosStatus.received:
         return _buildReceivedView();
       case SosStatus.failed:
-        return _buildFailedView();
+        return _buildFailedView(sosState);
     }
   }
 
@@ -73,11 +82,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
           const SizedBox(height: 32),
           EmergencyButton(
             onPressed: () {
-              setState(() {
-                _sosState = _sosState.copyWith(
-                  status: SosStatus.confirming,
-                );
-              });
+              ref.read(sosNotifierProvider.notifier).startConfirmation();
             },
           ),
           const SizedBox(height: 32),
@@ -127,17 +132,20 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  ref.read(sosNotifierProvider.notifier).reset();
                   setState(() {
-                    _sosState = _sosState.copyWith(
-                      status: SosStatus.selectingType,
-                    );
+                    _selectedTypeIndex = -1;
                   });
+                  // Move to type selection
+                  ref.read(sosNotifierProvider.notifier).startConfirmation();
+                  // We transition locally to selectingType
+                  // By default selectingType view
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.sosRed,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Yes, Send SOS'),
+                child: const Text('Yes, Select Emergency Type'),
               ),
             ),
             const SizedBox(height: 16),
@@ -145,9 +153,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  setState(() {
-                    _sosState = const SosState();
-                  });
+                  ref.read(sosNotifierProvider.notifier).reset();
                 },
                 child: const Text('Cancel'),
               ),
@@ -238,15 +244,11 @@ class _SOSPageState extends ConsumerState<SOSPage> {
           ElevatedButton(
             onPressed: _selectedTypeIndex >= 0
                 ? () {
-                    setState(() {
-                      _sosState = _sosState.copyWith(
-                        status: SosStatus.confirmingLocation,
-                        emergencyType:
-                            _emergencyTypes[_selectedTypeIndex]['label']
-                                .toString()
-                                .toLowerCase(),
-                      );
-                    });
+                    final selectedType =
+                        _emergencyTypes[_selectedTypeIndex]['label'] as String;
+                    ref
+                        .read(sosNotifierProvider.notifier)
+                        .selectType(selectedType);
                   }
                 : null,
             style: ElevatedButton.styleFrom(
@@ -260,7 +262,9 @@ class _SOSPageState extends ConsumerState<SOSPage> {
     );
   }
 
-  Widget _buildLocationConfirmView() {
+  Widget _buildLocationConfirmView(SosState sosState) {
+    final hasCoords = sosState.latitude != null && sosState.longitude != null;
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -275,7 +279,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Your location will be shared with responders',
+            'Your live location will be shared immediately with responders.',
             style: TextStyle(
               color: Colors.grey,
             ),
@@ -292,21 +296,41 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                     color: AppColors.primary,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Getting your location...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                  if (sosState.isLocationLoading) ...[
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Coordinates: Lat 0.00, Lng 0.00',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Acquiring high-accuracy GPS...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
+                  ] else ...[
+                    Text(
+                      hasCoords ? 'GPS Location Locked' : 'Location Pending',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      sosState.locationAddress ??
+                          (hasCoords
+                              ? 'Lat: ${sosState.latitude!.toStringAsFixed(4)}, Lng: ${sosState.longitude!.toStringAsFixed(4)}'
+                              : 'Coordinates pending permission check'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -314,36 +338,22 @@ class _SOSPageState extends ConsumerState<SOSPage> {
           const Spacer(),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                _sosState = _sosState.copyWith(
-                  status: SosStatus.sending,
-                );
-              });
-              // Simulate sending
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted) {
-                  setState(() {
-                    _sosState = _sosState.copyWith(
-                      status: SosStatus.sent,
-                    );
-                  });
-                }
-              });
+              ref.read(sosNotifierProvider.notifier).sendSOS();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.sosRed,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text('Send SOS Now'),
+            child: const Text(
+              'Send SOS Now',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () {
-              setState(() {
-                _sosState = _sosState.copyWith(
-                  status: SosStatus.selectingType,
-                );
-              });
+              ref.read(sosNotifierProvider.notifier).reset();
             },
             child: const Text('Back'),
           ),
@@ -371,7 +381,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
           ),
           SizedBox(height: 8),
           Text(
-            'Please wait while we contact emergency services',
+            'Please wait while we alert campus responders',
             style: TextStyle(
               color: Colors.grey,
             ),
@@ -381,7 +391,10 @@ class _SOSPageState extends ConsumerState<SOSPage> {
     );
   }
 
-  Widget _buildSentView() {
+  Widget _buildSentView(SosState sosState) {
+    final incident = sosState.createdIncident;
+    final incidentId = incident?.id ?? 'SOS-LIVE-ALERT';
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -411,32 +424,32 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Your emergency has been reported. A responder will be assigned shortly.',
+              'Your emergency has been dispatched. Nearby campus responders have been notified.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: AppColors.primary,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'Incident ID: SOS-2024-001',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
+                    'Incident ID: $incidentId',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -446,8 +459,16 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Return Home'),
+                onPressed: () {
+                  ref.read(sosNotifierProvider.notifier).reset();
+                  context.go('/emergency/active/$incidentId');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Track Active Emergency'),
               ),
             ),
             const SizedBox(height: 12),
@@ -455,9 +476,10 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  // Navigate to incident detail
+                  ref.read(sosNotifierProvider.notifier).reset();
+                  context.go('/home');
                 },
-                child: const Text('View Incident Details'),
+                child: const Text('Return Home'),
               ),
             ),
           ],
@@ -485,7 +507,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
     );
   }
 
-  Widget _buildFailedView() {
+  Widget _buildFailedView(SosState sosState) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -507,7 +529,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              _sosState.error ?? 'An error occurred. Please try again.',
+              sosState.error ?? 'An error occurred while contacting emergency services. Please call 911 or campus security directly.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.grey,
@@ -518,18 +540,24 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  setState(() {
-                    _sosState = const SosState();
-                  });
+                  ref.read(sosNotifierProvider.notifier).fetchLocation();
+                  ref.read(sosNotifierProvider.notifier).sendSOS();
                 },
-                child: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry SOS'),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => context.go('/home'),
+                onPressed: () {
+                  ref.read(sosNotifierProvider.notifier).reset();
+                  context.go('/home');
+                },
                 child: const Text('Return Home'),
               ),
             ),

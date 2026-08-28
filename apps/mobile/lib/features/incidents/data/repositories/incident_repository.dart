@@ -21,7 +21,7 @@ class IncidentRepository {
 
   /// Creates a new incident (SOS submission).
   Future<Result<Incident>> createIncident({
-    required String reporterId,
+    String? reporterId,
     required EmergencyType type,
     required int priority,
     double? latitude,
@@ -34,8 +34,8 @@ class IncidentRepository {
     if (!_isAvailable) return Left(NetworkError.noConnection());
     try {
       final now = DateTime.now().toIso8601String();
-      final data = await _client!.from('incidents').insert({
-        'reporter_id': reporterId,
+      final insertData = <String, dynamic>{
+        if (reporterId != null && reporterId.isNotEmpty) 'reporter_id': reporterId,
         'type': type.value,
         'status': IncidentStatus.created.value,
         'priority': priority,
@@ -47,7 +47,8 @@ class IncidentRepository {
         'source': source,
         'created_at': now,
         'updated_at': now,
-      }).select().single();
+      };
+      final data = await _client!.from('incidents').insert(insertData).select().single();
       return Right(Incident.fromJson(data));
     } catch (e) {
       return Left(NetworkError(message: 'Failed to create incident: $e'));
