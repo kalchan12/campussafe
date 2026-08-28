@@ -105,3 +105,31 @@ export async function fetchDashboardStats() {
   }
   return mock.getDashboardStats();
 }
+
+export async function updateIncidentStatus(
+  id: string,
+  status: Incident['status']
+): Promise<Incident | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      return await backendIncidents.updateIncidentStatus(id, status);
+    } catch (err) {
+      console.warn(`Backend updateIncidentStatus(${id}) failed:`, err);
+    }
+  }
+  return null;
+}
+
+export async function assignResponderToIncident(
+  incidentId: string,
+  responderId: string
+): Promise<Incident | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      return await backendIncidents.assignResponder(incidentId, responderId);
+    } catch (err) {
+      console.warn(`Backend assignResponder(${incidentId}) failed:`, err);
+    }
+  }
+  return null;
+}

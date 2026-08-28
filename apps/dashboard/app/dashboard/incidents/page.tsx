@@ -5,10 +5,16 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fetchIncidents } from '@/lib/data-service';
+import {
+  fetchIncidents,
+  fetchResponders,
+  assignResponderToIncident,
+  updateIncidentStatus,
+} from '@/lib/data-service';
 import { realtimeService } from '@/lib/realtime';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident, IncidentFilter } from '@/types/incident';
+import type { Responder } from '@/types/responder';
 import { formatTime } from '@/lib/utils';
 
 const SEVERITY_CONFIG: Record<number, { label: string; variant: 'critical' | 'high' | 'medium'; icon: string; color: string }> = {
@@ -19,15 +25,23 @@ const SEVERITY_CONFIG: Record<number, { label: string; variant: 'critical' | 'hi
 
 export default function IncidentsPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [responders, setResponders] = useState<Responder[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [selectedResponderId, setSelectedResponderId] = useState<string>('');
   const [filter, setFilter] = useState<IncidentFilter>({});
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [actionLoading, setActionLoading] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
     async function load() {
-      const data = await fetchIncidents({ ...filter, search });
-      setIncidents(data);
+      const [incidentsData, respondersData] = await Promise.all([
+        fetchIncidents({ ...filter, search }),
+        fetchResponders(),
+      ]);
+      setIncidents(incidentsData);
+      setResponders(respondersData);
       setCurrentPage(1);
     }
     load();
@@ -45,6 +59,9 @@ export default function IncidentsPage() {
       setIncidents((prev) =>
         prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i))
       );
+      if (selectedIncident && selectedIncident.id === updated.id) {
+        setSelectedIncident((prev) => (prev ? { ...prev, ...updated } : null));
+      }
     });
 
     return () => {
@@ -52,6 +69,39 @@ export default function IncidentsPage() {
       unsubStatus();
     };
   }, [filter, search]);
+
+  const handleAssignResponder = async () => {
+    if (!selectedIncident || !selectedResponderId) return;
+    setActionLoading(true);
+    const assignedResponder = responders.find((r) => r.id === selectedResponderId);
+    
+    await assignResponderToIncident(selectedIncident.id, selectedResponderId);
+    
+    const updated = {
+      ...selectedIncident,
+      status: 'assigned' as const,
+      assigned_responder_id: selectedResponderId,
+      assigned_responder_name: assignedResponder?.name ?? 'Assigned Responder',
+    };
+    
+    setIncidents((prev) =>
+      prev.map((i) => (i.id === selectedIncident.id ? updated : i))
+    );
+    setSelectedIncident(updated);
+    setActionLoading(false);
+  };
+
+  const handleUpdateStatus = async (status: Incident['status']) => {
+    if (!selectedIncident) return;
+    setActionLoading(true);
+    await updateIncidentStatus(selectedIncident.id, status);
+    const updated = { ...selectedIncident, status };
+    setIncidents((prev) =>
+      prev.map((i) => (i.id === selectedIncident.id ? updated : i))
+    );
+    setSelectedIncident(updated);
+    setActionLoading(false);
+  };
 
   const totalPages = Math.ceil(incidents.length / itemsPerPage);
   const paginatedIncidents = incidents.slice(
@@ -71,17 +121,13 @@ export default function IncidentsPage() {
               <div>
                 <h1 className="font-headline-lg text-headline-lg text-on-surface">Live Incidents</h1>
                 <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                  Real-time operational overview of campus events.
+                  Real-time operational overview of campus events. Click an incident to manage dispatch.
                 </p>
               </div>
               <div className="flex gap-3">
-                <Button variant="secondary">
+                <Button variant="secondary" onClick={() => window.print()}>
                   <span className="material-symbols-outlined text-sm mr-1.5">download</span>
                   Export
-                </Button>
-                <Button>
-                  <span className="mr-1.5">+</span>
-                  New Incident
                 </Button>
               </div>
             </div>
@@ -99,7 +145,7 @@ export default function IncidentsPage() {
                     setFilter({ ...filter, status: e.target.value ? [e.target.value as Incident['status']] : undefined })
                   }
                 >
-                  <option value="">Status: Active</option>
+                  <option value="">Status: All</option>
                   <option value="created">Created</option>
                   <option value="received">Received</option>
                   <option value="assigned">Assigned</option>
@@ -136,6 +182,7 @@ export default function IncidentsPage() {
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Reported</th>
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Responder</th>
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Status</th>
+                      <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -144,6 +191,10 @@ export default function IncidentsPage() {
                       return (
                         <tr
                           key={incident.id}
+                          onClick={() => {
+                            setSelectedIncident(incident);
+                            setSelectedResponderId(incident.assigned_responder_id || '');
+                          }}
                           className="border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer"
                         >
                           <td className="py-4 px-4">
@@ -159,25 +210,40 @@ export default function IncidentsPage() {
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-4 font-technical-sm text-technical-sm text-on-surface">
+                          <td className="py-4 px-4 font-technical-sm text-technical-sm text-on-surface font-bold">
                             {incident.id.toUpperCase()}
                           </td>
                           <td className="py-4 px-4 font-body-md text-body-md text-on-surface">
                             {EMERGENCY_TYPE_LABELS[incident.type]}
                           </td>
-                          <td className="py-4 px-4 font-body-md text-body-md text-on-surface">
-                            {incident.location_description || '-'}
+                          <td className="py-4 px-4 font-body-md text-body-md text-on-surface max-w-[220px] truncate">
+                            {incident.location_description || incident.campus_block || '-'}
                           </td>
                           <td className="py-4 px-4 font-technical-sm text-technical-sm text-on-surface-variant">
                             {formatTime(incident.created_at)}
                           </td>
                           <td className="py-4 px-4 font-body-md text-body-md text-on-surface">
-                            {incident.assigned_responder_name || '-'}
+                            {incident.assigned_responder_name || (
+                              <span className="text-amber-600 font-medium">Unassigned</span>
+                            )}
                           </td>
                           <td className="py-4 px-4">
                             <Badge variant={incident.priority === 1 ? 'error' : incident.priority === 2 ? 'info' : 'default'}>
                               {incident.status.charAt(0).toUpperCase() + incident.status.slice(1)}
                             </Badge>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Button
+                              variant="secondary"
+                              className="text-xs px-2.5 py-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedIncident(incident);
+                                setSelectedResponderId(incident.assigned_responder_id || '');
+                              }}
+                            >
+                              Dispatch
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -225,6 +291,119 @@ export default function IncidentsPage() {
           </div>
         </main>
       </div>
+
+      {/* Operator Dispatch & Status Modal */}
+      {selectedIncident && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="font-label-md text-xs uppercase tracking-wider text-on-surface-variant">
+                  Incident Management Console
+                </span>
+                <h3 className="font-headline-md text-xl font-bold text-on-surface mt-0.5">
+                  #{selectedIncident.id.toUpperCase()} — {EMERGENCY_TYPE_LABELS[selectedIncident.type]}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedIncident(null)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="bg-surface-container-low p-3.5 rounded-lg space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Location:</span>
+                <span className="font-semibold text-on-surface">
+                  {selectedIncident.campus_block ?? selectedIncident.location_description ?? 'Campus Quad'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Priority:</span>
+                <span className="font-semibold text-error">Priority {selectedIncident.priority}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Current Status:</span>
+                <Badge variant="info">{selectedIncident.status.toUpperCase()}</Badge>
+              </div>
+              {selectedIncident.description && (
+                <div className="pt-2 border-t border-outline-variant text-on-surface-variant text-xs">
+                  {selectedIncident.description}
+                </div>
+              )}
+            </div>
+
+            {/* Responder Assignment Section */}
+            <div className="space-y-2">
+              <label className="font-label-md text-xs font-bold text-on-surface">
+                Assign On-Duty Responder:
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={selectedResponderId}
+                  onChange={(e) => setSelectedResponderId(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-outline-variant rounded bg-surface text-on-surface text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Select a responder...</option>
+                  {responders.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} ({r.role}) • {r.status}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  onClick={handleAssignResponder}
+                  disabled={!selectedResponderId || actionLoading}
+                >
+                  Assign
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Progression Controls */}
+            <div className="space-y-2 pt-2 border-t border-outline-variant">
+              <label className="font-label-md text-xs font-bold text-on-surface">
+                Operator Status Override:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  className="text-xs"
+                  onClick={() => handleUpdateStatus('responding')}
+                  disabled={actionLoading || selectedIncident.status === 'responding'}
+                >
+                  Mark En Route
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="text-xs"
+                  onClick={() => handleUpdateStatus('arrived')}
+                  disabled={actionLoading || selectedIncident.status === 'arrived'}
+                >
+                  Mark Arrived
+                </Button>
+                <Button
+                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => handleUpdateStatus('resolved')}
+                  disabled={actionLoading || selectedIncident.status === 'resolved'}
+                >
+                  Mark Resolved
+                </Button>
+                <Button
+                  variant="danger"
+                  className="text-xs"
+                  onClick={() => handleUpdateStatus('cancelled')}
+                  disabled={actionLoading || selectedIncident.status === 'cancelled'}
+                >
+                  Cancel / False Alarm
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

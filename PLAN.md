@@ -510,7 +510,7 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 2. [x] **Step 2: Realtime Live Stream Integration on UI Views**
    - Connect `RealtimeService` inside `DashboardPage` and `IncidentsPage` to automatically append new SOS alerts, update status badges on responder progression, and show live device events without refreshing.
 
-3. [ ] **Step 3: Operator Actions & Dispatch Controls**
+3. [x] **Step 3: Operator Actions & Dispatch Controls**
    - Add "Assign Responder" dialog in the incidents table calling `assignResponder()` in Supabase.
    - Add status progression override controls (En Route / Arrived / Resolved / Cancelled) with live audit history logging.
 
