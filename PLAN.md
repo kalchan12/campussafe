@@ -499,16 +499,31 @@ Sensor → ESP32 → Backend → Event processing → Alert
 - [ ] Testing guide.
 - [ ] Demo guide.
 
-# Current Priority Queue
+# Current Priority Queue — Mobile Sprint Focus
 
-This section must always reflect the actual project state.
+This section outlines the immediate mobile tasks to complete, in order of execution:
 
-### Top 3 Immediate Next Steps
-1. **FlutterFire configure** — run `flutterfire configure` to generate `google-services.json` and `firebase_options.dart` for your Firebase project.
-2. **First ESP32 SOS station** — define MQTT/HTTP contracts and firmware architecture for physical IoT nodes.
-3. **Location-aware routing** — implement proximity responder dispatch algorithm using lat/lng calculations.
+### Mobile Sprint Plan (In Order of Execution)
+1. [ ] **Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out**
+   - Implement `ProfileNotifier` to fetch real profile from `ProfileRepository.getProfile()`.
+   - Wire `ProfilePage` to display dynamic data (name, email, role, building, emergency info).
+   - Build interactive "Edit Safety & Medical Info" sheet (blood type, allergies, conditions, ICE contact) with direct saving to Supabase.
+   - Connect Profile sign-out button to `AuthNotifier.signOut()`.
 
-### Overall Queue
+2. [ ] **Step 2: Direct Emergency Dialing & Campus Helpline Integration**
+   - Wire direct telephone dialer (`tel:911`, `tel:+1...`) for Campus Security, Health Center, and Night Safety Escort across SOS Page and Safety Guide views using `url_launcher`.
+   - Add one-tap emergency call triggers with confirmation dialogs.
+
+3. [ ] **Step 3: Responder Live Duty & Availability Synchronization**
+   - Connect the availability switch in `ResponderHomePage` to persist `is_active` / on-duty status in Supabase.
+   - Add status banner ("On Duty — Receiving Dispatch" vs "Off Duty") and auto-toggle when responder goes online.
+
+4. [ ] **Step 4: App Settings, Password Reset & Security Controls**
+   - Wire `SettingsPage` to show authenticated user email.
+   - Connect "Change / Reset Password" to `AuthNotifier.sendPasswordReset()`.
+   - Connect push notification permission status and location service toggles.
+
+### Overall Long-Term Queue
 1. [x] Project foundation.
 2. [x] Shared architecture.
 3. [x] Database/data model (migrations created, schema implemented).
@@ -519,13 +534,11 @@ This section must always reflect the actual project state.
 8. [x] Replace mock incidents/reports list pages with real Supabase data streams (connected IncidentsNotifier to watchActiveIncidents and SafetyReportsNotifier to SafetyReportRepository).
 9. [x] Anonymous reporting (connected SubmitReportPage to SafetyReportRepository).
 10. [x] Responder workflow (connected available incidents, accept/decline actions, and status progression to IncidentRepository).
-11. [ ] First ESP32 SOS station.
-12. [ ] Location-aware routing.
-13. [ ] Environmental IoT.
-14. [ ] Security/access IoT.
-15. [ ] Security hardening.
-16. [ ] Analytics.
-17. [ ] Advanced proximity features.
+11. [ ] First ESP32 SOS station firmware.
+12. [ ] Location-aware proximity auto-dispatch.
+13. [ ] Environmental IoT nodes.
+14. [ ] Security/access IoT nodes.
+15. [ ] Security hardening & production checklist.
 
 # Plan Update Rules
 
