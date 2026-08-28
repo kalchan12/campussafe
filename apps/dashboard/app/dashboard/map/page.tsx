@@ -6,7 +6,8 @@ import { TopNav } from '@/components/layout/top-nav';
 import { CampusMap } from '@/components/maps/campus-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getIncidents, getResponders, getDevices } from '@/lib/mock';
+import { fetchIncidents, fetchResponders, fetchDevices } from '@/lib/data-service';
+import { realtimeService } from '@/lib/realtime';
 import { getIncidentMarkers, getResponderMarkers } from '@/lib/maps';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident } from '@/types/incident';
@@ -26,15 +27,35 @@ export default function MapPage() {
   useEffect(() => {
     async function loadData() {
       const [incidentsData, respondersData, devicesData] = await Promise.all([
-        getIncidents(),
-        getResponders(),
-        getDevices(),
+        fetchIncidents(),
+        fetchResponders(),
+        fetchDevices(),
       ]);
       setIncidents(incidentsData);
       setResponders(respondersData);
       setDevices(devicesData);
     }
     loadData();
+
+    const unsubCreated = realtimeService.subscribe('INCIDENT_CREATED', (payload) => {
+      const newInc = payload.data as unknown as Incident;
+      setIncidents((prev) => {
+        if (prev.some((i) => i.id === newInc.id)) return prev;
+        return [newInc, ...prev];
+      });
+    });
+
+    const unsubStatus = realtimeService.subscribe('INCIDENT_STATUS_CHANGED', (payload) => {
+      const updated = payload.data as unknown as Incident;
+      setIncidents((prev) =>
+        prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i))
+      );
+    });
+
+    return () => {
+      unsubCreated();
+      unsubStatus();
+    };
   }, []);
 
   const activeIncidents = incidents.filter(
@@ -43,6 +64,16 @@ export default function MapPage() {
 
   const incidentMarkers = getIncidentMarkers(activeIncidents);
   const responderMarkers = getResponderMarkers(responders);
+  const deviceMarkers: MapMarker[] = devices
+    .filter((d) => d.latitude && d.longitude)
+    .map((d) => ({
+      id: d.id,
+      label: d.name,
+      latitude: d.latitude!,
+      longitude: d.longitude!,
+      type: 'device',
+      status: d.status,
+    }));
 
   let filteredMarkers: MapMarker[] = [];
   if (activeLayer === 'all' || activeLayer === 'incidents') {
@@ -50,6 +81,9 @@ export default function MapPage() {
   }
   if (activeLayer === 'all' || activeLayer === 'responders') {
     filteredMarkers = [...filteredMarkers, ...responderMarkers];
+  }
+  if (activeLayer === 'all' || activeLayer === 'devices') {
+    filteredMarkers = [...filteredMarkers, ...deviceMarkers];
   }
 
   const layers: { key: LayerFilter; label: string; icon: string }[] = [

@@ -514,8 +514,8 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
    - Add "Assign Responder" dialog in the incidents table calling `assignResponder()` in Supabase.
    - Add status progression override controls (En Route / Arrived / Resolved / Cancelled) with live audit history logging.
 
-4. [ ] **Step 4: Interactive Campus OpenStreetMap Web Component**
-   - Upgrade `campus-map.tsx` to an interactive OpenStreetMap component with live zoom/pan, custom SVG pins, pulsing SOS beacons, and responder coordinates.
+4. [x] **Step 4: Interactive Campus OpenStreetMap Web Component**
+   - Upgrade `campus-map.tsx` to an interactive OpenStreetMap component with Leaflet tiles, live zoom/pan, custom SVG pins, pulsing SOS beacons, and responder coordinates.
 
 ### Completed Mobile Sprint
 - [x] Step 1: Dynamic User Profile, Emergency Medical Info Editor & Sign-Out (`e12437da`)
