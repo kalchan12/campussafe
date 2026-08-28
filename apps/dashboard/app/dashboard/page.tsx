@@ -12,6 +12,7 @@ import {
   fetchDevices,
   fetchDashboardStats,
 } from '@/lib/data-service';
+import { realtimeService } from '@/lib/realtime';
 import { getIncidentMarkers, getResponderMarkers } from '@/lib/maps';
 import { useEffect, useState } from 'react';
 import { timeAgo, formatTime } from '@/lib/utils';
@@ -25,6 +26,11 @@ export default function DashboardPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [responders, setResponders] = useState<Responder[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [systemEvents, setSystemEvents] = useState([
+    { time: '10:45 AM', description: 'SOS-ENG-01 Connection Active', color: 'bg-primary' },
+    { time: '10:30 AM', description: 'Emergency Operations Center Online', color: 'bg-secondary' },
+    { time: '10:15 AM', description: 'Campus Responders on Standby', color: 'bg-emerald-500' },
+  ]);
 
   useEffect(() => {
     async function loadData() {
@@ -40,6 +46,57 @@ export default function DashboardPage() {
       setDevices(devicesData);
     }
     loadData();
+
+    // Subscribe to live Realtime events
+    const unsubCreated = realtimeService.subscribe('INCIDENT_CREATED', (payload) => {
+      const newIncident = payload.data as unknown as Incident;
+      setIncidents((prev) => {
+        if (prev.some((i) => i.id === newIncident.id)) return prev;
+        return [newIncident, ...prev];
+      });
+      setStats((prev) => (prev ? { ...prev, activeIncidents: prev.activeIncidents + 1 } : null));
+      setSystemEvents((prev) => [
+        {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          description: `LIVE SOS: ${newIncident.type?.toUpperCase() ?? 'EMERGENCY'} at ${newIncident.campus_block ?? 'Campus'}`,
+          color: 'bg-error',
+        },
+        ...prev.slice(0, 8),
+      ]);
+    });
+
+    const unsubStatus = realtimeService.subscribe('INCIDENT_STATUS_CHANGED', (payload) => {
+      const updated = payload.data as unknown as Incident;
+      setIncidents((prev) =>
+        prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i))
+      );
+      setSystemEvents((prev) => [
+        {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          description: `Incident #${updated.id?.slice(0, 8)} status changed to ${updated.status}`,
+          color: 'bg-primary',
+        },
+        ...prev.slice(0, 8),
+      ]);
+    });
+
+    const unsubDevice = realtimeService.subscribe('DEVICE_EVENT_RECEIVED', (payload) => {
+      const dev = payload.data as Record<string, unknown>;
+      setSystemEvents((prev) => [
+        {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          description: `IoT Device Event: ${String(dev.device_id ?? 'Station')} (${String(dev.event_type ?? 'Signal')})`,
+          color: 'bg-amber-600',
+        },
+        ...prev.slice(0, 8),
+      ]);
+    });
+
+    return () => {
+      unsubCreated();
+      unsubStatus();
+      unsubDevice();
+    };
   }, []);
 
   const activeIncidents = incidents.filter(
@@ -56,13 +113,6 @@ export default function DashboardPage() {
   const availableResponders = responders.filter((r) => r.status === 'available').length;
   const busyResponders = responders.filter((r) => ['assigned', 'arrived'].includes(r.status)).length;
   const respondingResponders = responders.filter((r) => r.status === 'responding').length;
-
-  // Mock system events
-  const systemEvents = [
-    { time: '10:45 AM', description: 'SOS-ENG-01 Connection Restored', color: 'bg-primary' },
-    { time: '10:30 AM', description: 'Incident INC-1040 Resolved', color: 'bg-secondary' },
-    { time: '10:15 AM', description: 'New responder came online', color: 'bg-emerald-500' },
-  ];
 
   return (
     <div className="flex min-h-screen bg-background">

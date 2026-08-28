@@ -6,6 +6,7 @@ import { TopNav } from '@/components/layout/top-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { fetchIncidents } from '@/lib/data-service';
+import { realtimeService } from '@/lib/realtime';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident, IncidentFilter } from '@/types/incident';
 import { formatTime } from '@/lib/utils';
@@ -30,6 +31,26 @@ export default function IncidentsPage() {
       setCurrentPage(1);
     }
     load();
+
+    const unsubCreated = realtimeService.subscribe('INCIDENT_CREATED', (payload) => {
+      const newInc = payload.data as unknown as Incident;
+      setIncidents((prev) => {
+        if (prev.some((i) => i.id === newInc.id)) return prev;
+        return [newInc, ...prev];
+      });
+    });
+
+    const unsubStatus = realtimeService.subscribe('INCIDENT_STATUS_CHANGED', (payload) => {
+      const updated = payload.data as unknown as Incident;
+      setIncidents((prev) =>
+        prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i))
+      );
+    });
+
+    return () => {
+      unsubCreated();
+      unsubStatus();
+    };
   }, [filter, search]);
 
   const totalPages = Math.ceil(incidents.length / itemsPerPage);
