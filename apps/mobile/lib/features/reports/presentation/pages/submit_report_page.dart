@@ -29,23 +29,18 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      final newReport = SafetyReport(
-        id: 'REP-${(1000 + DateTime.now().millisecond * 7)}',
-        reporterId: _isAnonymous ? null : 'usr_me',
+      await ref.read(userSafetyReportsListProvider.notifier).submitReport(
         isAnonymous: _isAnonymous,
         type: _selectedType,
-        status: ReportStatus.submitted,
         description: _descriptionController.text.trim(),
         locationDescription: _locationController.text.trim().isNotEmpty
             ? _locationController.text.trim()
             : 'Campus Area',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
       );
 
-      ref.read(userSafetyReportsListProvider.notifier).addReport(newReport);
+      if (!mounted) return;
       ref.read(alertsTabSegmentProvider.notifier).state = AlertsTabMode.myReports;
 
       showDialog(

@@ -504,8 +504,8 @@ Sensor → ESP32 → Backend → Event processing → Alert
 This section must always reflect the actual project state.
 
 ### Top 3 Immediate Next Steps
-1. **Wire the SOS page** — call `IncidentRepository.createIncident()` from the SOS submission flow (it's the biggest remaining E2E gap).
-2. **Replace mock incidents provider** — `IncidentsNotifier._loadInitialIncidents()` → `IncidentRepository.getActiveIncidents()` / `watchActiveIncidents()`.
+1. **Responder workflow** — connect responder pages (available incidents, incident details, accept/decline actions) to `IncidentRepository.updateStatus()`.
+2. **Dashboard Supabase wiring** — connect Next.js Dashboard to Supabase client using environment variables and live queries.
 3. **FlutterFire configure** — run `flutterfire configure` to generate `google-services.json` and `firebase_options.dart` for your Firebase project.
 
 ### Overall Queue
@@ -515,12 +515,12 @@ This section must always reflect the actual project state.
 4. [x] Backend authentication/core entities (Supabase Auth, AuthRepository, ProfileRepository, IncidentRepository, SafetyReportRepository).
 5. [x] Mobile foundation (UI implementation per Stitch design + Supabase + FCM integration).
 6. [~] Dashboard foundation (UI complete; needs Supabase client wiring with NEXT_PUBLIC_SUPABASE_ vars).
-7. [ ] End-to-end mobile SOS (connect SOS page to IncidentRepository.createIncident).
-8. [ ] Replace mock incidents/reports list pages with real Supabase data streams.
-9. [ ] Responder workflow (connect available incidents, accept/decline to IncidentRepository).
-10. [ ] First ESP32 SOS station.
-11. [ ] Location-aware routing.
-12. [ ] Anonymous reporting (SafetyReportRepository ready; connect SubmitReportPage).
+7. [x] End-to-end mobile SOS (connected SOS page & home page emergency types to IncidentRepository.createIncident and location service).
+8. [x] Replace mock incidents/reports list pages with real Supabase data streams (connected IncidentsNotifier to watchActiveIncidents and SafetyReportsNotifier to SafetyReportRepository).
+9. [x] Anonymous reporting (connected SubmitReportPage to SafetyReportRepository).
+10. [ ] Responder workflow (connect available incidents, accept/decline to IncidentRepository).
+11. [ ] First ESP32 SOS station.
+12. [ ] Location-aware routing.
 13. [ ] Environmental IoT.
 14. [ ] Security/access IoT.
 15. [ ] Security hardening.

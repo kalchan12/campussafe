@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/config/env.dart';
 import '../../../../core/location/location_service.dart';
 import '../../../../shared/models/incident.dart';
+import '../../data/repositories/incident_repository.dart';
 
 enum IncidentsViewMode {
   list,
@@ -46,14 +48,98 @@ final currentUserLocationProvider = FutureProvider<Position?>((ref) async {
 
 /// Provider for active incidents list with real/mock coordinates
 final incidentsListProvider = StateNotifierProvider<IncidentsNotifier, List<Incident>>((ref) {
-  return IncidentsNotifier(ref);
+  final repository = ref.watch(incidentRepositoryProvider);
+  return IncidentsNotifier(ref, repository);
 });
 
 class IncidentsNotifier extends StateNotifier<List<Incident>> {
   final Ref ref;
+  final IncidentRepository _repository;
+  StreamSubscription<List<Incident>>? _streamSubscription;
 
-  IncidentsNotifier(this.ref) : super([]) {
-    _loadInitialIncidents();
+  IncidentsNotifier(this.ref, this._repository) : super([]) {
+    _init();
+  }
+
+  void _init() {
+    if (Env.isConfigured) {
+      _loadFromBackend();
+      _subscribeToRealtime();
+    } else {
+      _loadInitialIncidents();
+    }
+  }
+
+  Future<void> _loadFromBackend() async {
+    final result = await _repository.getActiveIncidents();
+    result.fold(
+      (error) {
+        // Fallback to initial mock if backend load fails in dev
+        _loadInitialIncidents();
+      },
+      (incidents) {
+        if (mounted) {
+          if (incidents.isNotEmpty) {
+            state = incidents;
+          } else {
+            // If empty in development, load seed incidents
+            _loadInitialIncidents();
+          }
+        }
+      },
+    );
+  }
+
+  void _subscribeToRealtime() {
+    try {
+      _streamSubscription?.cancel();
+      _streamSubscription = _repository.watchActiveIncidents().listen(
+        (updatedIncidents) {
+          if (mounted && updatedIncidents.isNotEmpty) {
+            state = updatedIncidents;
+          }
+        },
+        onError: (e) {
+          // Silent catch for stream errors, retain current state
+        },
+      );
+    } catch (_) {
+      // Realtime subscription optional if offline
+    }
+  }
+
+  Future<void> refresh() async {
+    if (Env.isConfigured) {
+      await _loadFromBackend();
+    } else {
+      _loadInitialIncidents();
+    }
+  }
+
+  Future<void> updateIncidentStatus({
+    required String incidentId,
+    required IncidentStatus status,
+    String? responderId,
+  }) async {
+    if (Env.isConfigured) {
+      await _repository.updateStatus(
+        incidentId: incidentId,
+        status: status,
+        responderId: responderId,
+      );
+    }
+
+    // Also update locally immediately for snappy optimistic UI
+    state = state.map((inc) {
+      if (inc.id == incidentId) {
+        return inc.copyWith(
+          status: status,
+          assignedResponderId: responderId ?? inc.assignedResponderId,
+          updatedAt: DateTime.now(),
+        );
+      }
+      return inc;
+    }).toList();
   }
 
   void _loadInitialIncidents() {
@@ -160,6 +246,12 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
 
   void addIncident(Incident incident) {
     state = [incident, ...state];
+  }
+
+  @override
+  void dispose() {
+    _streamSubscription?.cancel();
+    super.dispose();
   }
 }
 

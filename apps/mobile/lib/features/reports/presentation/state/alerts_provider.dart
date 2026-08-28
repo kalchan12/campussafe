@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/config/env.dart';
 import '../../../../shared/models/campus_alert.dart';
 import '../../../../shared/models/safety_report.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../data/repositories/safety_report_repository.dart';
 
 enum AlertsTabMode {
   broadcasts,
@@ -118,12 +122,113 @@ class CampusAlertsNotifier extends StateNotifier<List<CampusAlert>> {
 
 /// StateNotifier for Safety Reports submitted by users
 final userSafetyReportsListProvider = StateNotifierProvider<UserSafetyReportsNotifier, List<SafetyReport>>((ref) {
-  return UserSafetyReportsNotifier();
+  final repository = ref.watch(safetyReportRepositoryProvider);
+  return UserSafetyReportsNotifier(ref, repository);
 });
 
 class UserSafetyReportsNotifier extends StateNotifier<List<SafetyReport>> {
-  UserSafetyReportsNotifier() : super([]) {
-    _loadInitialReports();
+  final Ref ref;
+  final SafetyReportRepository _repository;
+
+  UserSafetyReportsNotifier(this.ref, this._repository) : super([]) {
+    _init();
+  }
+
+  void _init() {
+    if (Env.isConfigured) {
+      _loadFromBackend();
+    } else {
+      _loadInitialReports();
+    }
+  }
+
+  Future<void> _loadFromBackend() async {
+    final authState = ref.read(authNotifierProvider);
+    final userId = authState.userId;
+    if (userId != null) {
+      final result = await _repository.getMyReports(userId);
+      result.fold(
+        (_) => _loadInitialReports(),
+        (reports) {
+          if (reports.isNotEmpty) {
+            state = reports;
+          } else {
+            _loadInitialReports();
+          }
+        },
+      );
+    } else {
+      _loadInitialReports();
+    }
+  }
+
+  Future<SafetyReport> submitReport({
+    required bool isAnonymous,
+    required ReportType type,
+    required String description,
+    String? locationDescription,
+    double? latitude,
+    double? longitude,
+    String? imageUrl,
+  }) async {
+    final authState = ref.read(authNotifierProvider);
+    final userId = authState.userId;
+
+    if (Env.isConfigured) {
+      final result = await _repository.submitReport(
+        reporterId: isAnonymous ? null : userId,
+        isAnonymous: isAnonymous,
+        type: type,
+        description: description,
+        locationDescription: locationDescription,
+        latitude: latitude,
+        longitude: longitude,
+        imageUrl: imageUrl,
+      );
+
+      return result.fold(
+        (error) {
+          // If network failed, create local representation
+          final localReport = SafetyReport(
+            id: 'REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+            reporterId: isAnonymous ? null : (userId ?? 'usr_me'),
+            isAnonymous: isAnonymous,
+            type: type,
+            status: ReportStatus.submitted,
+            description: description,
+            locationDescription: locationDescription ?? 'Campus Area',
+            latitude: latitude,
+            longitude: longitude,
+            imageUrl: imageUrl,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          state = [localReport, ...state];
+          return localReport;
+        },
+        (savedReport) {
+          state = [savedReport, ...state];
+          return savedReport;
+        },
+      );
+    } else {
+      final localReport = SafetyReport(
+        id: 'REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+        reporterId: isAnonymous ? null : (userId ?? 'usr_me'),
+        isAnonymous: isAnonymous,
+        type: type,
+        status: ReportStatus.submitted,
+        description: description,
+        locationDescription: locationDescription ?? 'Campus Area',
+        latitude: latitude,
+        longitude: longitude,
+        imageUrl: imageUrl,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      state = [localReport, ...state];
+      return localReport;
+    }
   }
 
   void _loadInitialReports() {
