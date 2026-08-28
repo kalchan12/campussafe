@@ -518,10 +518,11 @@ This section outlines the immediate mobile tasks to complete, in order of execut
    - Connect the availability switch in `ResponderHomePage` to persist `is_active` / on-duty status in Supabase.
    - Add status banner ("On Duty — Receiving Dispatch" vs "Off Duty") and auto-toggle when responder goes online.
 
-4. [ ] **Step 4: App Settings, Password Reset & Security Controls**
-   - Wire `SettingsPage` to show authenticated user email.
-   - Connect "Change / Reset Password" to `AuthNotifier.sendPasswordReset()`.
-   - Connect push notification permission status and location service toggles.
+4. [x] **Step 4: App Settings, Password Reset & Security Controls**
+   - Wire `SettingsPage` to show authenticated user email and role.
+   - Connect "Reset Password" to `AuthNotifier.sendPasswordReset()`.
+   - Connect push notification and location service toggle preferences.
+   - Wire Terms of Service, Privacy Policy, and Sign Out dialogs.
 
 ### Overall Long-Term Queue
 1. [x] Project foundation.
