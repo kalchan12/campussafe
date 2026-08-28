@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/env.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/input_fields.dart';
+import '../state/auth_notifier.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -27,9 +29,32 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    // Dev Mode: Allow logging in without requiring email or password until backend auth is connected
-    context.go('/home');
+  void _handleLogin() async {
+    // Dev bypass: if Supabase is not configured, skip auth
+    if (!Env.isConfigured) {
+      context.go('/home');
+      return;
+    }
+    if (!_formKey.currentState!.validate()) return;
+
+    final notifier = ref.read(authNotifierProvider.notifier);
+    await notifier.signIn(
+      email: _identifierController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+    final authState = ref.read(authNotifierProvider);
+    if (authState.isAuthenticated) {
+      context.go('/home');
+    } else if (authState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.error!),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -125,9 +150,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: AppSpacing.xs),
 
                     // Sign In Action
-                    PrimaryButton(
-                      label: 'Sign In',
-                      onPressed: _handleLogin,
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final isLoading =
+                            ref.watch(authNotifierProvider).isLoading;
+                        return PrimaryButton(
+                          label: isLoading ? 'Signing in…' : 'Sign In',
+                          onPressed: isLoading ? null : _handleLogin,
+                        );
+                      },
                     ),
                     const SizedBox(height: 2),
 

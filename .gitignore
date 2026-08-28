@@ -22,6 +22,18 @@ pubspec.lock
 .env.test.local
 .env.production.local
 
+# Firebase — contains real project identifiers, do not commit
+# (google-services.json and GoogleService-Info.plist are added per-platform
+#  from your own Firebase project; they are safe to commit if they contain no secrets,
+#  but keeping them gitignored is the safer default for a team project)
+apps/mobile/android/app/google-services.json
+apps/mobile/ios/Runner/GoogleService-Info.plist
+
+# Service account / secret credentials
+*.serviceaccount.json
+service-account-*.json
+*-service-account.json
+
 # IDE
 .idea/
 .vscode/

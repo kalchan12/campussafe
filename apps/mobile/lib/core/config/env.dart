@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class Env {
   Env._();
 
@@ -12,10 +14,22 @@ class Env {
   );
 
   static Future<void> init() async {
-    // Initialize environment variables
-    // In production, these should come from --dart-define or secure storage
+    if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
+        realtimeClientOptions: const RealtimeClientOptions(
+          logLevel: RealtimeLogLevel.info,
+        ),
+      );
+    }
+    // If not configured, the app will run in mock/offline mode.
+    // Repositories will guard against unconfigured Supabase clients.
   }
 
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
+  /// Convenience accessor — throws if Supabase is not initialized.
+  static SupabaseClient get supabase => Supabase.instance.client;
 }

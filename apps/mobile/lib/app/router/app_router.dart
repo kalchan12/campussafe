@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/registration_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
+import '../../features/auth/presentation/state/auth_notifier.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/sos/presentation/pages/sos_page.dart';
 import '../../features/sos/presentation/pages/active_emergency_page.dart';
@@ -21,10 +22,35 @@ import '../../shared/widgets/splash_screen.dart';
 import '../../shared/widgets/guest_mode_wrapper.dart';
 import '../../shared/widgets/navigation.dart';
 
+/// Routes accessible without authentication
+const _publicRoutes = ['/', '/login', '/register', '/forgot-password', '/guest', '/sos'];
+
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Rebuild the router when auth state changes
+  final authState = ref.watch(authNotifierProvider);
+
   return GoRouter(
     initialLocation: '/',
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: false,
+    redirect: (context, routerState) {
+      final path = routerState.uri.path;
+      final isPublic = _publicRoutes.any((r) => path.startsWith(r));
+      final isAuthenticated = authState.isAuthenticated;
+      final isGuest = authState.isGuest;
+
+      // Splash always loads
+      if (path == '/') return null;
+
+      // Not authenticated and not guest trying to access a protected route
+      if (!isAuthenticated && !isGuest && !isPublic) return '/login';
+
+      // Already authenticated trying to reach login/register — send home
+      if (isAuthenticated && (path == '/login' || path == '/register')) {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',

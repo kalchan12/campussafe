@@ -1,253 +1,179 @@
-# CampusSafe
+# CampusSafe — Campus Safety & Emergency Response System
 
-## Campus Safety & Emergency Response System
+CampusSafe is a campus-wide emergency communication, incident coordination, and safety monitoring platform connecting students, staff, responders, university operators, and IoT devices.
 
-CampusSafe is a campus-wide emergency communication, incident coordination, and safety monitoring platform connecting students, staff, responders, university operators, and ESP32-based IoT devices.
+## Architecture
 
-> **Get the right help to the right place as quickly as possible.**
-
-## What It Does
-
-A user can send an SOS from the mobile app. The system can use location, emergency type, responder role, availability, and proximity to identify appropriate help.
-
-Authorized operators monitor incidents through a real-time web dashboard.
-
-Physical ESP32 devices can generate safety events or provide dedicated SOS controls.
-
-## Three Main Components
-
-### Mobile Application
-**Flutter / Dart**
-
-- Login and registration.
-- User roles and profiles.
-- SOS.
-- GPS/location.
-- Active incident tracking.
-- Notifications.
-- Incident history.
-- Anonymous safety reporting.
-- Responder workflows.
-
-### Emergency Operations Dashboard
-**Next.js / React / TypeScript**
-
-- Live incidents.
-- Campus map.
-- Responder management.
-- Device monitoring.
-- Notifications.
-- User management.
-- Reports and analytics.
-- Audit logs.
-- Settings.
-
-### IoT / Hardware
-**ESP32 / C/C++**
-
-Possible prototype devices:
-- SOS station.
-- Environmental sensor node.
-- Security/access node.
-- Optional warning node.
-
-## Core Architecture
-
-```text
+```
                          CAMPUSSAFE
-                             |
-             +---------------+---------------+
-             |               |               |
-             v               v               v
-        Mobile App      Web Dashboard     IoT Devices
-             |               |               |
-             +---------------+---------------+
-                             |
-                             v
-                       Supabase Backend
-                             |
-              +--------------+--------------+
-              |              |              |
-              v              v              v
-          PostgreSQL     Realtime       Storage/Auth
-              |
-              v
-        Incident / User /
-        Responder / Device /
-        Audit Data
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+   Flutter Mobile       Web Dashboard          ESP32 Nodes
+        │                     │                     │
+        └─────────────────────┼─────────────────────┘
+                              │
+                              ▼
+                         SUPABASE
+                              │
+              ┌───────────────┼────────────────┐
+              │               │                │
+              ▼               ▼                ▼
+          PostgreSQL         Auth            Realtime
+              │
+              ▼
+       Notification Logic
+              │
+              ▼
+             FCM (Firebase Cloud Messaging)
+              │
+    ┌─────────┼─────────┐
+    ▼         ▼         ▼
+ Doctor    Security  Relevant
+ Device    Device    Responders
 ```
 
-## Emergency Example
+**Supabase** is the backend and single source of truth.  
+**FCM** is the push notification delivery mechanism only.
 
-```text
-Student
-   ↓
-Press SOS
-   ↓
-Mobile captures location
-   ↓
-Backend creates incident
-   ↓
-Relevant responder selected
-   ↓
-Responder receives alert
-   ↓
-Responder accepts
-   ↓
-Dashboard updates
-   ↓
-Response tracked
-   ↓
-Incident resolved
-```
-
-## Hardware Example
-
-```text
-Physical Button
-      ↓
-    ESP32
-      ↓
-     Wi-Fi
-      ↓
-  Backend/API
-      ↓
-Incident Processing
-      ↓
-Dashboard + Mobile + Responders
-```
+---
 
 ## Technology Stack
 
-| Area | Technology |
+| Layer | Technology |
 |---|---|
 | Mobile | Flutter / Dart |
-| Web | Next.js / React / TypeScript |
-| UI | Tailwind CSS or selected UI system |
+| Web Dashboard | Next.js / React / TypeScript |
 | Backend | Supabase |
-| Database | PostgreSQL |
-| Auth | Supabase Auth |
+| Database | PostgreSQL (via Supabase) |
+| Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
-| Storage | Supabase Storage where required |
-| IoT | ESP32 |
-| Firmware | C/C++ |
-| Networking | Wi-Fi / HTTPS |
-| Location | Mobile GPS/location services |
-| Version Control | Git / GitHub |
+| Push Notifications | Firebase Cloud Messaging (FCM) |
+| IoT | ESP32 / C++ |
+| Location | Mobile GPS (geolocator) |
 
-## Security
-
-CampusSafe handles identity, contact details, roles, location, emergency information, responder information, device credentials, and administrative actions.
-
-Security concerns include:
-- Authentication.
-- Authorization.
-- RBAC.
-- Least privilege.
-- HTTPS/TLS.
-- Input validation.
-- Secure credential handling.
-- Audit logging.
-- Privacy-aware location handling.
-- Device authentication where implemented.
-
-Never commit secrets or `.env` files. Use `.env.example`.
-
-## HCI
-
-Emergency interfaces prioritize:
-- Clear hierarchy.
-- Large touch targets.
-- Immediate feedback.
-- Error prevention.
-- Accessibility.
-- Predictable navigation.
-- Minimal cognitive load.
-- Visibility of system status.
+---
 
 ## Repository Structure
 
-```text
+```
 campussafe/
 ├── apps/
-│   ├── mobile/
-│   └── dashboard/
+│   ├── mobile/          # Flutter mobile application
+│   └── dashboard/       # Next.js web dashboard
 ├── backend/
-├── iot/
-│   ├── sos-station/
-│   ├── environmental-node/
-│   └── security-node/
-├── packages/
-│   └── shared/
-├── docs/
+│   ├── migrations/      # Supabase PostgreSQL migrations (apply in order)
+│   ├── functions/       # Supabase Edge Functions
+│   │   └── send-notification/   # Server-side FCM delivery
+│   └── seed/            # Development seed data
+├── iot/                 # ESP32 firmware (future)
+├── packages/shared/     # Shared types and contracts
+├── docs/                # Architecture docs and ADRs
+├── .env.example         # Environment variable template
 ├── PROJECT.md
+├── ARCHITECTURE.md
 ├── AGENTS.md
 ├── PLAN.md
 └── README.md
 ```
 
-The exact structure may evolve. `PLAN.md` is the source of truth for development priorities.
+---
 
-## Development Order
+## Quick Start
 
-```text
-Foundation
-   ↓
-Architecture/Data Model
-   ↓
-Backend
-   ↓
-Mobile + Dashboard
-   ↓
-End-to-End SOS
-   ↓
-Responder Workflow
-   ↓
-Realtime
-   ↓
-IoT
-   ↓
-Security Hardening
-   ↓
-Testing
-   ↓
-Final Demo
+### Prerequisites
+
+- Flutter 3.x (see `apps/mobile/pubspec.yaml` for version constraints)
+- Node.js 18+ (for dashboard)
+- [Supabase CLI](https://supabase.com/docs/guides/cli) (for local dev / migrations)
+- [FlutterFire CLI](https://firebase.flutter.dev/docs/cli/) (for Firebase setup)
+
+### 1. Clone and configure environment
+
+```bash
+cp .env.example .env
+# Fill in SUPABASE_URL, SUPABASE_ANON_KEY, etc.
 ```
 
-Do not prioritize advanced features over a reliable core emergency workflow.
+### 2. Apply database migrations
 
-## Project Boundary
+Using the Supabase CLI (with your project linked):
 
-CampusSafe is a university engineering prototype. It does not replace emergency services, guarantee response times, provide certified life-safety detection, or expose private location information to unauthorized users.
-
-## Documentation
-
-- `PROJECT.md` — project definition, goals, architecture, boundaries, users, and technology.
-- `AGENTS.md` — human/AI development and collaboration rules.
-- `PLAN.md` — living master development plan and current priorities.
-
-## Definition of Success
-
-```text
-PERSON OR DEVICE
-       ↓
-EVENT DETECTED
-       ↓
-INCIDENT CREATED
-       ↓
-LOCATION IDENTIFIED
-       ↓
-RESPONDER SELECTED
-       ↓
-RESPONDER NOTIFIED
-       ↓
-RESPONSE TRACKED
-       ↓
-OPERATOR MONITORS
-       ↓
-INCIDENT RESOLVED
-       ↓
-HISTORY + AUDIT
+```bash
+supabase db push
+# or apply each file manually in order:
+# backend/migrations/20260828000001_initial_schema.sql
+# backend/migrations/20260828000002_rls_policies.sql
+# backend/migrations/20260828000003_seed_data.sql  (dev only)
 ```
 
-CampusSafe's main strength is the integration of **mobile, web, backend, location services, cybersecurity, and physical IoT devices into one coherent emergency-response system.**
+### 3. Configure Firebase (FCM)
+
+Follow the [FlutterFire setup guide](https://firebase.flutter.dev/docs/overview):
+
+```bash
+# Install FlutterFire CLI
+dart pub global activate flutterfire_cli
+
+# Configure (from apps/mobile/)
+flutterfire configure
+```
+
+This generates:
+- `apps/mobile/android/app/google-services.json`
+- `apps/mobile/ios/Runner/GoogleService-Info.plist`
+- `apps/mobile/lib/firebase_options.dart`
+
+> These files are gitignored. Each developer/CI environment must generate their own.
+
+### 4. Run the mobile app
+
+```bash
+cd apps/mobile
+flutter pub get
+flutter run \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=your-anon-key
+```
+
+> **Dev mode:** If `SUPABASE_URL` is omitted, the app runs with mock data — existing UI works exactly as before.
+
+### 5. Run the web dashboard
+
+```bash
+cd apps/dashboard
+cp ../../.env.example .env.local
+# Edit .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+npm install
+npm run dev
+```
+
+### 6. Deploy Edge Functions
+
+```bash
+supabase functions deploy send-notification
+# Set secrets in Supabase dashboard — NEVER commit them:
+supabase secrets set FCM_SERVER_KEY=... FCM_PROJECT_ID=...
+```
+
+---
+
+## Security
+
+- All database access is enforced by Row Level Security (RLS).
+- FCM server credentials live **only** in Supabase Edge Function secrets.
+- The Flutter app uses the Supabase **anon** key only (safe to expose; RLS enforces boundaries).
+- Never commit `.env`, `google-services.json`, `GoogleService-Info.plist`, or service account keys.
+
+---
+
+## Development Conventions
+
+See [AGENTS.md](AGENTS.md) for full coding rules.
+
+Key rules:
+- Database changes require a migration file in `backend/migrations/`.
+- UI widgets must not directly contain backend queries — use repositories.
+- FCM server credentials must never appear in Flutter code.
+- Supabase service-role key must never appear in Flutter code.

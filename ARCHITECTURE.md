@@ -639,27 +639,79 @@ Event names are shared contracts and must be changed carefully.
 
 # 13. Notification Architecture
 
-Conceptual flow:
+## Two separate mechanisms
 
 ```text
-Incident
-   ↓
-Backend determines eligible recipient
-   ↓
-Notification generated
-   ↓
-Mobile responder receives notification
-   ↓
-Responder opens incident
-   ↓
-Status update
-   ↓
-Realtime dashboard update
+                        Incident
+                           │
+              ┌────────────┴─────────────┐
+              │                          │
+              ▼                          ▼
+       Supabase Realtime               FCM
+              │                          │
+              ▼                          ▼
+     Dashboard live update       Responder phone
+     Mobile incident update      (push notification)
 ```
 
-Notification delivery must not be treated as proof that the responder actually received or accepted the incident.
+### Supabase Realtime
+Used for live application state updates while the app is open:
+- Dashboard receives incident changes without polling.
+- Mobile app receives incident status updates for the active incident.
+- Implemented via `IncidentRepository.watchActiveIncidents()` and `watchIncident()`.
 
----
+### Firebase Cloud Messaging (FCM)
+Used to wake up a device that is not currently in the foreground:
+- Sends push notifications to responders when a new incident is created.
+- Handled server-side ONLY via the `send-notification` Supabase Edge Function.
+- Flutter client registers its token; the server reads the token and sends via FCM.
+
+## Notification flow
+
+```text
+Incident Created
+      ↓
+Supabase (IncidentRepository.createIncident)
+      ↓
+invoke Edge Function: send-notification
+      ↓
+Edge Function reads notification_tokens for eligible responders
+      ↓
+Edge Function sends via FCM HTTP API (using server-side FCM_SERVER_KEY)
+      ↓
+FCM delivers push to responder device
+      ↓
+Responder taps notification
+      ↓
+Mobile app navigates to incident detail
+```
+
+## Security
+
+- `FCM_SERVER_KEY` and `SUPABASE_SERVICE_ROLE_KEY` live **only** in Supabase Edge Function secrets.
+- Flutter uses `supabase_flutter` with the **anon** key only.
+- `firebase_messaging` on Flutter handles device-side token management and incoming notifications.
+- The `NotificationTokenService` stores FCM tokens in the `notification_tokens` table.
+- RLS ensures users can only read/write their own tokens.
+
+## FCM token lifecycle
+
+```text
+App starts
+  ↓
+NotificationService.initialize(userId)
+  ↓
+FCM.getToken() → token
+  ↓
+NotificationTokenService.registerToken(userId, token, platform)
+  ↓
+Stored in notification_tokens table (UNIQUE on user_id + token)
+
+Token refresh → onTokenRefresh → re-register
+
+Sign out → NotificationTokenService.deactivateTokens(userId, token)
+```
+
 
 # 14. Security Architecture
 

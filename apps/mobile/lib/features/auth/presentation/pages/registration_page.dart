@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/env.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/input_fields.dart';
+import '../state/auth_notifier.dart';
 
 class RegistrationPage extends ConsumerStatefulWidget {
   const RegistrationPage({super.key});
@@ -46,7 +48,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     super.dispose();
   }
 
-  void _handleNext() {
+  void _handleNext() async {
     if (_currentStep < _totalSteps - 1) {
       if (_validateCurrentStep()) {
         setState(() {
@@ -54,9 +56,39 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         });
       }
     } else {
-      if (_formKey.currentState!.validate()) {
-        // TODO: Implement registration submission logic
+      if (!_formKey.currentState!.validate()) return;
+
+      // Dev bypass: if Supabase is not configured skip auth
+      if (!Env.isConfigured) {
         context.go('/home');
+        return;
+      }
+
+      final notifier = ref.read(authNotifierProvider.notifier);
+      await notifier.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        fullName: _fullNameController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        role: _selectedRole,
+        campusBlock: _buildingController.text.trim().isEmpty
+            ? null
+            : _buildingController.text.trim(),
+      );
+
+      if (!mounted) return;
+      final authState = ref.read(authNotifierProvider);
+      if (authState.isAuthenticated) {
+        context.go('/home');
+      } else if (authState.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }

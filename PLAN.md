@@ -114,23 +114,23 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 
 # Phase 2 — Backend Foundation
 
-- [ ] Supabase environment.
-- [ ] PostgreSQL.
-- [ ] Authentication.
-- [ ] Initial migrations.
-- [ ] User profiles.
-- [ ] Roles.
-- [ ] Responders.
-- [ ] Campus locations.
-- [ ] Incidents.
-- [ ] Devices.
-- [ ] Safety reports.
-- [ ] Audit events.
-- [ ] Row Level Security.
-- [ ] Realtime.
-- [ ] Backend services.
-- [ ] Error strategy.
-- [ ] Seed/test data.
+- [x] Supabase environment (supabase_flutter package integrated, Env.init() with Supabase.initialize()).
+- [x] PostgreSQL (schema migration 20260828000001_initial_schema.sql).
+- [x] Authentication (Supabase Auth — signIn, signUp, signOut, password reset, session restore).
+- [x] Initial migrations (backend/migrations/ — 3 files: schema, RLS, seed).
+- [x] User profiles (profiles table, profile auto-create trigger, ProfileRepository).
+- [x] Roles (role column in profiles: student, medical_responder, security_responder, operator, administrator, staff).
+- [x] Responders (represented via role on profiles; responder-specific queries in IncidentRepository).
+- [x] Campus locations (campus_blocks table with seed data for 8 blocks).
+- [x] Incidents (incidents table, IncidentRepository with create/read/update/stream).
+- [x] Devices (devices table ready for IoT integration).
+- [x] Safety reports (safety_reports table, SafetyReportRepository).
+- [x] Audit events (incident_status_history table with auto-trigger).
+- [x] Row Level Security (RLS migration 20260828000002_rls_policies.sql — all tables secured).
+- [x] Realtime (Supabase Realtime enabled on incidents, history, reports, devices, device_events tables; watchActiveIncidents/watchIncident streams in IncidentRepository).
+- [x] Backend services (AuthRepository, ProfileRepository, IncidentRepository, SafetyReportRepository, NotificationTokenService).
+- [x] Error strategy (all repositories return Result<T> with Left/Right; UI receives understandable errors).
+- [x] Seed/test data (campus_blocks and devices seeded in migration 3).
 
 **Milestone:** Backend can safely create and retrieve a complete incident.
 
@@ -138,14 +138,14 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 
 ## Foundation
 - [x] Welcome/splash (Animated splash screen with router transition).
-- [x] Login (Dev bypass, toggle password visibility, improved vertical spacing).
-- [x] Registration (4-step onboarding, dedicated full-width input rows, form validation).
+- [x] Login (Supabase Auth connected — real signIn with dev bypass; loading state; error snackbar).
+- [x] Registration (Supabase Auth connected — real signUp with 4-step onboarding; dev bypass).
 - [x] Role selection.
-- [x] Profile (Compact safety header, medical emergency card, campus identity details, overflow-resilient layout, accessible bottom scroll padding).
+- [x] Profile (UI implemented; ProfileRepository ready for backend connection).
 - [ ] Permissions.
 - [x] Location permissions & GPS capture (Geolocator position stream and live permission checks).
-- [ ] Notifications.
-- [x] Navigation (AppBottomNavBar with Material 3 pill indicators, overflow prevention, and high contrast styling).
+- [x] Notifications (FCM initialized in main.dart; NotificationService with foreground/background/tap handling; token stored in Supabase notification_tokens; flutter_local_notifications for foreground display).
+- [x] Navigation (AppBottomNavBar; auth-aware GoRouter redirect added).
 - [ ] Loading/error/empty states.
 
 ## User Features
@@ -503,18 +503,24 @@ Sensor → ESP32 → Backend → Event processing → Alert
 
 This section must always reflect the actual project state.
 
+### Top 3 Immediate Next Steps
+1. **Wire the SOS page** — call `IncidentRepository.createIncident()` from the SOS submission flow (it's the biggest remaining E2E gap).
+2. **Replace mock incidents provider** — `IncidentsNotifier._loadInitialIncidents()` → `IncidentRepository.getActiveIncidents()` / `watchActiveIncidents()`.
+3. **FlutterFire configure** — run `flutterfire configure` to generate `google-services.json` and `firebase_options.dart` for your Firebase project.
+
+### Overall Queue
 1. [x] Project foundation.
-2. [ ] Shared architecture.
-3. [ ] Database/data model.
-4. [ ] Backend authentication/core entities.
-5. [x] Mobile foundation (UI implementation per Stitch design).
-6. [ ] Dashboard foundation.
-7. [ ] End-to-end mobile SOS (UI complete, backend integration pending).
-8. [ ] Responder workflow.
-9. [ ] Realtime.
+2. [x] Shared architecture.
+3. [x] Database/data model (migrations created, schema implemented).
+4. [x] Backend authentication/core entities (Supabase Auth, AuthRepository, ProfileRepository, IncidentRepository, SafetyReportRepository).
+5. [x] Mobile foundation (UI implementation per Stitch design + Supabase + FCM integration).
+6. [~] Dashboard foundation (UI complete; needs Supabase client wiring with NEXT_PUBLIC_SUPABASE_ vars).
+7. [ ] End-to-end mobile SOS (connect SOS page to IncidentRepository.createIncident).
+8. [ ] Replace mock incidents/reports list pages with real Supabase data streams.
+9. [ ] Responder workflow (connect available incidents, accept/decline to IncidentRepository).
 10. [ ] First ESP32 SOS station.
 11. [ ] Location-aware routing.
-12. [ ] Anonymous reporting.
+12. [ ] Anonymous reporting (SafetyReportRepository ready; connect SubmitReportPage).
 13. [ ] Environmental IoT.
 14. [ ] Security/access IoT.
 15. [ ] Security hardening.
