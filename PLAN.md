@@ -536,7 +536,7 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 ### Architecture Hardening Sprint (Current)
 1. [ ] **Phase 1: Dashboard Security Hardening:** Implement Next.js `middleware.ts` to protect `/dashboard/*` routes and redirect unauthenticated users to `/login`.
 2. [ ] **Phase 2: Proximity Dispatch Engine:** Enable PostGIS in Supabase, update `latitude`/`longitude` to `GEOGRAPHY(Point)`, and write an edge function/trigger (`handle_new_incident`) to automatically assign the closest responder via Haversine distance.
-3. [ ] **Phase 3: Mobile Offline Resilience & Background Location:** Queue failed SOS requests in SQLite (`sqflite`) for retry, and track responder background locations.
+3. [x] **Phase 3: Mobile Offline Resilience & Background Location:** Queue failed SOS requests in SQLite (`sqflite`) for retry, and track responder background locations.
 
 ### Hardware & IoT Sprint (Next Week)
 - [ ] Prepare backend IoT connection APIs (REST/MQTT endpoints).

@@ -21,6 +21,7 @@ export default function LoginPage() {
       const user = await signIn(email, password);
       saveUser(user);
       router.push('/dashboard');
+      router.refresh();
     } catch (err) {
       setError('Invalid credentials. Try operator@campus.edu / password');
     } finally {
@@ -134,11 +135,40 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-3 bg-surface-container rounded border border-outline-variant/50">
-            <p className="font-label-md text-label-md text-on-surface-variant font-semibold mb-1">Demo Credentials</p>
-            <p className="font-technical-sm text-technical-sm text-outline">Email: operator@campus.edu</p>
-            <p className="font-technical-sm text-technical-sm text-outline">Password: password</p>
+          {/* Demo Credentials & Quick Login */}
+          <div className="mt-6 p-4 bg-surface-container rounded-lg border border-outline-variant/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="font-label-md text-label-md text-on-surface font-semibold">Demo Credentials</p>
+              <span className="font-technical-sm text-[11px] bg-secondary-container text-primary px-2 py-0.5 rounded font-medium">Quick Fill</span>
+            </div>
+            <div className="space-y-1.5 text-technical-sm font-technical-sm text-outline">
+              <p>Email: <code className="text-on-surface font-medium">operator@campus.edu</code></p>
+              <p>Password: <code className="text-on-surface font-medium">password</code></p>
+            </div>
+            <div className="pt-2 border-t border-outline-variant/40 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('operator@campus.edu');
+                  setPassword('password');
+                  setError('');
+                }}
+                className="flex-1 py-1.5 px-2.5 text-xs bg-surface-container-lowest hover:bg-surface-variant text-primary border border-outline-variant rounded transition-colors font-medium text-center"
+              >
+                Fill Operator
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@campus.edu');
+                  setPassword('password');
+                  setError('');
+                }}
+                className="flex-1 py-1.5 px-2.5 text-xs bg-surface-container-lowest hover:bg-surface-variant text-primary border border-outline-variant rounded transition-colors font-medium text-center"
+              >
+                Fill Admin
+              </button>
+            </div>
           </div>
         </div>
 

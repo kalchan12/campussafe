@@ -60,21 +60,39 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // This will refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/server-side/nextjs
-  const { data: { user } } = await supabase.auth.getUser()
-
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard')
   const isAuthRoute = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/'
 
-  // Redirect unauthenticated users to login
-  if (isDashboardRoute && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  const isSupabaseConfigured =
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder_key';
 
-  // Redirect authenticated users away from login page
-  if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // In production with Supabase configured, check Supabase session
+  if (isSupabaseConfigured) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Redirect unauthenticated users to login
+    if (isDashboardRoute && !user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Redirect authenticated users away from login page
+    if (isAuthRoute && user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  } else {
+    // Demo / Mock mode: check demo cookie
+    const demoUser = request.cookies.get('campussafe_session')?.value
+
+    if (isDashboardRoute && !demoUser) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    if (isAuthRoute && demoUser) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return response
