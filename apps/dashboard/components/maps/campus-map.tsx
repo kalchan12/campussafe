@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MapMarker } from '@/types/map';
 import { CAMPUS_BLOCKS } from '@/lib/maps';
 
-export type MapViewType = 'streets' | 'satellite' | 'dark' | 'terrain';
+export type MapViewType = 'streets' | 'satellite' | 'hybrid' | 'dark' | 'light' | 'terrain';
 
 interface CampusMapProps {
   markers?: MapMarker[];
@@ -13,7 +13,7 @@ interface CampusMapProps {
   showViewSelector?: boolean;
 }
 
-const MAP_VIEW_TILES: Record<
+export const MAP_VIEW_TILES: Record<
   MapViewType,
   { name: string; url: string; attribution: string; icon: string; maxZoom: number }
 > = {
@@ -31,10 +31,24 @@ const MAP_VIEW_TILES: Record<
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     maxZoom: 18,
   },
+  hybrid: {
+    name: 'Hybrid',
+    icon: 'layers',
+    url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+  },
   dark: {
     name: 'Dark Ops',
     icon: 'dark_mode',
     url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+  },
+  light: {
+    name: 'Blueprint',
+    icon: 'light_mode',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 19,
   },

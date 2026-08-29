@@ -116,22 +116,27 @@ export default function MapPage() {
             <CampusMap markers={filteredMarkers} className="h-full w-full" />
           </div>
 
-          {/* Layer Filter Pills */}
-          <div className="absolute top-4 left-4 z-20 flex gap-2">
-            {layers.map((layer) => (
-              <button
-                key={layer.key}
-                onClick={() => setActiveLayer(layer.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-label-md text-label-md transition-colors shadow-sm ${
-                  activeLayer === layer.key
-                    ? 'bg-secondary-container text-on-secondary-container border border-secondary/30'
-                    : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant hover:bg-surface-variant'
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg">{layer.icon}</span>
-                {layer.label}
-              </button>
-            ))}
+          {/* Floating Control Toolbar (Layer Filters & Status) */}
+          <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2">
+            <div className="bg-surface-container-lowest/95 backdrop-blur-md rounded-xl p-1 border border-outline-variant shadow-lg flex items-center gap-1">
+              <span className="px-2.5 text-[11px] font-label-md uppercase tracking-wider text-outline font-bold">
+                Entities
+              </span>
+              {layers.map((layer) => (
+                <button
+                  key={layer.key}
+                  onClick={() => setActiveLayer(layer.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-md text-xs transition-colors ${
+                    activeLayer === layer.key
+                      ? 'bg-secondary-container text-on-secondary-container font-bold border border-secondary/30 shadow-sm'
+                      : 'text-on-surface-variant hover:bg-surface-variant'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">{layer.icon}</span>
+                  {layer.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Zoom Controls */}
