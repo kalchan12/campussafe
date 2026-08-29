@@ -199,7 +199,7 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [~] Device events.
 
 ## Administration
-- [~] User management.
+- [x] User management (Dedicated admin user directory with role assignment, filters, activation toggle).
 - [x] Reports (Safety report review table with anonymous flags).
 - [~] Analytics.
 - [~] Audit logs.

@@ -2,6 +2,7 @@ import * as backendIncidents from './backend/incidents';
 import * as backendResponders from './backend/responders';
 import * as backendDevices from './backend/devices';
 import * as backendReports from './backend/reports';
+import * as backendUsers from './backend/users';
 import * as mock from './mock';
 import { supabase } from './backend/supabase';
 
@@ -9,14 +10,78 @@ import type { Incident, IncidentFilter } from '@/types/incident';
 import type { Responder, ResponderFilter } from '@/types/responder';
 import type { Device, DeviceFilter } from '@/types/device';
 import type { SafetyReport, ReportFilter } from '@/types/report';
+import type { User, UserFilter, UserRole } from '@/types/user';
 
 export const isSupabaseConfigured = () => {
   return (
     typeof process !== 'undefined' &&
     !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder_key'
   );
 };
+
+export async function fetchUsers(filter?: UserFilter): Promise<User[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const data = await backendUsers.getUsers(filter);
+      if (data && data.length > 0) return data;
+    } catch (err) {
+      console.warn('Backend fetchUsers failed, falling back to mock data:', err);
+    }
+  }
+  return mock.getUsers(filter);
+}
+
+export async function fetchUserById(id: string): Promise<User | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const data = await backendUsers.getUserById(id);
+      if (data) return data;
+    } catch (err) {
+      console.warn(`Backend fetchUserById(${id}) failed:`, err);
+    }
+  }
+  const found = await mock.getUserById(id);
+  return found ?? null;
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<User | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      return await backendUsers.updateUserRole(id, role);
+    } catch (err) {
+      console.warn(`Backend updateUserRole(${id}) failed:`, err);
+    }
+  }
+  return mock.updateUserRole(id, role);
+}
+
+export async function toggleUserActive(id: string, isActive: boolean): Promise<User | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      return await backendUsers.toggleUserActive(id, isActive);
+    } catch (err) {
+      console.warn(`Backend toggleUserActive(${id}) failed:`, err);
+    }
+  }
+  return mock.toggleUserActive(id, isActive);
+}
+
+export async function fetchUserStats() {
+  const allUsers = await fetchUsers();
+  return {
+    total: allUsers.length,
+    students: allUsers.filter((u) => u.role === 'student').length,
+    responders: allUsers.filter((u) => u.role === 'medical_responder' || u.role === 'security_responder').length,
+    operators: allUsers.filter((u) => u.role === 'operator').length,
+    administrators: allUsers.filter((u) => u.role === 'administrator').length,
+    staff: allUsers.filter((u) => u.role === 'staff').length,
+    active: allUsers.filter((u) => u.is_active ?? true).length,
+    inactive: allUsers.filter((u) => u.is_active === false).length,
+  };
+}
 
 export async function fetchIncidents(filter?: IncidentFilter): Promise<Incident[]> {
   if (isSupabaseConfigured()) {
@@ -133,3 +198,4 @@ export async function assignResponderToIncident(
   }
   return null;
 }
+

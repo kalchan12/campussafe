@@ -1,3 +1,4 @@
+import type { User, UserFilter, UserRole } from '@/types/user';
 import type { Incident, IncidentFilter } from '@/types/incident';
 import type { Responder, ResponderFilter } from '@/types/responder';
 import type { Device, DeviceFilter } from '@/types/device';
@@ -7,7 +8,63 @@ import {
   mockResponders,
   mockDevices,
   mockReports,
+  mockUsers,
 } from './data';
+
+let usersState = [...mockUsers];
+
+export async function getUsers(filter?: UserFilter): Promise<User[]> {
+  let results = [...usersState];
+
+  if (filter?.role?.length) {
+    results = results.filter((u) => filter.role!.includes(u.role));
+  }
+  if (filter?.campus_block) {
+    results = results.filter((u) => u.campus_block?.toLowerCase() === filter.campus_block?.toLowerCase());
+  }
+  if (filter?.is_active !== undefined) {
+    results = results.filter((u) => (u.is_active ?? true) === filter.is_active);
+  }
+  if (filter?.search) {
+    const search = filter.search.toLowerCase();
+    results = results.filter(
+      (u) =>
+        u.full_name.toLowerCase().includes(search) ||
+        u.email.toLowerCase().includes(search) ||
+        (u.phone && u.phone.toLowerCase().includes(search)) ||
+        (u.campus_block && u.campus_block.toLowerCase().includes(search))
+    );
+  }
+
+  return results;
+}
+
+export async function getUserById(id: string): Promise<User | undefined> {
+  return usersState.find((u) => u.id === id);
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<User | null> {
+  const index = usersState.findIndex((u) => u.id === id);
+  if (index === -1) return null;
+  usersState[index] = {
+    ...usersState[index],
+    role,
+    updated_at: new Date().toISOString(),
+  };
+  return usersState[index];
+}
+
+export async function toggleUserActive(id: string, isActive: boolean): Promise<User | null> {
+  const index = usersState.findIndex((u) => u.id === id);
+  if (index === -1) return null;
+  usersState[index] = {
+    ...usersState[index],
+    is_active: isActive,
+    updated_at: new Date().toISOString(),
+  };
+  return usersState[index];
+}
+
 
 export async function getIncidents(filter?: IncidentFilter): Promise<Incident[]> {
   let results = [...mockIncidents];

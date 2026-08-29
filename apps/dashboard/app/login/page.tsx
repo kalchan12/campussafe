@@ -20,10 +20,14 @@ export default function LoginPage() {
     try {
       const user = await signIn(email, password);
       saveUser(user);
-      router.push('/dashboard');
+      if (user.role === 'administrator') {
+        router.push('/dashboard/users');
+      } else {
+        router.push('/dashboard');
+      }
       router.refresh();
     } catch (err) {
-      setError('Invalid credentials. Try operator@campus.edu / password');
+      setError('Invalid credentials. Try operator@campus.edu or admin@campus.edu / password');
     } finally {
       setIsLoading(false);
     }
