@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { MapMarker } from '@/types/map';
-import { CAMPUS_BLOCKS, ADAMA_CENTER, ADAMA_CAMPUS_BOUNDS } from '@/lib/maps';
+import {
+  CAMPUS_BLOCKS,
+  ADAMA_CENTER,
+  ADAMA_CAMPUS_BOUNDS,
+  ADAMA_UNIVERSITY_CAMPUS_POLYGON,
+  getBestRoute,
+  type RouteGeoJson,
+} from '@/lib/maps';
 
 export type MapViewType = 'streets' | 'satellite' | 'hybrid' | 'dark' | 'light' | 'terrain';
 
@@ -22,6 +29,7 @@ interface CampusMapProps {
   selectedMarkerId?: string | null;
   onMarkerClick?: (marker: MapMarker) => void;
   onRecenterOperator?: () => void;
+  onRouteCalculated?: (route: RouteGeoJson | null) => void;
 }
 
 export const MAP_VIEW_TILES: Record<
@@ -81,6 +89,7 @@ export function CampusMap({
   selectedMarkerId = null,
   onMarkerClick,
   onRecenterOperator,
+  onRouteCalculated,
 }: CampusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -130,6 +139,19 @@ export function CampusMap({
 
         const operatorLayer = L.layerGroup().addTo(map);
         operatorLayerGroupRef.current = operatorLayer;
+
+        const campusBoundaryLayer = L.layerGroup().addTo(map);
+
+        // Highlight University Campus Perimeter Polygon
+        L.polygon(ADAMA_UNIVERSITY_CAMPUS_POLYGON, {
+          color: '#2563eb',
+          weight: 2,
+          dashArray: '5, 5',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.08,
+        })
+          .bindPopup('<b>Adama University Campus Zone</b><br/>Monitored Safety Area')
+          .addTo(campusBoundaryLayer);
 
         mapInstanceRef.current = map;
       }
@@ -318,7 +340,7 @@ export function CampusMap({
           }
         });
 
-        // Draw distance line from Operator to Selected Incident/Marker
+        // Calculate and Draw Optimal Route from Operator to Selected Incident
         if (routeLineRef.current) {
           mapInstanceRef.current.removeLayer(routeLineRef.current);
           routeLineRef.current = null;
@@ -327,21 +349,35 @@ export function CampusMap({
         if (operatorLocation && selectedMarkerId) {
           const selectedMarker = markers.find((m) => m.id === selectedMarkerId);
           if (selectedMarker && selectedMarker.latitude && selectedMarker.longitude) {
-            const polyline = L.polyline(
-              [
-                [operatorLocation.latitude, operatorLocation.longitude],
-                [selectedMarker.latitude, selectedMarker.longitude],
-              ],
-              {
-                color: '#1a73e8',
-                weight: 3,
-                dashArray: '6, 8',
-                opacity: 0.85,
-              }
-            ).addTo(mapInstanceRef.current);
+            getBestRoute(
+              operatorLocation.latitude,
+              operatorLocation.longitude,
+              selectedMarker.latitude,
+              selectedMarker.longitude
+            ).then((route) => {
+              if (!isMounted || !mapInstanceRef.current) return;
+              onRouteCalculated?.(route);
 
-            routeLineRef.current = polyline;
+              if (routeLineRef.current) {
+                mapInstanceRef.current.removeLayer(routeLineRef.current);
+              }
+
+              // Draw path polyline (with subtle glow and dashed style)
+              const polyline = L.polyline(route.coordinates, {
+                color: '#2563eb',
+                weight: 4,
+                opacity: 0.9,
+                dashArray: route.isRealRoadRoute ? undefined : '6, 8',
+                lineJoin: 'round',
+              }).addTo(mapInstanceRef.current);
+
+              routeLineRef.current = polyline;
+            });
+          } else {
+            onRouteCalculated?.(null);
           }
+        } else {
+          onRouteCalculated?.(null);
         }
 
         // Auto-fit bounds if we have valid marker coordinates

@@ -19,6 +19,8 @@ import {
   calculateDistanceMeters,
   formatDistance,
   calculateEtaMinutes,
+  calculateTravelEstimates,
+  type RouteGeoJson,
 } from '@/lib/maps';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident } from '@/types/incident';
@@ -149,23 +151,30 @@ export default function MapPage() {
     { key: 'devices', label: 'Devices', icon: 'sos' },
   ];
 
-  // Operator distance & ETA to the selected incident
+  // Real Route GeoJSON & Multi-Modal breakdown
+  const [activeRoute, setActiveRoute] = useState<import('@/lib/maps').RouteGeoJson | null>(null);
+
+  // Operator distance & multi-modal ETA to the selected incident
   const operatorIncidentDistance = useMemo(() => {
     if (!operatorLocation || !selectedIncident || !selectedIncident.latitude || !selectedIncident.longitude) {
       return null;
     }
-    const meters = calculateDistanceMeters(
+    const straightMeters = calculateDistanceMeters(
       operatorLocation.latitude,
       operatorLocation.longitude,
       selectedIncident.latitude,
       selectedIncident.longitude
     );
+    const distanceMeters = activeRoute ? activeRoute.distanceMeters : straightMeters;
+    const estimates = activeRoute ? activeRoute.estimates : calculateTravelEstimates(distanceMeters);
+
     return {
-      meters,
-      formatted: formatDistance(meters),
-      eta: calculateEtaMinutes(meters),
+      meters: distanceMeters,
+      formatted: formatDistance(distanceMeters),
+      estimates,
+      isRealRoad: activeRoute?.isRealRoadRoute ?? false,
     };
-  }, [operatorLocation, selectedIncident]);
+  }, [operatorLocation, selectedIncident, activeRoute]);
 
   // Proximity-ranked responders relative to the selected incident
   const rankedResponders = useMemo(() => {
@@ -250,6 +259,7 @@ export default function MapPage() {
               operatorLocation={operatorLocation}
               selectedMarkerId={selectedIncident?.id || null}
               onMarkerClick={handleMarkerClick}
+              onRouteCalculated={setActiveRoute}
               className="h-full w-full"
             />
           </div>
@@ -330,27 +340,58 @@ export default function MapPage() {
                 </button>
               </div>
 
-              {/* Operator Distance & ETA Banner */}
+              {/* Operator Distance & Multi-Modal Transit Breakdown */}
               {operatorIncidentDistance && (
-                <div className="bg-blue-50 border-b border-blue-100 px-5 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-blue-600 text-lg">near_me</span>
-                    <div>
-                      <p className="text-[11px] font-label-md uppercase tracking-wider text-blue-700 font-bold">
-                        Distance From You
-                      </p>
-                      <p className="text-xs font-semibold text-blue-950">
-                        {operatorIncidentDistance.formatted} away
+                <div className="bg-blue-50/90 border-b border-blue-100 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-blue-600 text-base">near_me</span>
+                      <p className="text-[11px] font-label-md uppercase tracking-wider text-blue-800 font-bold">
+                        Calculated Route Distance
                       </p>
                     </div>
+                    <span className="text-xs font-bold text-blue-950 font-technical-sm bg-blue-100/80 px-2 py-0.5 rounded-full">
+                      {operatorIncidentDistance.formatted}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[11px] uppercase tracking-wider text-blue-600 font-bold block">
-                      Est. Time
-                    </span>
-                    <span className="text-xs font-bold text-blue-800">
-                      ~{operatorIncidentDistance.eta}
-                    </span>
+
+                  {/* Multi-Modal Travel Time Badges (Walking First) */}
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    {/* Walk (Prioritized) */}
+                    <div className="bg-white border-2 border-blue-500 rounded-xl p-2 text-center shadow-sm">
+                      <div className="flex items-center justify-center gap-1 text-blue-700 font-bold text-[11px]">
+                        <span className="material-symbols-outlined text-sm">directions_walk</span>
+                        <span>Walk</span>
+                      </div>
+                      <p className="text-xs font-extrabold text-blue-950 mt-0.5">
+                        {operatorIncidentDistance.estimates.walking.text}
+                      </p>
+                      <span className="text-[9px] text-blue-600 font-semibold block uppercase">Preferred</span>
+                    </div>
+
+                    {/* Bike */}
+                    <div className="bg-white/80 border border-blue-200 rounded-xl p-2 text-center">
+                      <div className="flex items-center justify-center gap-1 text-slate-700 font-semibold text-[11px]">
+                        <span className="material-symbols-outlined text-sm text-slate-600">directions_bike</span>
+                        <span>Bike</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-900 mt-0.5">
+                        {operatorIncidentDistance.estimates.bicycling.text}
+                      </p>
+                      <span className="text-[9px] text-outline block">Cycling</span>
+                    </div>
+
+                    {/* Car / Patrol */}
+                    <div className="bg-white/80 border border-blue-200 rounded-xl p-2 text-center">
+                      <div className="flex items-center justify-center gap-1 text-slate-700 font-semibold text-[11px]">
+                        <span className="material-symbols-outlined text-sm text-slate-600">directions_car</span>
+                        <span>Drive</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-900 mt-0.5">
+                        {operatorIncidentDistance.estimates.driving.text}
+                      </p>
+                      <span className="text-[9px] text-outline block">Patrol</span>
+                    </div>
                   </div>
                 </div>
               )}
