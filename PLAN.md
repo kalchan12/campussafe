@@ -155,6 +155,12 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
 - [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
+- [ ] Mobile Map Parity & Advanced Spatial Operations (Pending Mobile Sync):
+  - [ ] Locked campus map zone & bounds for Adama City (`ADAMA_CAMPUS_BOUNDS`) with minimum zoom constraints.
+  - [ ] University Campus Safety Zone shaded perimeter polygon overlay (`ADAMA_UNIVERSITY_CAMPUS_POLYGON` covering Stadium, North Residence, Research Complex).
+  - [ ] Multi-modal best route path calculation with pedestrian/road geometry (Walk priority, Bike, Drive ETA chips).
+  - [ ] Multi-style tile layer switcher for Flutter (Streets, Satellite, Dark Ops, Topography).
+  - [ ] Real-time proximity calculation and responder dispatch ranking for mobile responder/operator view.
 - [ ] History.
 - [x] Alerts & Campus Broadcasts Hub (Live broadcasts, severity color badges, acknowledge flow, filter chips, and interactive advisory details).
 - [x] Safety Action Protocols & 24/7 Escort Guide (Expandable emergency guidelines and night safety escort helpline quick dial).
