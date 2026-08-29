@@ -45,8 +45,8 @@ export default function MapPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setGpsError('Geolocation is not supported by your browser.');
-      // Fallback location near campus
-      setOperatorLocation({ latitude: 6.8905, longitude: 79.8815, accuracy: 15, isLive: false });
+      // Fallback location at Adama Campus EOC
+      setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 15, isLive: false });
       return;
     }
 
@@ -63,8 +63,8 @@ export default function MapPage() {
       (err) => {
         console.warn('Operator GPS watch error, using default EOC building coords:', err.message);
         setGpsError(err.message);
-        // Fallback default coordinates (Admin building / EOC base)
-        setOperatorLocation({ latitude: 6.8905, longitude: 79.8815, accuracy: 20, isLive: false });
+        // Fallback default coordinates (Adama University Admin building / EOC base)
+        setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 20, isLive: false });
       },
       {
         enableHighAccuracy: true,
@@ -479,12 +479,12 @@ export default function MapPage() {
               </div>
             </div>
           ) : (
-            /* Show hint to click a marker */
+            /* Show hint to click a marker (Positioned at bottom center to avoid blocking top map switcher) */
             activeIncidents.length > 0 && (
-              <div className="absolute top-4 right-4 z-20">
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 shadow-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">touch_app</span>
-                  <p className="font-label-md text-xs text-on-surface-variant">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <div className="bg-surface-container-lowest/95 backdrop-blur-md border border-outline-variant rounded-full px-5 py-2.5 shadow-xl flex items-center gap-2 pointer-events-auto animate-fade-in">
+                  <span className="material-symbols-outlined text-primary text-base">touch_app</span>
+                  <p className="font-label-md text-xs text-on-surface">
                     Click any incident marker to inspect live distance & dispatch closest responders.
                   </p>
                 </div>

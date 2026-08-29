@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { MapMarker } from '@/types/map';
-import { CAMPUS_BLOCKS } from '@/lib/maps';
+import { CAMPUS_BLOCKS, ADAMA_CENTER, ADAMA_CAMPUS_BOUNDS } from '@/lib/maps';
 
 export type MapViewType = 'streets' | 'satellite' | 'hybrid' | 'dark' | 'light' | 'terrain';
 
@@ -104,11 +104,15 @@ export function CampusMap({
       if (!mapInstanceRef.current && mapContainerRef.current) {
         const defaultCenter: [number, number] = operatorLocation
           ? [operatorLocation.latitude, operatorLocation.longitude]
-          : [6.8905, 79.8820];
+          : ADAMA_CENTER;
 
         const map = L.map(mapContainerRef.current, {
           center: defaultCenter,
-          zoom: 16,
+          zoom: operatorLocation ? 17 : 16,
+          minZoom: 13, // Keep locked to campus & Adama city level
+          maxZoom: 19,
+          maxBounds: ADAMA_CAMPUS_BOUNDS, // Prevent panning across the entire globe
+          maxBoundsViscosity: 0.85,
           zoomControl: true,
         });
 

@@ -1,13 +1,26 @@
 import type { MapMarker, CampusBlock } from '@/types/map';
 
-export const CAMPUS_BLOCKS: CampusBlock[] = [
-  { id: 'engineering', name: 'Engineering Building', latitude: 6.8897, longitude: 79.8823 },
-  { id: 'library', name: 'Library', latitude: 6.8901, longitude: 79.8835 },
-  { id: 'science', name: 'Science Building', latitude: 6.8910, longitude: 79.8810 },
-  { id: 'student_center', name: 'Student Center', latitude: 6.8885, longitude: 79.8845 },
-  { id: 'admin', name: 'Admin Building', latitude: 6.8905, longitude: 79.8815 },
-  { id: 'parking', name: 'Parking Area', latitude: 6.8895, longitude: 79.8820 },
+// Real Adama Science & Technology / Adama City Campus Coordinates (Adama, Oromia, Ethiopia)
+export const ADAMA_CENTER: [number, number] = [8.5565, 39.2910];
+
+// Boundary bounding box for Adama City & University Campus
+export const ADAMA_CAMPUS_BOUNDS: [[number, number], [number, number]] = [
+  [8.5200, 39.2400], // Southwest boundary
+  [8.5900, 39.3400], // Northeast boundary
 ];
+
+export const CAMPUS_BLOCKS: CampusBlock[] = [
+  { id: 'admin', name: 'Administration Building & EOC', latitude: 8.5565, longitude: 39.2910 },
+  { id: 'engineering', name: 'Engineering Complex Block B', latitude: 8.5582, longitude: 39.2895 },
+  { id: 'library', name: 'Main Campus Central Library', latitude: 8.5574, longitude: 39.2925 },
+  { id: 'science', name: 'Applied Science & Chemistry Labs', latitude: 8.5550, longitude: 39.2880 },
+  { id: 'student_center', name: 'Student Union & Cafeteria', latitude: 8.5540, longitude: 39.2935 },
+  { id: 'health_center', name: 'Campus Health & Medical Centre', latitude: 8.5595, longitude: 39.2940 },
+  { id: 'sports_complex', name: 'Stadium & Sports Complex', latitude: 8.5525, longitude: 39.2870 },
+  { id: 'dormitory_north', name: 'North Residential Halls', latitude: 8.5610, longitude: 39.2915 },
+  { id: 'main_gate', name: 'Campus Main Entrance Gate', latitude: 8.5515, longitude: 39.2950 },
+];
+
 
 export function getIncidentMarkers(
   incidents: { id: string; latitude: number; longitude: number; type: string; status: string }[]
