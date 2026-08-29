@@ -466,10 +466,38 @@ export function CampusMap({
         </div>
       )}
 
+      {/* Locate Operator GPS Action Button */}
+      {operatorLocation && (
+        <div className="absolute bottom-28 left-4 z-10 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => {
+              if (mapInstanceRef.current && operatorLocation) {
+                mapInstanceRef.current.flyTo(
+                  [operatorLocation.latitude, operatorLocation.longitude],
+                  18,
+                  { animate: true, duration: 1 }
+                );
+              }
+              onRecenterOperator?.();
+            }}
+            title="Recenter view on your exact GPS location"
+            className="flex items-center gap-1.5 px-3 py-2 bg-surface-container-lowest/95 backdrop-blur-md rounded-xl shadow-lg border border-blue-200 text-blue-700 hover:bg-blue-50 text-xs font-label-md font-bold transition-all"
+          >
+            <span className="material-symbols-outlined text-base text-blue-600">my_location</span>
+            <span>Focus My Location</span>
+          </button>
+        </div>
+      )}
+
       {/* Interactive Legend Overlay */}
       <div className="absolute bottom-4 left-4 bg-surface-container-lowest/90 backdrop-blur-sm rounded-lg shadow-lg p-3 text-xs border border-outline-variant z-10 pointer-events-auto">
         <p className="font-label-md text-label-md text-on-surface mb-2 font-bold">CampusSafe Live Map</p>
         <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-600 animate-ping" />
+            <span className="font-technical-sm text-on-surface-variant">Operator Location (You)</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-error animate-pulse" />
             <span className="font-technical-sm text-on-surface-variant">Live Incident (Pulsing)</span>

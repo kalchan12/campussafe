@@ -43,40 +43,76 @@ export default function MapPage() {
   // Real Operator GPS state
   const [operatorLocation, setOperatorLocation] = useState<OperatorLocation | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<'requesting' | 'active' | 'denied' | 'fallback'>('requesting');
 
-  // 1. Capture Real Operator Location via Browser Geolocation API
-  useEffect(() => {
+  // Request & Watch precise browser GPS location
+  const requestPreciseLocation = () => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setGpsError('Geolocation is not supported by your browser.');
-      // Fallback location at Adama Campus EOC
-      setOperatorLocation(getCampusOperatorLocation(null));
+      setGpsStatus('fallback');
+      setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 15, isLive: false });
       return;
     }
 
-    const watchId = navigator.geolocation.watchPosition(
+    setGpsStatus('requesting');
+
+    // 1. Force prompt for high-accuracy GPS fix immediately
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const validatedLoc = getCampusOperatorLocation({
+        setOperatorLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
+          isLive: true,
         });
-        setOperatorLocation(validatedLoc);
+        setGpsStatus('active');
         setGpsError(null);
       },
       (err) => {
-        console.warn('Operator GPS watch error, using default EOC base inside campus:', err.message);
+        console.warn('Operator initial getCurrentPosition error:', err.message);
         setGpsError(err.message);
-        setOperatorLocation(getCampusOperatorLocation(null));
+        setGpsStatus('denied');
+        // Fallback default coordinates (Adama University Admin building / EOC base)
+        setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 20, isLive: false });
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000,
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
 
+    // 2. Continually stream live updates as the operator moves
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setOperatorLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          isLive: true,
+        });
+        setGpsStatus('active');
+        setGpsError(null);
+      },
+      (err) => {
+        console.warn('Operator live GPS watch error:', err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 1000,
+      }
+    );
+
+    return watchId;
+  };
+
+  useEffect(() => {
+    const watchId = requestPreciseLocation();
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      if (watchId !== undefined) {
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
   }, []);
 
@@ -286,17 +322,36 @@ export default function MapPage() {
               ))}
             </div>
 
-            {/* Operator Live GPS Pill */}
+            {/* Operator Live GPS Pill with Locate Me Button */}
             <div className="bg-surface-container-lowest/95 backdrop-blur-md rounded-xl px-3 py-1.5 border border-outline-variant shadow-lg flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  gpsStatus === 'active'
+                    ? 'bg-blue-600 animate-ping'
+                    : gpsStatus === 'requesting'
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-slate-400'
+                }`}
+              />
               <div className="text-xs">
                 <span className="font-label-md font-semibold text-on-surface">Operator Location: </span>
                 <span className="font-technical-sm text-outline">
                   {operatorLocation
-                    ? `${operatorLocation.latitude.toFixed(4)}, ${operatorLocation.longitude.toFixed(4)}`
-                    : 'Locating...'}
+                    ? `${operatorLocation.latitude.toFixed(5)}, ${operatorLocation.longitude.toFixed(5)}`
+                    : gpsStatus === 'requesting'
+                    ? 'Requesting Browser GPS...'
+                    : 'Campus Base (Default)'}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={requestPreciseLocation}
+                title="Refresh & request precise device GPS location"
+                className="ml-1 p-1 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-bold"
+              >
+                <span className="material-symbols-outlined text-sm">my_location</span>
+                <span>Get Exact GPS</span>
+              </button>
             </div>
           </div>
 
