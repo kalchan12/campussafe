@@ -1,14 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNav } from '@/components/layout/top-nav';
-import { CampusMap } from '@/components/maps/campus-map';
+import { CampusMap, type OperatorLocation } from '@/components/maps/campus-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fetchIncidents, fetchResponders, fetchDevices } from '@/lib/data-service';
+import {
+  fetchIncidents,
+  fetchResponders,
+  fetchDevices,
+  assignResponderToIncident,
+} from '@/lib/data-service';
 import { realtimeService } from '@/lib/realtime';
-import { getIncidentMarkers, getResponderMarkers } from '@/lib/maps';
+import {
+  getIncidentMarkers,
+  getResponderMarkers,
+  calculateDistanceMeters,
+  formatDistance,
+  calculateEtaMinutes,
+} from '@/lib/maps';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
 import type { Incident } from '@/types/incident';
 import type { Responder } from '@/types/responder';
@@ -23,7 +34,51 @@ export default function MapPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [activeLayer, setActiveLayer] = useState<LayerFilter>('all');
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [dispatchSuccess, setDispatchSuccess] = useState<string | null>(null);
 
+  // Real Operator GPS state
+  const [operatorLocation, setOperatorLocation] = useState<OperatorLocation | null>(null);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  // 1. Capture Real Operator Location via Browser Geolocation API
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsError('Geolocation is not supported by your browser.');
+      // Fallback location near campus
+      setOperatorLocation({ latitude: 6.8905, longitude: 79.8815, accuracy: 15, isLive: false });
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setOperatorLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          isLive: true,
+        });
+        setGpsError(null);
+      },
+      (err) => {
+        console.warn('Operator GPS watch error, using default EOC building coords:', err.message);
+        setGpsError(err.message);
+        // Fallback default coordinates (Admin building / EOC base)
+        setOperatorLocation({ latitude: 6.8905, longitude: 79.8815, accuracy: 20, isLive: false });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  // 2. Load Incidents, Responders, and Devices
   useEffect(() => {
     async function loadData() {
       const [incidentsData, respondersData, devicesData] = await Promise.all([
@@ -50,6 +105,7 @@ export default function MapPage() {
       setIncidents((prev) =>
         prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i))
       );
+      setSelectedIncident((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
     });
 
     return () => {
@@ -93,6 +149,81 @@ export default function MapPage() {
     { key: 'devices', label: 'Devices', icon: 'sos' },
   ];
 
+  // Operator distance & ETA to the selected incident
+  const operatorIncidentDistance = useMemo(() => {
+    if (!operatorLocation || !selectedIncident || !selectedIncident.latitude || !selectedIncident.longitude) {
+      return null;
+    }
+    const meters = calculateDistanceMeters(
+      operatorLocation.latitude,
+      operatorLocation.longitude,
+      selectedIncident.latitude,
+      selectedIncident.longitude
+    );
+    return {
+      meters,
+      formatted: formatDistance(meters),
+      eta: calculateEtaMinutes(meters),
+    };
+  }, [operatorLocation, selectedIncident]);
+
+  // Proximity-ranked responders relative to the selected incident
+  const rankedResponders = useMemo(() => {
+    if (!selectedIncident || !selectedIncident.latitude || !selectedIncident.longitude) {
+      return [];
+    }
+
+    return responders
+      .filter((r) => r.latitude && r.longitude)
+      .map((r) => {
+        const distanceToIncident = calculateDistanceMeters(
+          r.latitude!,
+          r.longitude!,
+          selectedIncident.latitude!,
+          selectedIncident.longitude!
+        );
+        return {
+          ...r,
+          distanceToIncident,
+          formattedDistance: formatDistance(distanceToIncident),
+          etaToIncident: calculateEtaMinutes(distanceToIncident),
+        };
+      })
+      .sort((a, b) => a.distanceToIncident - b.distanceToIncident);
+  }, [responders, selectedIncident]);
+
+  // Handle assigning a specific responder based on proximity
+  const handleAssignResponder = async (responderId: string, responderName: string) => {
+    if (!selectedIncident) return;
+    setIsAssigning(true);
+    try {
+      await assignResponderToIncident(selectedIncident.id, responderId);
+      setSelectedIncident((prev) =>
+        prev
+          ? {
+              ...prev,
+              assigned_responder_id: responderId,
+              assigned_responder_name: responderName,
+              status: 'assigned',
+            }
+          : null
+      );
+      setDispatchSuccess(`Dispatched ${responderName} to incident`);
+      setTimeout(() => setDispatchSuccess(null), 4000);
+    } catch (err) {
+      console.error('Failed to assign responder:', err);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleMarkerClick = (marker: MapMarker) => {
+    if (marker.type === 'incident') {
+      const inc = incidents.find((i) => i.id === marker.id);
+      if (inc) setSelectedIncident(inc);
+    }
+  };
+
   // Find responder for selected incident
   const assignedResponder = selectedIncident
     ? responders.find((r) => r.id === selectedIncident.assigned_responder_id)
@@ -109,11 +240,18 @@ export default function MapPage() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+                backgroundImage:
+                  'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
                 backgroundSize: '40px 40px',
               }}
             />
-            <CampusMap markers={filteredMarkers} className="h-full w-full" />
+            <CampusMap
+              markers={filteredMarkers}
+              operatorLocation={operatorLocation}
+              selectedMarkerId={selectedIncident?.id || null}
+              onMarkerClick={handleMarkerClick}
+              className="h-full w-full"
+            />
           </div>
 
           {/* Floating Control Toolbar (Layer Filters & Status) */}
@@ -137,127 +275,225 @@ export default function MapPage() {
                 </button>
               ))}
             </div>
+
+            {/* Operator Live GPS Pill */}
+            <div className="bg-surface-container-lowest/95 backdrop-blur-md rounded-xl px-3 py-1.5 border border-outline-variant shadow-lg flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
+              <div className="text-xs">
+                <span className="font-label-md font-semibold text-on-surface">Operator Location: </span>
+                <span className="font-technical-sm text-outline">
+                  {operatorLocation
+                    ? `${operatorLocation.latitude.toFixed(4)}, ${operatorLocation.longitude.toFixed(4)}`
+                    : 'Locating...'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Zoom Controls */}
-          <div className="absolute bottom-24 left-4 z-20 flex flex-col gap-1">
-            <button className="w-10 h-10 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors shadow-sm">
-              <span className="material-symbols-outlined">add</span>
-            </button>
-            <button className="w-10 h-10 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors shadow-sm">
-              <span className="material-symbols-outlined">remove</span>
-            </button>
-          </div>
-          <button className="absolute bottom-8 left-4 z-20 w-10 h-10 bg-surface-container-lowest border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors shadow-sm">
-            <span className="material-symbols-outlined">my_location</span>
-          </button>
+          {/* Toast Notification */}
+          {dispatchSuccess && (
+            <div className="absolute top-16 left-4 z-30 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-xl font-label-md text-xs flex items-center gap-2 animate-fade-in">
+              <span className="material-symbols-outlined text-base">check_circle</span>
+              <span>{dispatchSuccess}</span>
+            </div>
+          )}
 
-          {/* Incident Detail Drawer */}
+          {/* Incident Detail & Proximity Dispatch Drawer */}
           {selectedIncident ? (
-            <div className="absolute top-4 right-4 z-20 w-96 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-lg overflow-hidden">
+            <div className="absolute top-4 right-4 z-20 w-[410px] max-h-[90vh] bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-y-auto flex flex-col animate-fade-in">
               {/* Header */}
-              <div className="bg-error text-on-error px-6 py-4 flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined">medical_services</span>
+              <div className="bg-error text-on-error px-5 py-4 flex items-start justify-between sticky top-0 z-10">
+                <div className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-2xl">
+                    {selectedIncident.type === 'medical'
+                      ? 'medical_services'
+                      : selectedIncident.type === 'security'
+                      ? 'shield'
+                      : selectedIncident.type === 'fire'
+                      ? 'local_fire_department'
+                      : 'warning'}
+                  </span>
                   <div>
-                    <p className="font-technical-sm text-technical-sm uppercase tracking-wider opacity-90">
-                      {EMERGENCY_TYPE_LABELS[selectedIncident.type]}
+                    <p className="font-technical-sm text-[11px] uppercase tracking-wider opacity-90">
+                      {EMERGENCY_TYPE_LABELS[selectedIncident.type] || 'Emergency'}
                     </p>
-                    <p className="font-headline-lg-mobile text-headline-lg-mobile font-bold">
-                      {selectedIncident.id.toUpperCase()}
+                    <p className="font-headline-lg-mobile text-base font-bold">
+                      Incident #{selectedIncident.id.toUpperCase().slice(0, 8)}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedIncident(null)}
-                  className="text-on-error hover:opacity-80 transition-opacity"
+                  className="text-on-error/80 hover:text-on-error p-1 rounded-full hover:bg-white/10 transition-colors"
                 >
-                  <span className="material-symbols-outlined">close</span>
+                  <span className="material-symbols-outlined text-lg">close</span>
                 </button>
               </div>
 
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 gap-3 p-4">
-                <div className="bg-error-container rounded-lg p-3 text-center">
-                  <p className="font-technical-sm text-technical-sm text-on-error-container uppercase tracking-wider">Severity</p>
-                  <p className="font-headline-lg-mobile text-headline-lg-mobile text-on-error-container font-bold">CRITICAL</p>
-                </div>
-                <div className="bg-secondary-container rounded-lg p-3 text-center">
-                  <p className="font-technical-sm text-technical-sm text-on-secondary-container uppercase tracking-wider">Responder ETA</p>
-                  <p className="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">3m</p>
-                </div>
-              </div>
-
-              {/* Metadata */}
-              <div className="px-4 pb-4 space-y-3">
-                <div className="flex items-center gap-3 py-2 border-t border-outline-variant">
-                  <span className="material-symbols-outlined text-on-surface-variant text-lg">location_on</span>
-                  <div>
-                    <p className="font-technical-sm text-technical-sm text-on-surface-variant uppercase tracking-wider">Location</p>
-                    <p className="font-body-md text-body-md text-on-surface">{selectedIncident.location_description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 py-2 border-t border-outline-variant">
-                  <span className="material-symbols-outlined text-on-surface-variant text-lg">person_alert</span>
-                  <div>
-                    <p className="font-technical-sm text-technical-sm text-on-surface-variant uppercase tracking-wider">Reporter</p>
-                    <p className="font-body-md text-body-md text-on-surface">{selectedIncident.reporter_name || 'Unknown'}</p>
-                  </div>
-                </div>
-                {selectedIncident.assigned_responder_name && (
-                  <div className="flex items-center gap-3 py-2 border-t border-outline-variant">
-                    <span className="material-symbols-outlined text-on-surface-variant text-lg">location_on</span>
-                    <div className="flex-1">
-                      <p className="font-technical-sm text-technical-sm text-on-surface-variant uppercase tracking-wider">Responder</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-body-md text-body-md text-on-surface">{selectedIncident.assigned_responder_name}</p>
-                        <span className="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary font-technical-sm text-technical-sm rounded">
-                          En Route
-                        </span>
-                      </div>
+              {/* Operator Distance & ETA Banner */}
+              {operatorIncidentDistance && (
+                <div className="bg-blue-50 border-b border-blue-100 px-5 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-600 text-lg">near_me</span>
+                    <div>
+                      <p className="text-[11px] font-label-md uppercase tracking-wider text-blue-700 font-bold">
+                        Distance From You
+                      </p>
+                      <p className="text-xs font-semibold text-blue-950">
+                        {operatorIncidentDistance.formatted} away
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
+                  <div className="text-right">
+                    <span className="text-[11px] uppercase tracking-wider text-blue-600 font-bold block">
+                      Est. Time
+                    </span>
+                    <span className="text-xs font-bold text-blue-800">
+                      ~{operatorIncidentDistance.eta}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-              {/* Action Footer */}
-              <div className="flex gap-3 p-4 border-t border-outline-variant">
-                <Button variant="ghost" className="flex-1">
-                  <span className="material-symbols-outlined text-sm mr-1.5">chat</span>
-                  Connect
-                </Button>
-                <Button className="flex-1">
-                  <span className="material-symbols-outlined text-sm mr-1.5">info</span>
-                  Full Details
-                </Button>
+              {/* Quick Incident Info */}
+              <div className="p-5 space-y-4">
+                <div>
+                  <h4 className="text-xs font-label-md uppercase tracking-wider text-outline font-bold mb-1">
+                    Location & Description
+                  </h4>
+                  <p className="text-sm font-semibold text-on-surface">
+                    {selectedIncident.location_description || 'Campus Block'}
+                  </p>
+                  {selectedIncident.description && (
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      {selectedIncident.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-surface-container rounded-lg">
+                    <span className="text-[10px] font-technical-sm uppercase text-outline block">Status</span>
+                    <span className="font-bold uppercase text-primary">{selectedIncident.status}</span>
+                  </div>
+                  <div className="p-2.5 bg-surface-container rounded-lg">
+                    <span className="text-[10px] font-technical-sm uppercase text-outline block">Reporter</span>
+                    <span className="font-bold text-on-surface truncate block">
+                      {selectedIncident.reporter_name || 'Anonymous / Student'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Assigned Responder (if any) */}
+                {selectedIncident.assigned_responder_name && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-600 text-lg">verified</span>
+                      <div>
+                        <p className="text-[10px] font-label-md uppercase tracking-wider text-emerald-700 font-bold">
+                          Assigned Responder
+                        </p>
+                        <p className="text-xs font-bold text-emerald-950">
+                          {selectedIncident.assigned_responder_name}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded font-semibold uppercase">
+                      Active
+                    </span>
+                  </div>
+                )}
+
+                {/* Proximity Responder Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-label-md uppercase tracking-wider text-outline font-bold">
+                      Nearby Responders (Proximity)
+                    </h4>
+                    <span className="text-[11px] text-primary font-semibold">
+                      {rankedResponders.length} found
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {rankedResponders.length === 0 ? (
+                      <p className="text-xs text-outline py-2 text-center">No responders available with GPS.</p>
+                    ) : (
+                      rankedResponders.map((resp, idx) => {
+                        const isCurrentlyAssigned =
+                          selectedIncident.assigned_responder_id === resp.id;
+
+                        return (
+                          <div
+                            key={resp.id}
+                            className={`p-2.5 rounded-xl border transition-all flex items-center justify-between ${
+                              isCurrentlyAssigned
+                                ? 'bg-primary/5 border-primary/40'
+                                : 'bg-surface-container-lowest border-outline-variant hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                                  idx === 0
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-surface-variant text-on-surface-variant'
+                                }`}
+                              >
+                                #{idx + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-on-surface truncate">
+                                  {resp.name}
+                                </p>
+                                <div className="flex items-center gap-2 text-[11px] text-outline font-technical-sm">
+                                  <span className="text-blue-600 font-semibold">
+                                    {resp.formattedDistance}
+                                  </span>
+                                  <span>•</span>
+                                  <span>ETA {resp.etaToIncident}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAssignResponder(resp.id, resp.name)}
+                              disabled={isAssigning || isCurrentlyAssigned}
+                              className={`px-3 py-1 rounded-lg text-xs font-label-md transition-colors ${
+                                isCurrentlyAssigned
+                                  ? 'bg-emerald-100 text-emerald-800 font-bold cursor-default'
+                                  : idx === 0
+                                  ? 'bg-primary text-on-primary hover:bg-primary-container font-semibold'
+                                  : 'bg-surface-variant text-on-surface hover:bg-secondary-container'
+                              }`}
+                            >
+                              {isCurrentlyAssigned ? 'Assigned' : idx === 0 ? 'Dispatch Closest' : 'Dispatch'}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
-            /* Show a hint to click a marker */
+            /* Show hint to click a marker */
             activeIncidents.length > 0 && (
               <div className="absolute top-4 right-4 z-20">
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 shadow-sm">
-                  <p className="font-label-md text-label-md text-on-surface-variant">
-                    <span className="material-symbols-outlined text-sm align-middle mr-1">touch_app</span>
-                    Click a marker for details
+                <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 shadow-lg flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-lg">touch_app</span>
+                  <p className="font-label-md text-xs text-on-surface-variant">
+                    Click any incident marker to inspect live distance & dispatch closest responders.
                   </p>
                 </div>
               </div>
             )
-          )}
-
-          {/* Auto-select first critical incident for demo */}
-          {!selectedIncident && activeIncidents.find((i) => i.priority === 1) && (
-            <button
-              onClick={() => setSelectedIncident(activeIncidents.find((i) => i.priority === 1) || null)}
-              className="absolute bottom-8 right-4 z-20 bg-error text-on-error px-4 py-2 rounded-lg font-label-md text-label-md shadow-lg animate-subtle-pulse flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">warning</span>
-              View Critical Incident
-            </button>
           )}
         </main>
       </div>
     </div>
   );
 }
+

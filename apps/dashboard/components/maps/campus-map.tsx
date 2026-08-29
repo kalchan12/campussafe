@@ -6,11 +6,22 @@ import { CAMPUS_BLOCKS } from '@/lib/maps';
 
 export type MapViewType = 'streets' | 'satellite' | 'hybrid' | 'dark' | 'light' | 'terrain';
 
+export interface OperatorLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  isLive?: boolean;
+}
+
 interface CampusMapProps {
   markers?: MapMarker[];
   className?: string;
   defaultView?: MapViewType;
   showViewSelector?: boolean;
+  operatorLocation?: OperatorLocation | null;
+  selectedMarkerId?: string | null;
+  onMarkerClick?: (marker: MapMarker) => void;
+  onRecenterOperator?: () => void;
 }
 
 export const MAP_VIEW_TILES: Record<
@@ -66,10 +77,16 @@ export function CampusMap({
   className = '',
   defaultView = 'streets',
   showViewSelector = true,
+  operatorLocation = null,
+  selectedMarkerId = null,
+  onMarkerClick,
+  onRecenterOperator,
 }: CampusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersLayerGroupRef = useRef<any>(null);
+  const operatorLayerGroupRef = useRef<any>(null);
+  const routeLineRef = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
   const [currentView, setCurrentView] = useState<MapViewType>(defaultView);
 
@@ -85,7 +102,9 @@ export function CampusMap({
       if (!isMounted) return;
 
       if (!mapInstanceRef.current && mapContainerRef.current) {
-        const defaultCenter: [number, number] = [6.8905, 79.8820];
+        const defaultCenter: [number, number] = operatorLocation
+          ? [operatorLocation.latitude, operatorLocation.longitude]
+          : [6.8905, 79.8820];
 
         const map = L.map(mapContainerRef.current, {
           center: defaultCenter,
@@ -104,7 +123,71 @@ export function CampusMap({
 
         const markersLayer = L.layerGroup().addTo(map);
         markersLayerGroupRef.current = markersLayer;
+
+        const operatorLayer = L.layerGroup().addTo(map);
+        operatorLayerGroupRef.current = operatorLayer;
+
         mapInstanceRef.current = map;
+      }
+
+      // Update Operator Location Beacon
+      if (mapInstanceRef.current && operatorLayerGroupRef.current) {
+        operatorLayerGroupRef.current.clearLayers();
+
+        if (operatorLocation) {
+          // Google Maps Blue Dot Marker with Accuracy Circle
+          if (operatorLocation.accuracy && operatorLocation.accuracy > 0) {
+            L.circle([operatorLocation.latitude, operatorLocation.longitude], {
+              radius: Math.min(operatorLocation.accuracy, 100),
+              color: '#4285F4',
+              weight: 1,
+              opacity: 0.4,
+              fillColor: '#4285F4',
+              fillOpacity: 0.12,
+            }).addTo(operatorLayerGroupRef.current);
+          }
+
+          const operatorIcon = L.divIcon({
+            className: 'operator-gps-dot',
+            html: `
+              <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+                <div style="
+                  position: absolute;
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 50%;
+                  background: rgba(66, 133, 244, 0.4);
+                  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+                "></div>
+                <div style="
+                  width: 18px;
+                  height: 18px;
+                  border-radius: 50%;
+                  background: #1a73e8;
+                  border: 3px solid #ffffff;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+                  position: relative;
+                  z-index: 2;
+                "></div>
+              </div>
+            `,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+          });
+
+          L.marker([operatorLocation.latitude, operatorLocation.longitude], {
+            icon: operatorIcon,
+            zIndexOffset: 1000,
+          })
+            .bindPopup(`
+              <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
+                <strong style="color: #1a73e8;">📍 Operator Location (You)</strong><br/>
+                <span style="font-size: 11px; color: #555;">Live GPS coordinates</span><br/>
+                <span>${operatorLocation.latitude.toFixed(5)}, ${operatorLocation.longitude.toFixed(5)}</span>
+              </div>
+            `)
+            .addTo(operatorLayerGroupRef.current);
+        }
       }
 
       // Update markers on the map
@@ -113,11 +196,15 @@ export function CampusMap({
 
         const latLngs: [number, number][] = [];
 
+        if (operatorLocation) {
+          latLngs.push([operatorLocation.latitude, operatorLocation.longitude]);
+        }
+
         // Add campus blocks as markers
         CAMPUS_BLOCKS.forEach((block) => {
           if (block.latitude && block.longitude) {
             latLngs.push([block.latitude, block.longitude]);
-            const isDark = currentView === 'dark' || currentView === 'satellite';
+            const isDark = currentView === 'dark' || currentView === 'satellite' || currentView === 'hybrid';
             const blockIcon = L.divIcon({
               className: 'custom-block-marker',
               html: `
@@ -153,57 +240,105 @@ export function CampusMap({
 
             const isIncident = marker.type === 'incident';
             const isResponder = marker.type === 'responder';
+            const isSelected = selectedMarkerId === marker.id;
 
             const markerColor = isIncident ? '#ba1a1a' : isResponder ? '#00236f' : '#10b981';
             const markerEmoji = isIncident ? '🚨' : isResponder ? '🛡️' : '📡';
 
             const customIcon = L.divIcon({
-              className: 'custom-live-marker',
+              className: `custom-live-marker ${isSelected ? 'scale-125' : ''}`,
               html: `
-                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">
+                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; cursor: pointer;">
                   ${
                     isIncident
                       ? `<div style="
                           position: absolute;
-                          width: 32px;
-                          height: 32px;
+                          width: 36px;
+                          height: 36px;
                           border-radius: 50%;
                           background: rgba(186, 26, 26, 0.35);
                           animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
                         "></div>`
                       : ''
                   }
+                  ${
+                    isSelected
+                      ? `<div style="
+                          position: absolute;
+                          width: 44px;
+                          height: 44px;
+                          border-radius: 50%;
+                          border: 2px dashed ${markerColor};
+                          animation: spin 6s linear infinite;
+                        "></div>`
+                      : ''
+                  }
                   <div style="
-                    width: 28px;
-                    height: 28px;
+                    width: ${isSelected ? '32px' : '28px'};
+                    height: ${isSelected ? '32px' : '28px'};
                     border-radius: 50%;
                     background: ${markerColor};
-                    border: 2px solid #ffffff;
+                    border: 2.5px solid #ffffff;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 13px;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    font-size: ${isSelected ? '15px' : '13px'};
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
                   ">
                     ${markerEmoji}
                   </div>
                 </div>
               `,
-              iconSize: [34, 34],
-              iconAnchor: [17, 17],
+              iconSize: [38, 38],
+              iconAnchor: [19, 19],
             });
 
-            L.marker([marker.latitude, marker.longitude], { icon: customIcon })
-              .bindPopup(`
-                <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
-                  <strong style="color: ${markerColor};">${marker.label}</strong><br/>
-                  <span>Type: ${marker.type.toUpperCase()}</span><br/>
-                  <span>Coordinates: ${marker.latitude.toFixed(4)}, ${marker.longitude.toFixed(4)}</span>
-                </div>
-              `)
-              .addTo(markersLayerGroupRef.current);
+            const m = L.marker([marker.latitude, marker.longitude], {
+              icon: customIcon,
+              zIndexOffset: isSelected ? 500 : 0,
+            });
+
+            m.on('click', () => {
+              onMarkerClick?.(marker);
+            });
+
+            m.bindPopup(`
+              <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
+                <strong style="color: ${markerColor};">${marker.label}</strong><br/>
+                <span>Type: ${marker.type.toUpperCase()}</span><br/>
+                <span>Coordinates: ${marker.latitude.toFixed(4)}, ${marker.longitude.toFixed(4)}</span>
+              </div>
+            `);
+
+            m.addTo(markersLayerGroupRef.current);
           }
         });
+
+        // Draw distance line from Operator to Selected Incident/Marker
+        if (routeLineRef.current) {
+          mapInstanceRef.current.removeLayer(routeLineRef.current);
+          routeLineRef.current = null;
+        }
+
+        if (operatorLocation && selectedMarkerId) {
+          const selectedMarker = markers.find((m) => m.id === selectedMarkerId);
+          if (selectedMarker && selectedMarker.latitude && selectedMarker.longitude) {
+            const polyline = L.polyline(
+              [
+                [operatorLocation.latitude, operatorLocation.longitude],
+                [selectedMarker.latitude, selectedMarker.longitude],
+              ],
+              {
+                color: '#1a73e8',
+                weight: 3,
+                dashArray: '6, 8',
+                opacity: 0.85,
+              }
+            ).addTo(mapInstanceRef.current);
+
+            routeLineRef.current = polyline;
+          }
+        }
 
         // Auto-fit bounds if we have valid marker coordinates
         if (latLngs.length > 0) {
@@ -221,7 +356,8 @@ export function CampusMap({
     return () => {
       isMounted = false;
     };
-  }, [markers, currentView]);
+  }, [markers, currentView, operatorLocation, selectedMarkerId]);
+
 
   // Switch Tile Layer when currentView changes
   useEffect(() => {

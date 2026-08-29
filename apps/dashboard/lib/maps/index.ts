@@ -89,3 +89,48 @@ function getDeviceColor(status: string): string {
   };
   return colors[status] || '#6b7280';
 }
+
+/**
+ * Calculates straight-line distance in meters between two lat/lng points (Haversine formula).
+ */
+export function calculateDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
+
+/**
+ * Formats distance in meters into human readable units (e.g., '140 m' or '1.4 km').
+ */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) {
+    return `${meters} m`;
+  }
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+/**
+ * Calculates estimated walking/transit ETA based on average speed (e.g. ~4.8 km/h or 80 m/min).
+ */
+export function calculateEtaMinutes(meters: number, speedMetersPerMin = 80): string {
+  const mins = Math.max(1, Math.ceil(meters / speedMetersPerMin));
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  return `${hours}h ${remainingMins}m`;
+}
+
