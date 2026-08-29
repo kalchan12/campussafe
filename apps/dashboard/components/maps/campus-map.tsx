@@ -1,19 +1,65 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MapMarker } from '@/types/map';
 import { CAMPUS_BLOCKS } from '@/lib/maps';
+
+export type MapViewType = 'streets' | 'satellite' | 'dark' | 'terrain';
 
 interface CampusMapProps {
   markers?: MapMarker[];
   className?: string;
+  defaultView?: MapViewType;
+  showViewSelector?: boolean;
 }
 
-export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
+const MAP_VIEW_TILES: Record<
+  MapViewType,
+  { name: string; url: string; attribution: string; icon: string; maxZoom: number }
+> = {
+  streets: {
+    name: 'Standard',
+    icon: 'map',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  },
+  satellite: {
+    name: 'Satellite',
+    icon: 'satellite_alt',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 18,
+  },
+  dark: {
+    name: 'Dark Ops',
+    icon: 'dark_mode',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+  },
+  terrain: {
+    name: 'Topography',
+    icon: 'terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17,
+  },
+};
+
+export function CampusMap({
+  markers = [],
+  className = '',
+  defaultView = 'streets',
+  showViewSelector = true,
+}: CampusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersLayerGroupRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
+  const [currentView, setCurrentView] = useState<MapViewType>(defaultView);
 
+  // Initialize Map
   useEffect(() => {
     let isMounted = true;
 
@@ -25,8 +71,7 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
       if (!isMounted) return;
 
       if (!mapInstanceRef.current && mapContainerRef.current) {
-        // Fallback default coordinates (Stanford / Campus Quad)
-        const defaultCenter: [number, number] = [37.4275, -122.1697];
+        const defaultCenter: [number, number] = [6.8905, 79.8820];
 
         const map = L.map(mapContainerRef.current, {
           center: defaultCenter,
@@ -34,10 +79,14 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
           zoomControl: true,
         });
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
+        const initialConfig = MAP_VIEW_TILES[currentView];
+        const tileLayer = L.tileLayer(initialConfig.url, {
+          attribution: initialConfig.attribution,
+          maxZoom: initialConfig.maxZoom,
+          subdomains: 'abcd',
         }).addTo(map);
+
+        tileLayerRef.current = tileLayer;
 
         const markersLayer = L.layerGroup().addTo(map);
         markersLayerGroupRef.current = markersLayer;
@@ -50,23 +99,25 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
 
         const latLngs: [number, number][] = [];
 
-        // Add campus blocks as polygons/rectangles or labels
+        // Add campus blocks as markers
         CAMPUS_BLOCKS.forEach((block) => {
           if (block.latitude && block.longitude) {
+            latLngs.push([block.latitude, block.longitude]);
+            const isDark = currentView === 'dark' || currentView === 'satellite';
             const blockIcon = L.divIcon({
               className: 'custom-block-marker',
               html: `
                 <div style="
-                  background: rgba(38, 65, 145, 0.12);
-                  border: 1.5px solid #264191;
+                  background: ${isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.92)'};
+                  border: 1.5px solid ${isDark ? '#60a5fa' : '#264191'};
                   border-radius: 6px;
                   padding: 2px 6px;
                   font-size: 10px;
                   font-weight: 700;
-                  color: #00236f;
+                  color: ${isDark ? '#93c5fd' : '#00236f'};
                   white-space: nowrap;
                   text-align: center;
-                  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
                 ">
                   🏢 ${block.name}
                 </div>
@@ -143,7 +194,7 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
         // Auto-fit bounds if we have valid marker coordinates
         if (latLngs.length > 0) {
           try {
-            mapInstanceRef.current.fitBounds(latLngs, { padding: [40, 40], maxZoom: 17 });
+            mapInstanceRef.current.fitBounds(latLngs, { padding: [50, 50], maxZoom: 17 });
           } catch {
             // Keep default center
           }
@@ -156,7 +207,34 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
     return () => {
       isMounted = false;
     };
-  }, [markers]);
+  }, [markers, currentView]);
+
+  // Switch Tile Layer when currentView changes
+  useEffect(() => {
+    async function switchLayer() {
+      if (!mapInstanceRef.current) return;
+      const L = (await import('leaflet')).default;
+
+      if (tileLayerRef.current) {
+        mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      }
+
+      const layerConfig = MAP_VIEW_TILES[currentView];
+      const newTileLayer = L.tileLayer(layerConfig.url, {
+        attribution: layerConfig.attribution,
+        maxZoom: layerConfig.maxZoom,
+        subdomains: 'abcd',
+      }).addTo(mapInstanceRef.current);
+
+      tileLayerRef.current = newTileLayer;
+      // Keep tileLayer behind markers
+      if (markersLayerGroupRef.current) {
+        markersLayerGroupRef.current.bringToFront();
+      }
+    }
+
+    switchLayer();
+  }, [currentView]);
 
   useEffect(() => {
     return () => {
@@ -172,12 +250,38 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
       {/* Map Target Container */}
       <div ref={mapContainerRef} className="w-full h-full min-h-[400px] z-0" />
 
+      {/* Map Style Selector Overlay */}
+      {showViewSelector && (
+        <div className="absolute top-4 right-4 bg-surface-container-lowest/90 backdrop-blur-md rounded-xl shadow-lg p-1.5 border border-outline-variant z-10 flex items-center gap-1 pointer-events-auto">
+          {(Object.keys(MAP_VIEW_TILES) as MapViewType[]).map((viewKey) => {
+            const view = MAP_VIEW_TILES[viewKey];
+            const isSelected = currentView === viewKey;
+            return (
+              <button
+                key={viewKey}
+                type="button"
+                onClick={() => setCurrentView(viewKey)}
+                title={`Switch to ${view.name} view`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-label-md transition-all duration-150 ${
+                  isSelected
+                    ? 'bg-primary text-on-primary font-bold shadow-sm'
+                    : 'text-on-surface-variant hover:bg-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{view.icon}</span>
+                <span>{view.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Interactive Legend Overlay */}
       <div className="absolute bottom-4 left-4 bg-surface-container-lowest/90 backdrop-blur-sm rounded-lg shadow-lg p-3 text-xs border border-outline-variant z-10 pointer-events-auto">
         <p className="font-label-md text-label-md text-on-surface mb-2 font-bold">CampusSafe Live Map</p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-error" />
+            <div className="w-3 h-3 rounded-full bg-error animate-pulse" />
             <span className="font-technical-sm text-on-surface-variant">Live Incident (Pulsing)</span>
           </div>
           <div className="flex items-center gap-2">
@@ -193,3 +297,4 @@ export function CampusMap({ markers = [], className = '' }: CampusMapProps) {
     </div>
   );
 }
+
