@@ -20,6 +20,7 @@ import {
   formatDistance,
   calculateEtaMinutes,
   calculateTravelEstimates,
+  getCampusOperatorLocation,
   type RouteGeoJson,
 } from '@/lib/maps';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
@@ -48,25 +49,24 @@ export default function MapPage() {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       setGpsError('Geolocation is not supported by your browser.');
       // Fallback location at Adama Campus EOC
-      setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 15, isLive: false });
+      setOperatorLocation(getCampusOperatorLocation(null));
       return;
     }
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        setOperatorLocation({
+        const validatedLoc = getCampusOperatorLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
-          isLive: true,
         });
+        setOperatorLocation(validatedLoc);
         setGpsError(null);
       },
       (err) => {
-        console.warn('Operator GPS watch error, using default EOC building coords:', err.message);
+        console.warn('Operator GPS watch error, using default EOC base inside campus:', err.message);
         setGpsError(err.message);
-        // Fallback default coordinates (Adama University Admin building / EOC base)
-        setOperatorLocation({ latitude: 8.5565, longitude: 39.2910, accuracy: 20, isLive: false });
+        setOperatorLocation(getCampusOperatorLocation(null));
       },
       {
         enableHighAccuracy: true,

@@ -9,17 +9,79 @@ export const ADAMA_CAMPUS_BOUNDS: [[number, number], [number, number]] = [
   [8.5900, 39.3400], // Northeast boundary
 ];
 
+// Precise ASTU / Adama University Full Campus Perimeter Polygon
+// Covers the main gates, administrative block, north dormitories, university stadium,
+// and the eastern/northeastern advanced research & technology park.
+export const ADAMA_UNIVERSITY_CAMPUS_POLYGON: [number, number][] = [
+  [8.5670, 39.2890], // Far North-West Gate & Field perimeter
+  [8.5675, 39.2940], // North perimeter (North of North Residential Halls & Stadium)
+  [8.5680, 39.2985], // North-East (North of University Stadium)
+  [8.5650, 39.3060], // East Research & Technology Center Annex
+  [8.5610, 39.3080], // Eastern Research Complex boundary
+  [8.5530, 39.3050], // South-East Agricultural & Energy Research field
+  [8.5490, 39.2980], // South-East perimeter
+  [8.5480, 39.2920], // South Gate / Main Entrance perimeter
+  [8.5505, 39.2850], // South-West sports boundary
+  [8.5590, 39.2840], // West Engineering perimeter
+  [8.5670, 39.2890], // Close polygon back to North-West
+];
+
 export const CAMPUS_BLOCKS: CampusBlock[] = [
-  { id: 'admin', name: 'Administration Building & EOC', latitude: 8.5565, longitude: 39.2910 },
+  { id: 'admin', name: 'Administration Building & Emergency Operations Center', latitude: 8.5565, longitude: 39.2910 },
   { id: 'engineering', name: 'Engineering Complex Block B', latitude: 8.5582, longitude: 39.2895 },
   { id: 'library', name: 'Main Campus Central Library', latitude: 8.5574, longitude: 39.2925 },
   { id: 'science', name: 'Applied Science & Chemistry Labs', latitude: 8.5550, longitude: 39.2880 },
   { id: 'student_center', name: 'Student Union & Cafeteria', latitude: 8.5540, longitude: 39.2935 },
   { id: 'health_center', name: 'Campus Health & Medical Centre', latitude: 8.5595, longitude: 39.2940 },
-  { id: 'sports_complex', name: 'Stadium & Sports Complex', latitude: 8.5525, longitude: 39.2870 },
-  { id: 'dormitory_north', name: 'North Residential Halls', latitude: 8.5610, longitude: 39.2915 },
-  { id: 'main_gate', name: 'Campus Main Entrance Gate', latitude: 8.5515, longitude: 39.2950 },
+  { id: 'dormitory_north', name: 'North Residential Dormitories', latitude: 8.5620, longitude: 39.2925 },
+  { id: 'stadium_north', name: 'University Stadium & Sports Arena', latitude: 8.5645, longitude: 39.2955 },
+  { id: 'research_complex', name: 'Advanced Technology & Science Research Institute', latitude: 8.5625, longitude: 39.3040 },
+  { id: 'innovation_hub', name: 'University Innovation & Incubation Center', latitude: 8.5590, longitude: 39.3025 },
+  { id: 'main_gate', name: 'Main Campus Entrance Gate & Security Post', latitude: 8.5515, longitude: 39.2950 },
 ];
+
+/**
+ * Checks if given lat/lng is inside the University Campus perimeter polygon (Ray-casting algorithm).
+ */
+export function isInsideCampusZone(lat: number, lng: number): boolean {
+  const polygon = ADAMA_UNIVERSITY_CAMPUS_POLYGON;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    const intersect = yi > lng !== yj > lng && lat < ((xj - xi) * (lng - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Returns the effective operator location for campus operations.
+ * If browser GPS is available and within campus bounds, uses live GPS.
+ * Otherwise, defaults to the Administration Building & EOC within the campus highlight zone.
+ */
+export function getCampusOperatorLocation(
+  rawGps: { latitude: number; longitude: number; accuracy?: number } | null
+): { latitude: number; longitude: number; accuracy?: number; isLive: boolean; isInsideCampus: boolean } {
+  if (rawGps && isInsideCampusZone(rawGps.latitude, rawGps.longitude)) {
+    return {
+      latitude: rawGps.latitude,
+      longitude: rawGps.longitude,
+      accuracy: rawGps.accuracy,
+      isLive: true,
+      isInsideCampus: true,
+    };
+  }
+  // If operator browser GPS is outside the campus (e.g. testing remotely or off campus),
+  // snap operator location to Campus EOC Base inside the campus polygon.
+  return {
+    latitude: 8.5565,
+    longitude: 39.2910,
+    accuracy: 15,
+    isLive: false,
+    isInsideCampus: true,
+  };
+}
 
 
 export function getIncidentMarkers(
@@ -102,18 +164,6 @@ function getDeviceColor(status: string): string {
   };
   return colors[status] || '#6b7280';
 }
-
-// Precise University Campus Perimeter Polygon (Adama University Campus Zone)
-export const ADAMA_UNIVERSITY_CAMPUS_POLYGON: [number, number][] = [
-  [8.5630, 39.2885],
-  [8.5635, 39.2945],
-  [8.5595, 39.2970],
-  [8.5510, 39.2975],
-  [8.5495, 39.2920],
-  [8.5515, 39.2855],
-  [8.5580, 39.2850],
-  [8.5630, 39.2885],
-];
 
 export interface TravelModeEstimates {
   walking: { minutes: number; text: string; distanceMeters: number };
