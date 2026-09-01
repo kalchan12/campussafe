@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'location_service.dart';
 import '../../features/auth/presentation/state/auth_notifier.dart';
+import '../../features/profile/presentation/state/profile_notifier.dart';
 import '../../features/profile/data/repositories/responder_repository.dart';
 import '../../shared/models/user.dart';
 
@@ -26,9 +28,12 @@ class ResponderLocationTracker {
   }
 
   void _init() {
-    // Listen to auth state to only track if the user is a logged-in responder
-    _ref.listen(authNotifierProvider, (previous, next) {
-      if (next.isAuthenticated && next.user != null && next.user!.role.isResponder) {
+    // Listen to profile state to only track if the logged-in user is a responder
+    _ref.listen(profileNotifierProvider, (previous, next) {
+      final user = next.user;
+      final authState = _ref.read(authNotifierProvider);
+
+      if (authState.isAuthenticated && user != null && user.role.isResponder) {
         startTracking();
       } else {
         stopTracking();
@@ -61,7 +66,8 @@ class ResponderLocationTracker {
   }
 
   Future<void> _sendLocationUpdate(Position position) async {
-    final userId = _ref.read(authNotifierProvider).userId;
+    final userId = _ref.read(profileNotifierProvider).user?.id ??
+        _ref.read(authNotifierProvider).userId;
     if (userId == null) return;
 
     final result = await _responderRepo.updateLocation(
@@ -71,7 +77,7 @@ class ResponderLocationTracker {
     );
 
     result.fold(
-      (error) => print('Failed to update responder location: ${error.message}'),
+      (error) => debugPrint('Failed to update responder location: ${error.message}'),
       (_) => _lastSentPosition = position,
     );
   }
