@@ -155,12 +155,12 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
 - [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
-- [ ] Mobile Map Parity & Advanced Spatial Operations (Pending Mobile Sync):
-  - [ ] Locked campus map zone & bounds for Adama City (`ADAMA_CAMPUS_BOUNDS`) with minimum zoom constraints.
-  - [ ] University Campus Safety Zone shaded perimeter polygon overlay (`ADAMA_UNIVERSITY_CAMPUS_POLYGON` covering Stadium, North Residence, Research Complex).
-  - [ ] Multi-modal best route path calculation with pedestrian/road geometry (Walk priority, Bike, Drive ETA chips).
-  - [ ] Multi-style tile layer switcher for Flutter (Streets, Satellite, Dark Ops, Topography).
-  - [ ] Real-time proximity calculation and responder dispatch ranking for mobile responder/operator view.
+- [x] Mobile Map Parity & Advanced Spatial Operations (Completed):
+  - [x] Locked campus map zone & bounds for Adama City (`ADAMA_CAMPUS_BOUNDS`) with minimum zoom constraints.
+  - [x] University Campus Safety Zone shaded perimeter polygon overlay (`ADAMA_UNIVERSITY_CAMPUS_POLYGON` covering Stadium, North Residence, Research Complex).
+  - [x] Multi-modal best route path calculation with pedestrian/road geometry (Walk priority, Bike, Drive ETA chips).
+  - [x] Multi-style tile layer switcher for Flutter (Streets, Satellite, Dark Ops, Topography).
+  - [x] Real-time proximity calculation and responder dispatch ranking for mobile responder/operator view.
 - [ ] History.
 - [x] Alerts & Campus Broadcasts Hub (Live broadcasts, severity color badges, acknowledge flow, filter chips, and interactive advisory details).
 - [x] Safety Action Protocols & 24/7 Escort Guide (Expandable emergency guidelines and night safety escort helpline quick dial).
@@ -539,10 +539,11 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 7. [x] Dashboard foundation & Supabase client setup.
 8. [x] Dashboard live data & realtime operations.
 
-### Architecture Hardening Sprint (Current)
-1. [ ] **Phase 1: Dashboard Security Hardening:** Implement Next.js `middleware.ts` to protect `/dashboard/*` routes and redirect unauthenticated users to `/login`.
-2. [ ] **Phase 2: Proximity Dispatch Engine:** Enable PostGIS in Supabase, update `latitude`/`longitude` to `GEOGRAPHY(Point)`, and write an edge function/trigger (`handle_new_incident`) to automatically assign the closest responder via Haversine distance.
-3. [x] **Phase 3: Mobile Offline Resilience & Background Location:** Queue failed SOS requests in SQLite (`sqflite`) for retry, and track responder background locations.
+### Architecture Hardening Sprint (Completed)
+1. [x] **Phase 1: Dashboard Security Hardening:** Implemented Next.js `middleware.ts` to protect `/dashboard/*` routes and redirect unauthenticated users to `/login`.
+2. [x] **Phase 2: Proximity Dispatch Engine:** Created SQL Haversine proximity function and `trigger_auto_dispatch` migration `20260828000004_proximity_dispatch.sql` to automatically assign nearest responder.
+3. [x] **Phase 3: Mobile Offline Resilience & Background Location:** Queued failed SOS requests in SQLite (`sqflite`) for retry, and tracked responder background locations.
+4. [x] **Phase 4: Mobile Map Parity & Advanced Spatial Engine:** Ported Adama campus bounds, safety polygon overlay, OSRM multi-modal routing engine, and multi-style tile switcher to Flutter.
 
 ### Hardware & IoT Sprint (Next Week)
 - [ ] Prepare backend IoT connection APIs (REST/MQTT endpoints).
