@@ -90,7 +90,7 @@ final activeIncidentRouteProvider = FutureProvider<RouteResult?>((ref) async {
   return await routingService.getBestRoute(startLatLng, endLatLng);
 });
 
-/// Provider for active incidents list with real/mock coordinates
+/// Provider for active incidents list with real coordinates
 final incidentsListProvider = StateNotifierProvider<IncidentsNotifier, List<Incident>>((ref) {
   final repository = ref.watch(incidentRepositoryProvider);
   return IncidentsNotifier(ref, repository);
@@ -110,7 +110,7 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       _loadFromBackend();
       _subscribeToRealtime();
     } else {
-      _loadInitialIncidents();
+      state = [];
     }
   }
 
@@ -118,15 +118,11 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
     final result = await _repository.getActiveIncidents();
     result.fold(
       (error) {
-        _loadInitialIncidents();
+        state = [];
       },
       (incidents) {
         if (mounted) {
-          if (incidents.isNotEmpty) {
-            state = incidents;
-          } else {
-            _loadInitialIncidents();
-          }
+          state = incidents;
         }
       },
     );
@@ -137,7 +133,7 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       _streamSubscription?.cancel();
       _streamSubscription = _repository.watchActiveIncidents().listen(
         (updatedIncidents) {
-          if (mounted && updatedIncidents.isNotEmpty) {
+          if (mounted) {
             state = updatedIncidents;
           }
         },
@@ -153,8 +149,6 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
   Future<void> refresh() async {
     if (Env.isConfigured) {
       await _loadFromBackend();
-    } else {
-      _loadInitialIncidents();
     }
   }
 
@@ -181,89 +175,6 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       }
       return inc;
     }).toList();
-  }
-
-  void _loadInitialIncidents() {
-    final now = DateTime.now();
-
-    state = [
-      Incident(
-        id: 'CS-1042',
-        type: EmergencyType.medical,
-        status: IncidentStatus.responding,
-        priority: 1,
-        reporterId: 'usr_sarah',
-        latitude: 8.5582,
-        longitude: 39.2895,
-        campusBlock: 'Engineering Complex Block B',
-        locationDescription: '2nd Floor, Room 204 near east stairwell',
-        description: 'Student experiencing severe dizziness and shortness of breath. First aid kit requested.',
-        createdAt: now.subtract(const Duration(minutes: 8)),
-        updatedAt: now.subtract(const Duration(minutes: 2)),
-        assignedAt: now.subtract(const Duration(minutes: 6)),
-        respondedAt: now.subtract(const Duration(minutes: 4)),
-      ),
-      Incident(
-        id: 'CS-1039',
-        type: EmergencyType.security,
-        status: IncidentStatus.assigned,
-        priority: 2,
-        reporterId: 'usr_david',
-        latitude: 8.5574,
-        longitude: 39.2925,
-        campusBlock: 'Main Campus Central Library',
-        locationDescription: 'South Gate Entrance near bicycle racks',
-        description: 'Suspicious unattended package reported by staff.',
-        createdAt: now.subtract(const Duration(minutes: 25)),
-        updatedAt: now.subtract(const Duration(minutes: 10)),
-        assignedAt: now.subtract(const Duration(minutes: 15)),
-      ),
-      Incident(
-        id: 'CS-1035',
-        type: EmergencyType.fire,
-        status: IncidentStatus.arrived,
-        priority: 1,
-        reporterId: 'usr_alex',
-        latitude: 8.5645,
-        longitude: 39.2955,
-        campusBlock: 'University Stadium & Sports Arena',
-        locationDescription: 'North Grandstand Electrical Control Room',
-        description: 'Electrical smoke detector activated. Area evacuated safely.',
-        createdAt: now.subtract(const Duration(minutes: 45)),
-        updatedAt: now.subtract(const Duration(minutes: 5)),
-        assignedAt: now.subtract(const Duration(minutes: 40)),
-        respondedAt: now.subtract(const Duration(minutes: 35)),
-        arrivedAt: now.subtract(const Duration(minutes: 12)),
-      ),
-      Incident(
-        id: 'CS-1028',
-        type: EmergencyType.accident,
-        status: IncidentStatus.received,
-        priority: 3,
-        reporterId: 'usr_emma',
-        latitude: 8.5540,
-        longitude: 39.2935,
-        campusBlock: 'Student Union & Cafeteria',
-        locationDescription: 'Outdoor cafeteria seating area',
-        description: 'Minor bicycle collision near walkway. Needs assessment.',
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 10)),
-        updatedAt: now.subtract(const Duration(minutes: 30)),
-      ),
-      Incident(
-        id: 'CS-1015',
-        type: EmergencyType.other,
-        status: IncidentStatus.created,
-        priority: 2,
-        reporterId: 'usr_rob',
-        latitude: 8.5625,
-        longitude: 39.3040,
-        campusBlock: 'Advanced Technology & Science Research Institute',
-        locationDescription: 'East Wing Lab Corridor',
-        description: 'Power grid fluctuation and water pipe leakage reported.',
-        createdAt: now.subtract(const Duration(minutes: 18)),
-        updatedAt: now.subtract(const Duration(minutes: 18)),
-      ),
-    ];
   }
 
   void addIncident(Incident incident) {
