@@ -33,6 +33,10 @@ class SosNotifier extends StateNotifier<SosState> {
     state = state.copyWith(status: SosStatus.confirming, error: null);
   }
 
+  void startTypeSelection() {
+    state = state.copyWith(status: SosStatus.selectingType, error: null);
+  }
+
   void selectType(String type) {
     state = state.copyWith(
       status: SosStatus.confirmingLocation,

@@ -149,14 +149,11 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  ref.read(sosNotifierProvider.notifier).reset();
                   setState(() {
                     _selectedTypeIndex = -1;
                   });
                   // Move to type selection
-                  ref.read(sosNotifierProvider.notifier).startConfirmation();
-                  // We transition locally to selectingType
-                  // By default selectingType view
+                  ref.read(sosNotifierProvider.notifier).startTypeSelection();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.sosRed,
