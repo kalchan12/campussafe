@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../profile/presentation/state/profile_notifier.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../shared/widgets/buttons.dart';
@@ -40,10 +41,10 @@ class HomePage extends ConsumerWidget {
                 children: [
                   Consumer(
                     builder: (context, ref, _) {
+                      final profileState = ref.watch(profileNotifierProvider);
                       final authState = ref.watch(authNotifierProvider);
-                      final displayName = authState.email != null
-                          ? authState.email!.split('@').first
-                          : (isGuest ? 'Guest' : 'Student');
+                      final displayName = profileState.user?.fullName ?? 
+                          (authState.email != null ? authState.email!.split('@').first : (isGuest ? 'Guest' : 'Student'));
                       return Text(
                         'Hello, $displayName',
                         style: AppTypography.displayLgMobile.copyWith(
