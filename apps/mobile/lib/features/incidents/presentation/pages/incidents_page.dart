@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
-import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/models/incident.dart';
 import '../../../../shared/widgets/cards.dart';
+import '../../../../shared/widgets/status_badge.dart';
 import '../state/incidents_provider.dart';
 import '../widgets/incident_map_view.dart';
 
@@ -23,80 +23,72 @@ class IncidentsPage extends ConsumerWidget {
         ? incidents
         : incidents.where((i) => i.type == selectedFilter).toList();
 
+    final activeCount = incidents.where((i) => i.status != IncidentStatus.resolved && i.status != IncidentStatus.cancelled).length;
+    final criticalCount = incidents.where((i) => i.priority == 1 && i.status != IncidentStatus.resolved).length;
+
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Campus Incidents',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Campus Emergencies',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 19,
+                color: AppColors.onSurface,
+                letterSpacing: -0.3,
+              ),
             ),
             Text(
-              '${incidents.length} active emergency events',
-              style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+              '$activeCount active events across campus',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
         actions: [
-          // View Mode Switcher: List vs Live GPS Map
+          // View Mode Switcher Pill (List vs Live Map)
           Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: SegmentedButton<IncidentsViewMode>(
-              segments: [
-                ButtonSegment<IncidentsViewMode>(
-                  value: IncidentsViewMode.list,
-                  icon: Icon(
-                    Icons.view_list_rounded,
-                    size: 18,
-                    color: viewMode == IncidentsViewMode.list ? Colors.white : AppColors.onSurfaceVariant,
-                  ),
-                  label: Text(
-                    'List',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: viewMode == IncidentsViewMode.list ? FontWeight.bold : FontWeight.w500,
-                      color: viewMode == IncidentsViewMode.list ? Colors.white : AppColors.onSurfaceVariant,
-                    ),
-                  ),
+            padding: const EdgeInsets.only(right: 16),
+            child: Container(
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.6),
                 ),
-                ButtonSegment<IncidentsViewMode>(
-                  value: IncidentsViewMode.map,
-                  icon: Icon(
-                    Icons.map_rounded,
-                    size: 18,
-                    color: viewMode == IncidentsViewMode.map ? Colors.white : AppColors.onSurfaceVariant,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ViewModeOption(
+                    icon: Icons.list_alt_rounded,
+                    label: 'List',
+                    isSelected: viewMode == IncidentsViewMode.list,
+                    onTap: () {
+                      ref.read(incidentsViewModeProvider.notifier).state =
+                          IncidentsViewMode.list;
+                    },
                   ),
-                  label: Text(
-                    'Map',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: viewMode == IncidentsViewMode.map ? FontWeight.bold : FontWeight.w500,
-                      color: viewMode == IncidentsViewMode.map ? Colors.white : AppColors.onSurfaceVariant,
-                    ),
+                  _ViewModeOption(
+                    icon: Icons.map_outlined,
+                    label: 'Map',
+                    isSelected: viewMode == IncidentsViewMode.map,
+                    onTap: () {
+                      ref.read(incidentsViewModeProvider.notifier).state =
+                          IncidentsViewMode.map;
+                    },
                   ),
-                ),
-              ],
-              selected: {viewMode},
-              onSelectionChanged: (newSelection) {
-                ref.read(incidentsViewModeProvider.notifier).state =
-                    newSelection.first;
-              },
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppColors.primary;
-                  }
-                  return AppColors.surfaceContainerLow;
-                }),
-                foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return Colors.white;
-                  }
-                  return AppColors.onSurfaceVariant;
-                }),
-                visualDensity: VisualDensity.compact,
+                ],
               ),
             ),
           ),
@@ -104,13 +96,17 @@ class IncidentsPage extends ConsumerWidget {
       ),
       body: viewMode == IncidentsViewMode.map
           ? IncidentMapView(incidents: incidents)
-          : _buildIncidentList(context, ref, filteredIncidents),
+          : _buildIncidentList(context, ref, filteredIncidents, incidents, criticalCount),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/reports/new'),
-        icon: const Icon(Icons.add_alert_rounded),
-        label: const Text('Report Incident'),
+        icon: const Icon(Icons.add_alert_rounded, size: 20),
+        label: const Text(
+          'Report Incident',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        elevation: 3,
       ),
     );
   }
@@ -118,42 +114,27 @@ class IncidentsPage extends ConsumerWidget {
   Widget _buildIncidentList(
     BuildContext context,
     WidgetRef ref,
-    List<Incident> incidents,
+    List<Incident> filteredIncidents,
+    List<Incident> allIncidents,
+    int criticalCount,
   ) {
     final selectedFilter = ref.watch(selectedEmergencyTypeFilterProvider);
-    final allIncidents = ref.watch(incidentsListProvider);
 
     return Column(
       children: [
-        // Filter Chips Row
+        // Category Filter Chips
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
+          width: double.infinity,
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                FilterChip(
-                  label: Text(
-                    'All (${allIncidents.length})',
-                    style: TextStyle(
-                      color: selectedFilter == null ? Colors.white : AppColors.onSurface,
-                      fontWeight: selectedFilter == null ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 12,
-                    ),
-                  ),
-                  selected: selectedFilter == null,
-                  selectedColor: AppColors.primary,
-                  checkmarkColor: Colors.white,
-                  backgroundColor: AppColors.surfaceContainerLow,
-                  side: BorderSide(
-                    color: selectedFilter == null
-                        ? AppColors.primary
-                        : AppColors.outlineVariant.withValues(alpha: 0.6),
-                  ),
-                  onSelected: (_) {
+                _FilterPill(
+                  label: 'All (${allIncidents.length})',
+                  isSelected: selectedFilter == null,
+                  onTap: () {
                     ref.read(selectedEmergencyTypeFilterProvider.notifier).state = null;
                   },
                 ),
@@ -166,27 +147,13 @@ class IncidentsPage extends ConsumerWidget {
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(
-                        '${type.displayName} ($count)',
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.onSurface,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          fontSize: 12,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.primary,
-                      checkmarkColor: Colors.white,
-                      backgroundColor: AppColors.surfaceContainerLow,
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.outlineVariant.withValues(alpha: 0.6),
-                      ),
-                      onSelected: (_) {
+                    child: _FilterPill(
+                      label: '${type.displayName} ($count)',
+                      isSelected: isSelected,
+                      icon: type.value.typeIcon,
+                      onTap: () {
                         ref.read(selectedEmergencyTypeFilterProvider.notifier).state =
-                            selectedFilter == type ? null : type;
+                            isSelected ? null : type;
                       },
                     ),
                   );
@@ -196,102 +163,174 @@ class IncidentsPage extends ConsumerWidget {
           ),
         ),
 
-        // List Content
+        const Divider(height: 1, color: AppColors.outlineVariant),
+
+        // Incident Cards List
         Expanded(
-          child: incidents.isEmpty
+          child: filteredIncidents.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        size: 64,
-                        color: AppColors.success,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        'No Incidents Found',
-                        style: AppTypography.headlineMd.copyWith(
-                          color: AppColors.onSurface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 40,
+                            color: AppColors.success,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'No matching active emergencies for this filter.',
-                        style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Active Emergencies',
+                          style: AppTypography.headlineMd.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Campus is currently secure. No incidents match your active filter.',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.containerMargin,
-                    AppSpacing.xs,
-                    AppSpacing.containerMargin,
-                    80 + AppSpacing.safeAreaBottom,
-                  ),
-                  itemCount: incidents.length,
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 88),
+                  itemCount: filteredIncidents.length,
                   itemBuilder: (context, index) {
-                    final incident = incidents[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                      child: Column(
-                        children: [
-                          IncidentCard(
-                            id: incident.id,
-                            type: incident.type.value,
-                            status: incident.status.value,
-                            description: incident.description,
-                            location: incident.campusBlock,
-                            createdAt: incident.createdAt,
-                            priority: incident.priority,
-                            onTap: () => context.push('/incident/${incident.id}'),
-                          ),
-                          // Quick Map Action Bar under card
-                          if (incident.latitude != null && incident.longitude != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2, bottom: 6),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      visualDensity: VisualDensity.compact,
-                                      foregroundColor: AppColors.primary,
-                                    ),
-                                    onPressed: () {
-                                      ref.read(selectedMapIncidentProvider.notifier).state = incident;
-                                      ref.read(incidentsViewModeProvider.notifier).state = IncidentsViewMode.map;
-                                    },
-                                    icon: const Icon(Icons.map_rounded, size: 16),
-                                    label: const Text('View on Live Map', style: TextStyle(fontSize: 12)),
-                                  ),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      visualDensity: VisualDensity.compact,
-                                      foregroundColor: AppColors.onSurfaceVariant,
-                                    ),
-                                    onPressed: () {
-                                      MapLauncherUtil.openInGoogleMaps(
-                                        latitude: incident.latitude!,
-                                        longitude: incident.longitude!,
-                                        label: '${incident.type.displayName} - ${incident.campusBlock}',
-                                      );
-                                    },
-                                    icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                                    label: const Text('Google Maps', style: TextStyle(fontSize: 12)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
+                    final incident = filteredIncidents[index];
+                    return IncidentCard(
+                      id: incident.id,
+                      type: incident.type.value,
+                      status: incident.status.value,
+                      description: incident.description,
+                      location: incident.campusBlock,
+                      createdAt: incident.createdAt,
+                      priority: incident.priority,
+                      onTap: () => context.push('/incident/${incident.id}'),
                     );
                   },
                 ),
         ),
       ],
+    );
+  }
+}
+
+class _ViewModeOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ViewModeOption({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  const _FilterPill({
+    required this.label,
+    required this.isSelected,
+    this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.outlineVariant.withValues(alpha: 0.6),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 13,
+                color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

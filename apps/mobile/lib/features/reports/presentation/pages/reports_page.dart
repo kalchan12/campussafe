@@ -18,12 +18,30 @@ class ReportsPage extends ConsumerStatefulWidget {
   ConsumerState<ReportsPage> createState() => _ReportsPageState();
 }
 
-class _ReportsPageState extends ConsumerState<ReportsPage> {
+class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        final mode = _tabController.index == 0
+            ? AlertsTabMode.broadcasts
+            : _tabController.index == 1
+                ? AlertsTabMode.myReports
+                : AlertsTabMode.safetyGuide;
+        ref.read(alertsTabSegmentProvider.notifier).state = mode;
+      }
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -56,20 +74,28 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     }).toList();
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Alerts & Safety Hub',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 19,
+                color: AppColors.onSurface,
+                letterSpacing: -0.3,
+              ),
             ),
             Row(
               children: [
                 Container(
-                  width: 7,
-                  height: 7,
+                  width: 6,
+                  height: 6,
                   decoration: const BoxDecoration(
                     color: AppColors.success,
                     shape: BoxShape.circle,
@@ -78,183 +104,114 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                 const SizedBox(width: 5),
                 const Text(
                   'Campus Broadcast Live',
-                  style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_moderator_rounded),
-            tooltip: 'New Safety Report',
-            onPressed: () => context.push('/reports/new'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TabBar(
+              controller: _tabController,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.onSurfaceVariant,
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              tabs: [
+                Tab(text: 'Broadcasts (${alerts.length})'),
+                Tab(text: 'Reports (${reports.length})'),
+                const Tab(text: 'Safety Guides'),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
       body: Column(
         children: [
-          const SizedBox(height: 4),
-
-          // Search Bar with generous spacing
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.containerMargin,
-              vertical: 4,
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                ref.read(alertsSearchQueryProvider.notifier).state = value;
-              },
-              decoration: InputDecoration(
-                hintText: activeTab == AlertsTabMode.broadcasts
-                    ? 'Search campus broadcasts & alerts...'
-                    : activeTab == AlertsTabMode.myReports
-                        ? 'Search your submitted reports...'
-                        : 'Search safety guidelines...',
-                hintStyle: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.onSurfaceVariant),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(alertsSearchQueryProvider.notifier).state = '';
-                        },
-                      )
-                    : null,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                filled: true,
-                fillColor: AppColors.surfaceContainerLow,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                  borderSide: const BorderSide(color: AppColors.outlineVariant),
+          // Search Input
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.6),
                 ),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          // Segmented Tab Switcher with High-Contrast White Text on Selected Blue
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.containerMargin,
-              vertical: 2,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<AlertsTabMode>(
-                segments: [
-                  ButtonSegment<AlertsTabMode>(
-                    value: AlertsTabMode.broadcasts,
-                    icon: Icon(
-                      Icons.campaign_outlined,
-                      size: 18,
-                      color: activeTab == AlertsTabMode.broadcasts ? Colors.white : AppColors.onSurfaceVariant,
-                    ),
-                    label: Text(
-                      'Broadcasts (${alerts.length})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: activeTab == AlertsTabMode.broadcasts ? FontWeight.bold : FontWeight.w500,
-                        color: activeTab == AlertsTabMode.broadcasts ? Colors.white : AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  ButtonSegment<AlertsTabMode>(
-                    value: AlertsTabMode.myReports,
-                    icon: Icon(
-                      Icons.assignment_outlined,
-                      size: 18,
-                      color: activeTab == AlertsTabMode.myReports ? Colors.white : AppColors.onSurfaceVariant,
-                    ),
-                    label: Text(
-                      'My Reports (${reports.length})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: activeTab == AlertsTabMode.myReports ? FontWeight.bold : FontWeight.w500,
-                        color: activeTab == AlertsTabMode.myReports ? Colors.white : AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  ButtonSegment<AlertsTabMode>(
-                    value: AlertsTabMode.safetyGuide,
-                    icon: Icon(
-                      Icons.menu_book_outlined,
-                      size: 18,
-                      color: activeTab == AlertsTabMode.safetyGuide ? Colors.white : AppColors.onSurfaceVariant,
-                    ),
-                    label: Text(
-                      'Guides',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: activeTab == AlertsTabMode.safetyGuide ? FontWeight.bold : FontWeight.w500,
-                        color: activeTab == AlertsTabMode.safetyGuide ? Colors.white : AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-                selected: {activeTab},
-                onSelectionChanged: (selection) {
-                  ref.read(alertsTabSegmentProvider.notifier).state = selection.first;
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  ref.read(alertsSearchQueryProvider.notifier).state = value;
                 },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return AppColors.primary;
-                    }
-                    return AppColors.surfaceContainerLow;
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.white;
-                    }
-                    return AppColors.onSurfaceVariant;
-                  }),
-                  visualDensity: VisualDensity.compact,
+                decoration: InputDecoration(
+                  hintText: activeTab == AlertsTabMode.broadcasts
+                      ? 'Search campus broadcasts & alerts...'
+                      : activeTab == AlertsTabMode.myReports
+                          ? 'Search your submitted reports...'
+                          : 'Search emergency protocols...',
+                  hintStyle: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                  prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.onSurfaceVariant),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref.read(alertsSearchQueryProvider.notifier).state = '';
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 6),
-
-          // Filter Chips Row for Broadcasts / Reports with White Text on Active
+          // Sub-filters for active tab
           if (activeTab == AlertsTabMode.broadcasts)
             _buildBroadcastFilters(ref, selectedCategory, alerts)
           else if (activeTab == AlertsTabMode.myReports)
             _buildReportFilters(ref, selectedReportStatus, reports),
 
-          const SizedBox(height: 6),
+          const Divider(height: 1, color: AppColors.outlineVariant),
 
-          // Main Tab Body
+          // Tab Views
           Expanded(
-            child: activeTab == AlertsTabMode.broadcasts
-                ? _buildBroadcastsList(filteredAlerts)
-                : activeTab == AlertsTabMode.myReports
-                    ? _buildReportsList(context, filteredReports)
-                    : const SafetyGuideView(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildBroadcastsList(filteredAlerts),
+                _buildReportsList(context, filteredReports),
+                const SafetyGuideView(),
+              ],
+            ),
           ),
         ],
       ),
-      floatingActionButton: activeTab != AlertsTabMode.safetyGuide
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/reports/new'),
-              icon: const Icon(Icons.add_alert_rounded, color: Colors.white),
-              label: const Text(
-                'Report Hazard / Issue',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/reports/new'),
+        icon: const Icon(Icons.add_moderator_rounded, size: 20),
+        label: const Text(
+          'Report Hazard',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 3,
+      ),
     );
   }
 

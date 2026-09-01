@@ -32,53 +32,85 @@ class SettingsPage extends ConsumerWidget {
         );
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Settings & Security'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Settings & Security',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 19,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
+          ),
+        ),
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 1. Account & Security Section
           _SettingsSection(
-            title: 'Account & Identity',
+            title: 'ACCOUNT & IDENTITY',
             children: [
               _SettingsTile(
-                icon: Icons.person_outlined,
+                icon: Icons.person_outline_rounded,
+                iconColor: AppColors.primary,
                 title: 'Edit Safety Profile',
-                subtitle: user.fullName.isNotEmpty ? user.fullName : 'Update your profile information',
+                subtitle: user.fullName.isNotEmpty ? user.fullName : 'Update your contact and medical info',
                 onTap: () => context.go('/profile'),
               ),
               _SettingsTile(
-                icon: Icons.email_outlined,
-                title: 'Registered Email',
+                icon: Icons.alternate_email_rounded,
+                iconColor: const Color(0xFF0284C7),
+                title: 'Registered Campus Email',
                 subtitle: user.email,
-                trailing: const Icon(Icons.verified_user, size: 18, color: AppColors.success),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'VERIFIED',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ),
               ),
               _SettingsTile(
                 icon: Icons.badge_outlined,
+                iconColor: const Color(0xFF7C3AED),
                 title: 'Campus Role',
                 subtitle: user.role.displayName,
-                trailing: const SizedBox.shrink(),
               ),
               _SettingsTile(
-                icon: Icons.lock_reset_outlined,
+                icon: Icons.lock_reset_rounded,
+                iconColor: const Color(0xFFD97706),
                 title: 'Reset Password',
-                subtitle: 'Send a password recovery email',
+                subtitle: 'Send password recovery link to your email',
                 onTap: () => _showPasswordResetDialog(context, ref, user.email),
               ),
             ],
           ),
 
+          const SizedBox(height: 16),
+
           // 2. Notifications Section
           _SettingsSection(
-            title: 'Safety Broadcasts & Notifications',
+            title: 'NOTIFICATIONS & BROADCASTS',
             children: [
               _SettingsTile(
                 icon: Icons.notifications_active_outlined,
+                iconColor: AppColors.primary,
                 title: 'Push Notifications',
                 subtitle: pushEnabled
-                    ? 'Receiving high-priority emergency alerts'
+                    ? 'Receiving high-priority campus safety alerts'
                     : 'Alerts muted (Not recommended)',
-                trailing: Switch(
+                trailing: Switch.adaptive(
                   value: pushEnabled,
                   activeTrackColor: AppColors.primary,
                   onChanged: (val) {
@@ -87,25 +119,29 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
               const _SettingsTile(
-                icon: Icons.campaign_outlined,
-                title: 'Emergency Sound Channel',
-                subtitle: 'Overrides Do Not Disturb for severe hazard SOS alerts',
-                trailing: Icon(Icons.check_circle, size: 18, color: AppColors.primary),
+                icon: Icons.volume_up_outlined,
+                iconColor: Color(0xFFEA580C),
+                title: 'Emergency Siren Override',
+                subtitle: 'Overrides silent mode for severe hazard alerts',
+                trailing: Icon(Icons.check_circle_rounded, size: 20, color: AppColors.primary),
               ),
             ],
           ),
 
+          const SizedBox(height: 16),
+
           // 3. Location & Campus Section
           _SettingsSection(
-            title: 'Location & Proximity',
+            title: 'LOCATION & DISPATCH',
             children: [
               _SettingsTile(
-                icon: Icons.location_on_outlined,
-                title: 'GPS Location Services',
+                icon: Icons.near_me_outlined,
+                iconColor: const Color(0xFF059669),
+                title: 'Live GPS Location Services',
                 subtitle: locationEnabled
-                    ? 'High-accuracy GPS active for emergency dispatch'
-                    : 'Location disabled (SOS coordinates will be estimated)',
-                trailing: Switch(
+                    ? 'High accuracy GPS enabled for dispatch'
+                    : 'Location disabled (Manual block required)',
+                trailing: Switch.adaptive(
                   value: locationEnabled,
                   activeTrackColor: AppColors.primary,
                   onChanged: (val) {
@@ -114,8 +150,9 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
               _SettingsTile(
-                icon: Icons.domain_outlined,
-                title: 'Primary Campus Quad',
+                icon: Icons.domain_rounded,
+                iconColor: AppColors.primary,
+                title: 'Assigned Campus Block',
                 subtitle: user.campusBlock != null && user.campusBlock!.isNotEmpty
                     ? user.campusBlock!
                     : 'Main Campus Quad',
@@ -124,50 +161,59 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
 
+          const SizedBox(height: 16),
+
           // 4. About & Legal Section
           _SettingsSection(
-            title: 'About CampusSafe',
+            title: 'ABOUT & LEGAL',
             children: [
               const _SettingsTile(
-                icon: Icons.verified_outlined,
-                title: 'App Version',
-                subtitle: 'CampusSafe 1.0.0 (Build 2026.08 - Enterprise Security)',
-                trailing: SizedBox.shrink(),
+                icon: Icons.info_outline_rounded,
+                iconColor: AppColors.onSurfaceVariant,
+                title: 'CampusSafe Platform',
+                subtitle: 'Version 1.0.0 (Enterprise Safety Edition)',
               ),
               _SettingsTile(
                 icon: Icons.description_outlined,
+                iconColor: AppColors.onSurfaceVariant,
                 title: 'Terms of Service',
                 onTap: () => _showTermsDialog(context),
               ),
               _SettingsTile(
-                icon: Icons.privacy_tip_outlined,
+                icon: Icons.shield_outlined,
+                iconColor: AppColors.onSurfaceVariant,
                 title: 'Privacy & Data Protection',
                 onTap: () => _showPrivacyDialog(context),
               ),
             ],
           ),
 
-          // 5. Danger Zone / Logout
+          const SizedBox(height: 16),
+
+          // 5. Account Actions
           _SettingsSection(
-            title: 'Account Actions',
+            title: 'ACCOUNT ACTIONS',
             children: [
               _SettingsTile(
                 icon: Icons.logout_rounded,
+                iconColor: AppColors.primary,
                 title: 'Sign Out',
                 subtitle: 'Log out from this device',
                 titleColor: AppColors.primary,
                 onTap: () => _showLogoutDialog(context, ref),
               ),
               _SettingsTile(
-                icon: Icons.delete_forever_outlined,
+                icon: Icons.no_accounts_outlined,
+                iconColor: AppColors.error,
                 title: 'Deactivate Account',
-                subtitle: 'Request account removal from campus database',
+                subtitle: 'Unlink your campus safety profile',
                 titleColor: AppColors.error,
                 onTap: () => _showDeactivateDialog(context, ref),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+
+          const SizedBox(height: 48),
         ],
       ),
     );
@@ -177,14 +223,16 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset Password'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Reset Password', style: TextStyle(fontWeight: FontWeight.w800)),
         content: Text(
           'Send a secure password reset link to $email?',
+          style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -210,6 +258,7 @@ class SettingsPage extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Send Email', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
@@ -222,14 +271,16 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Logout Confirmation'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Sign Out Confirmation', style: TextStyle(fontWeight: FontWeight.w800)),
         content: const Text(
           'Are you sure you want to sign out from CampusSafe?',
+          style: TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -242,8 +293,9 @@ class SettingsPage extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -254,16 +306,18 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Deactivate Account'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Deactivate Account', style: TextStyle(fontWeight: FontWeight.w800)),
         content: const Text(
           'Deactivating your account will disable emergency push alerts and unregister your campus ID. Are you sure?',
+          style: TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await ref.read(authNotifierProvider.notifier).signOut();
@@ -271,7 +325,12 @@ class SettingsPage extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            child: const Text('Deactivate', style: TextStyle(color: AppColors.error)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Deactivate', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -282,16 +341,18 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Terms of Service'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Terms of Service', style: TextStyle(fontWeight: FontWeight.w800)),
         content: const SingleChildScrollView(
           child: Text(
             'CampusSafe is an emergency response coordination platform designed for university students, staff, and authorized responders. It assists in location dispatch and communication during campus emergencies.\n\nCampusSafe does not replace official national emergency services (911). In critical life-threatening situations, dial 911 immediately.',
+            style: TextStyle(fontSize: 13, height: 1.4),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -302,16 +363,18 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Privacy & Data Protection'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Privacy & Data Protection', style: TextStyle(fontWeight: FontWeight.w800)),
         content: const SingleChildScrollView(
           child: Text(
             'Your privacy is strictly safeguarded under University Data Protection standards.\n\n• Location data is only shared with verified responders when you actively trigger an SOS or submit a safety report.\n• Anonymous safety reports do not record your user identity or phone number.\n• Medical information is encrypted and accessible only to responding medical units.',
+            style: TextStyle(fontSize: 13, height: 1.4),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -334,21 +397,44 @@ class _SettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-              color: Colors.grey.shade600,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.7),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
-            children: children,
+            children: [
+              for (int i = 0; i < children.length; i++) ...[
+                children[i],
+                if (i < children.length - 1)
+                  const Divider(
+                    height: 1,
+                    indent: 52,
+                    color: AppColors.outlineVariant,
+                  ),
+              ],
+            ],
           ),
         ),
       ],
@@ -358,6 +444,7 @@ class _SettingsSection extends StatelessWidget {
 
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
+  final Color? iconColor;
   final String title;
   final String? subtitle;
   final Widget? trailing;
@@ -366,6 +453,7 @@ class _SettingsTile extends StatelessWidget {
 
   const _SettingsTile({
     required this.icon,
+    this.iconColor,
     required this.title,
     this.subtitle,
     this.trailing,
@@ -376,17 +464,42 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: titleColor ?? AppColors.primary),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: iconColor ?? AppColors.primary,
+        ),
+      ),
       title: Text(
         title,
         style: TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: titleColor,
+          color: titleColor ?? AppColors.onSurface,
         ),
       ),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: trailing ?? const Icon(Icons.chevron_right, size: 20),
-      onTap: onTap,
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          : null,
+      trailing: trailing ??
+          (onTap != null
+              ? const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: AppColors.onSurfaceVariant)
+              : null),
     );
   }
 }

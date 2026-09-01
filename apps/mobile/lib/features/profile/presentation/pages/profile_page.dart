@@ -28,20 +28,28 @@ class ProfilePage extends ConsumerWidget {
         );
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: const Text(
           'Profile & Safety ID',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 19,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_note_outlined),
-            tooltip: 'Edit Profile & Safety Info',
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: 'Edit Profile',
             onPressed: () => _showEditProfileModal(context, ref, user),
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings & Security',
+            icon: const Icon(Icons.settings_outlined, size: 20),
+            tooltip: 'Settings',
             onPressed: () => context.push('/settings'),
           ),
         ],
@@ -52,32 +60,27 @@ class ProfilePage extends ConsumerWidget {
               onRefresh: () => ref.read(profileNotifierProvider.notifier).loadProfile(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.containerMargin,
-                  AppSpacing.xs,
-                  AppSpacing.containerMargin,
-                  96 + AppSpacing.safeAreaBottom,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Compact Profile Header Card
+                    // 1. Modern Profile Hero Card
                     _buildProfileHeaderCard(context, ref, user),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
-                    // 2. Emergency & Medical Information Section (Safety Critical)
+                    // 2. Emergency & Medical Safety Card
                     _buildEmergencyInfoSection(context, ref, user),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
-                    // 3. Identity & Campus Location Section
+                    // 3. Campus & Network Info Section
                     _buildCampusInfoSection(context, user),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
-                    // 4. Account Settings & Security Section
+                    // 4. Quick Account Actions
                     _buildAccountActionsSection(context),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-                    // 5. Logout Button
+                    // 5. Sign Out
                     _buildLogoutButton(context, ref),
                   ],
                 ),
@@ -87,374 +90,419 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildProfileHeaderCard(BuildContext context, WidgetRef ref, User user) {
-    return Card(
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Compact Profile Avatar
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
-              ),
-              child: Center(
-                child: Text(
-                  user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Identity Hierarchy with Auto-wrapping Tags
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    user.fullName.isNotEmpty ? user.fullName : 'Campus Member',
-                    style: AppTypography.headlineMd.copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    user.email,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                        ),
-                        child: Text(
-                          user.role.displayName.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'ID: ${user.id.length > 8 ? user.id.substring(0, 8) : user.id}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.7),
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmergencyInfoSection(BuildContext context, WidgetRef ref, User user) {
-    final infoText = user.emergencyInfo ?? 'No emergency medical notes recorded. Tap edit to add blood group, allergies, or emergency contact.';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section Header
-        Row(
-          children: [
-            const Icon(Icons.medical_services_outlined, size: 15, color: AppColors.critical),
-            const SizedBox(width: 6),
-            const Expanded(
-              child: Text(
-                'EMERGENCY & MEDICAL INFO',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: AppColors.critical,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            InkWell(
-              onTap: () => _showEditProfileModal(context, ref, user),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.edit, size: 12, color: AppColors.primary),
-                    SizedBox(width: 4),
-                    Text(
-                      'Edit',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-
-        Card(
-          elevation: 1.5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            side: BorderSide(color: AppColors.critical.withValues(alpha: 0.25), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.critical.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.critical.withValues(alpha: 0.15)),
-                  ),
-                  child: Text(
-                    infoText,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Emergency Contact Row
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.outlineVariant),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.contact_phone_outlined, size: 18, color: AppColors.primary),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Campus Emergency Dispatch',
-                              style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w500),
-                            ),
-                            SizedBox(height: 1),
-                            Text(
-                              'Campus Police & First Aid • 911 / Direct',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.phone, size: 18, color: AppColors.primary),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () async {
-                          final uri = Uri.parse('tel:911');
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
+        ],
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF00084D), Color(0xFF005FAF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCampusInfoSection(BuildContext context, User user) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'CAMPUS & IDENTITY DETAILS',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        Card(
-          elevation: 1.5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            side: const BorderSide(color: AppColors.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              _buildInfoRow(
-                icon: Icons.phone_outlined,
-                label: 'Phone Number',
-                value: user.phone != null && user.phone!.isNotEmpty ? user.phone! : 'Not provided',
+            child: Center(
+              child: Text(
+                user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
               ),
-              const Divider(height: 1, color: AppColors.outlineVariant),
-              _buildInfoRow(
-                icon: Icons.domain_rounded,
-                label: 'Assigned Campus Block / Room',
-                value: user.campusBlock != null && user.campusBlock!.isNotEmpty ? user.campusBlock! : 'Main Campus Quad',
-              ),
-              const Divider(height: 1, color: AppColors.outlineVariant),
-              _buildInfoRow(
-                icon: Icons.wifi_tethering_rounded,
-                label: 'Campus Safety Network',
-                value: 'Active & Connected',
-                valueColor: AppColors.success,
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
-    );
-  }
+          const SizedBox(width: 14),
 
-  Widget _buildAccountActionsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'ACCOUNT & PREFERENCES',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        Card(
-          elevation: 1.5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            side: const BorderSide(color: AppColors.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              ListTile(
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                leading: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 20),
-                title: const Text('Notification Preferences', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
-                onTap: () => context.push('/settings'),
-              ),
-              const Divider(height: 1, color: AppColors.outlineVariant),
-              ListTile(
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                leading: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
-                title: const Text('Security & Password', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.onSurfaceVariant),
-                onTap: () => context.push('/settings'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.primary),
-          const SizedBox(width: 12),
+          // User info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  user.fullName.isNotEmpty ? user.fullName : 'Campus Member',
                   style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurface,
+                    letterSpacing: -0.2,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: 3),
                 Text(
-                  value,
-                  style: TextStyle(
+                  user.email,
+                  style: const TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? AppColors.onSurface,
+                    color: AppColors.onSurfaceVariant,
+                    fontWeight: FontWeight.w400,
                   ),
-                  softWrap: true,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        user.role.displayName.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'ID: ${user.id.length > 8 ? user.id.substring(0, 8).toUpperCase() : user.id.toUpperCase()}',
+                      style: AppTypography.technicalSm.copyWith(
+                        fontSize: 11,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEmergencyInfoSection(BuildContext context, WidgetRef ref, User user) {
+    final infoText = user.emergencyInfo ?? 'No emergency medical notes recorded. Tap Edit to add blood group, allergies, or emergency contact.';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.medical_services_rounded, size: 16, color: AppColors.error),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Emergency & Medical ID',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _showEditProfileModal(context, ref, user),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit, size: 12, color: AppColors.primary),
+                      SizedBox(width: 4),
+                      Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Info Text Box
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.12)),
+            ),
+            child: Text(
+              infoText,
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 1-Tap Emergency Hotline
+          InkWell(
+            onTap: () async {
+              final uri = Uri.parse('tel:911');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              }
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.outlineVariant),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.phone_in_talk_rounded, size: 18, color: AppColors.error),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Campus Emergency Dispatch',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 1),
+                        Text(
+                          'Dial 911 / Campus Police Hotline',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.call, size: 18, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCampusInfoSection(BuildContext context, User user) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Campus & Network Info',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildInfoTile(
+            icon: Icons.phone_outlined,
+            label: 'Phone Number',
+            value: user.phone != null && user.phone!.isNotEmpty ? user.phone! : 'Not provided',
+          ),
+          const Divider(height: 16, color: AppColors.outlineVariant),
+          _buildInfoTile(
+            icon: Icons.domain_rounded,
+            label: 'Assigned Campus Block',
+            value: user.campusBlock != null && user.campusBlock!.isNotEmpty
+                ? user.campusBlock!
+                : 'Main Campus Quad',
+          ),
+          const Divider(height: 16, color: AppColors.outlineVariant),
+          _buildInfoTile(
+            icon: Icons.wifi_tethering_rounded,
+            label: 'Safety Grid Status',
+            value: 'Connected & Monitored',
+            valueColor: AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountActionsSection(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
+            ),
+            title: const Text(
+              'App Settings & Notifications',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
+            onTap: () => context.push('/settings'),
+          ),
+          const Divider(height: 1, color: AppColors.outlineVariant),
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 18),
+            ),
+            title: const Text(
+              'Security & Password',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
+            onTap: () => context.push('/settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: valueColor ?? AppColors.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -466,14 +514,19 @@ class ProfilePage extends ConsumerWidget {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Logout Confirmation'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                'Sign Out Confirmation',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
               content: const Text(
-                'Are you sure you want to sign out from CampusSafe? You will stop receiving high-priority campus safety broadcasts until you log back in.',
+                'Are you sure you want to sign out from CampusSafe? High-priority emergency broadcast delivery will be paused until you log back in.',
+                style: TextStyle(fontSize: 14, height: 1.4),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -486,9 +539,10 @@ class ProfilePage extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text(
-                    'Logout',
+                    'Sign Out',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -499,9 +553,9 @@ class ProfilePage extends ConsumerWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.error,
           side: const BorderSide(color: AppColors.error),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         icon: const Icon(Icons.logout_rounded, size: 18),

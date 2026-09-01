@@ -90,135 +90,202 @@ class IncidentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusVariant = status.statusBadgeVariant;
     final typeIcon = type.typeIcon;
-    final typeContainerColor = type.typeContainerColor;
-    final typeOnContainerColor = type.typeOnContainerColor;
+    final typeColor = type.typeColor;
 
-    return AppCard(
-      onTap: onTap,
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.7),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Row: Emergency Type Badge + Status Pill + Time
+                Row(
                   children: [
-                    StatusBadge(
-                      label: status.statusDisplayName,
-                      variant: statusVariant,
-                      isSmall: true,
-                    ),
+                    // Emergency Type Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: typeContainerColor,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        color: typeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(typeIcon, size: 12, color: typeOnContainerColor),
-                          const SizedBox(width: AppSpacing.xs),
+                          Icon(typeIcon, size: 14, color: typeColor),
+                          const SizedBox(width: 6),
                           Text(
                             type.toUpperCase(),
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: typeOnContainerColor,
-                              fontFamily: AppTypography.inter,
+                              fontWeight: FontWeight.w700,
+                              color: typeColor,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showPriority) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: Text(
-                        'P$priority',
-                        style: AppTypography.technicalSm.copyWith(
-                          color: AppColors.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(width: 8),
+
+                    // Status Pill
+                    StatusBadge(
+                      label: status.statusDisplayName,
+                      variant: statusVariant,
+                      isSmall: true,
+                    ),
+
+                    const Spacer(),
+
+                    // Elapsed Time
+                    Text(
+                      _formatRelativeTime(createdAt),
+                      style: AppTypography.technicalSm.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.xs),
                   ],
-                  Text(
-                    _formatTime(createdAt),
-                    style: AppTypography.technicalSm.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                ),
+
+                const SizedBox(height: 12),
+
+                // Location / Title
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        location ?? 'Main Campus Area',
+                        style: AppTypography.headlineMd.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (showPriority && priority == 1)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'P1 CRITICAL',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                if (description != null && description!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 22),
+                    child: Text(
+                      description!,
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            description ?? type.toUpperCase(),
-            style: AppTypography.bodyMd.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.onSurface,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (location != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 14,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    location!,
-                    style: AppTypography.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 12,
+
+                const SizedBox(height: 12),
+
+                // Bottom Footer: ID tag & Tap to View Details
+                Container(
+                  padding: const EdgeInsets.only(top: 10),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '#${id.length > 8 ? id.substring(0, 8).toUpperCase() : id.toUpperCase()}',
+                        style: AppTypography.technicalSm.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'View Live Response',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 11,
+                        color: AppColors.primary,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
 
-  String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+  String _formatRelativeTime(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }
 
