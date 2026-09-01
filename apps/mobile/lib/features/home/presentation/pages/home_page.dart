@@ -334,7 +334,7 @@ class HomePage extends ConsumerWidget {
   void _showSOSConfirmation(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Confirm Emergency',
           style: AppTypography.headlineMd.copyWith(color: AppColors.onSurface),
@@ -345,13 +345,13 @@ class HomePage extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
           ),
           PrimaryButton(
             label: 'Yes, Send SOS',
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               ref.read(sosNotifierProvider.notifier).startConfirmation();
               context.push('/sos');
             },
