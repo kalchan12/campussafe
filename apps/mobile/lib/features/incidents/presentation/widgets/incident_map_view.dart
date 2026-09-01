@@ -407,31 +407,26 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                                 height: 52 * _pulseAnimation.value,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primary.withValues(alpha: 0.22),
+                                  color: Colors.blue.withValues(alpha: 0.25),
                                 ),
                               ),
                               Container(
-                                width: 32,
-                                height: 32,
+                                width: 22,
+                                height: 22,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primary,
+                                  color: Colors.blue,
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 2.8,
+                                    width: 3.5,
                                   ),
                                   boxShadow: const [
                                     BoxShadow(
                                       color: Colors.black26,
-                                      blurRadius: 8,
-                                      offset: Offset(0, 3),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
                                     ),
                                   ],
-                                ),
-                                child: const Icon(
-                                  Icons.person_pin_circle_rounded,
-                                  size: 20,
-                                  color: Colors.white,
                                 ),
                               ),
                             ],
