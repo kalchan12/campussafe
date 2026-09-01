@@ -120,7 +120,7 @@ CREATE POLICY "Guest incident create"
     WITH CHECK (
         auth.role() = 'anon'
         AND reporter_id IS NULL
-        AND source = 'guest_report'
+        
     );
 
 -- =============================================================================

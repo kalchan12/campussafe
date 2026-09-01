@@ -44,7 +44,6 @@ class IncidentRepository {
         'location_description': locationDescription,
         'campus_block': campusBlock,
         'description': description,
-        'source': source,
         'created_at': now,
         'updated_at': now,
       };
