@@ -23,6 +23,7 @@ class SyncService {
 
   SyncService(this._ref, this._queueDb, this._incidentRepo) {
     _initConnectivityListener();
+    syncPendingIncidents();
   }
 
   void _initConnectivityListener() {
