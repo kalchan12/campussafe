@@ -64,6 +64,12 @@ final currentUserLocationProvider = FutureProvider<Position?>((ref) async {
   );
 });
 
+/// Stream provider for watching a responder's location in realtime.
+final responderLocationProvider = StreamProvider.family<Map<String, dynamic>?, String>((ref, responderId) {
+  final repository = ref.watch(incidentRepositoryProvider);
+  return repository.watchResponder(responderId);
+});
+
 /// Provider for multi-modal route path between current user/operator position and selected incident
 final activeIncidentRouteProvider = FutureProvider<RouteResult?>((ref) async {
   final selectedIncident = ref.watch(selectedMapIncidentProvider);

@@ -149,4 +149,18 @@ class IncidentRepository {
           return Incident.fromJson(data.first);
         });
   }
+
+  /// Returns a real-time stream of a responder's data.
+  Stream<Map<String, dynamic>?> watchResponder(String responderId) {
+    if (!_isAvailable) return Stream.error(NetworkError.noConnection());
+    // Since assigned_responder_id is user_id, we need to match user_id
+    return _client!
+        .from('responders')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', responderId)
+        .map((data) {
+          if (data.isEmpty) return null;
+          return data.first;
+        });
+  }
 }

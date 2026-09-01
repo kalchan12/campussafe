@@ -285,6 +285,15 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         ? widget.incidents
         : widget.incidents.where((i) => i.type == selectedFilter).toList();
 
+    final selectedIncident = ref.watch(selectedMapIncidentProvider) ?? widget.initialSelectedIncident;
+    final responderId = selectedIncident?.assignedResponderId;
+    final responderData = responderId != null 
+        ? ref.watch(responderLocationProvider(responderId)).value
+        : null;
+    final responderLatLng = responderData != null && responderData['latitude'] != null 
+        ? LatLng(responderData['latitude'], responderData['longitude'])
+        : null;
+
     final userLatLng = livePosAsync.value != null
         ? LatLng(livePosAsync.value!.latitude, livePosAsync.value!.longitude)
         : null;
@@ -432,6 +441,28 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                             ],
                           );
                         },
+                      ),
+                    ),
+
+                  // Responder Live Marker
+                  if (responderLatLng != null)
+                    Marker(
+                      point: responderLatLng,
+                      width: 56,
+                      height: 56,
+                      child: Tooltip(
+                        message: 'Responder Unit',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade600,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
+                            ],
+                          ),
+                          child: const Icon(Icons.security, color: Colors.white, size: 28),
+                        ),
                       ),
                     ),
 
