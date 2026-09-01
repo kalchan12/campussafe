@@ -466,11 +466,10 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
-          label: 'Campus Block / Building',
+          label: 'Campus Block / Building (Optional)',
           hint: 'e.g. Engineering Block B',
           controller: _buildingController,
           prefixIcon: const Icon(Icons.business_outlined, size: 20),
-          validator: (value) => Validators.required(value, 'Campus building'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(

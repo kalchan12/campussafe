@@ -372,6 +372,7 @@ class _EmergencyButtonState extends State<EmergencyButton>
         height: widget.size + 40,
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             // Pulse rings when pressing
             if (_isPressing)
@@ -454,7 +455,7 @@ class _EmergencyButtonState extends State<EmergencyButton>
             // Progress indicator text
             if (_isPressing && _progress > 0)
               Positioned(
-                bottom: -10,
+                bottom: 0,
                 child: Text(
                   _progress >= 1.0 ? 'RELEASING...' : 'HOLD TO ACTIVATE',
                   style: AppTypography.technicalSm.copyWith(

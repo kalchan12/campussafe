@@ -195,6 +195,7 @@ class _AppTextFieldState extends State<AppTextField> {
             errorStyle: hasError
                 ? AppTypography.technicalSm.copyWith(color: AppColors.error)
                 : null,
+            errorMaxLines: 5,
           ),
         ),
       ],
@@ -352,6 +353,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
               vertical: AppSpacing.md,
             ),
             hintStyle: AppTypography.bodyMd.copyWith(color: AppColors.outline),
+            errorMaxLines: 5,
           ),
         ),
       ],
