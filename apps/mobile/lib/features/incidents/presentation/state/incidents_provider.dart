@@ -5,12 +5,20 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/config/env.dart';
 import '../../../../core/location/location_service.dart';
+import '../../../../core/maps/campus_map_data.dart';
+import '../../../../core/maps/routing_service.dart';
 import '../../../../shared/models/incident.dart';
 import '../../data/repositories/incident_repository.dart';
 
 enum IncidentsViewMode {
   list,
   map,
+}
+
+enum TravelMode {
+  walking,
+  bicycling,
+  driving,
 }
 
 /// Provider for the active view mode (List vs Live GPS Map)
@@ -26,6 +34,16 @@ final selectedEmergencyTypeFilterProvider = StateProvider<EmergencyType?>((ref) 
 /// Provider for currently selected/highlighted incident on the map
 final selectedMapIncidentProvider = StateProvider<Incident?>((ref) {
   return null;
+});
+
+/// Provider for currently active map tile layer style
+final selectedMapStyleProvider = StateProvider<MapStyleOption>((ref) {
+  return MapStyleOption.streets;
+});
+
+/// Provider for selected multi-modal travel transit mode
+final activeTravelModeProvider = StateProvider<TravelMode>((ref) {
+  return TravelMode.walking;
 });
 
 /// Stream provider for the user's live GPS position
@@ -44,6 +62,32 @@ final currentUserLocationProvider = FutureProvider<Position?>((ref) async {
     (error) => null,
     (position) => position,
   );
+});
+
+/// Provider for multi-modal route path between current user/operator position and selected incident
+final activeIncidentRouteProvider = FutureProvider<RouteResult?>((ref) async {
+  final selectedIncident = ref.watch(selectedMapIncidentProvider);
+  if (selectedIncident == null ||
+      selectedIncident.latitude == null ||
+      selectedIncident.longitude == null) {
+    return null;
+  }
+
+  final userPosAsync = ref.watch(userLivePositionProvider);
+  final livePos = userPosAsync.value;
+
+  // If user GPS is available and inside or near campus, use live GPS; otherwise default to Campus EOC
+  final startLatLng = livePos != null
+      ? LatLng(livePos.latitude, livePos.longitude)
+      : kAdamaCampusCenter;
+
+  final endLatLng = LatLng(
+    selectedIncident.latitude!,
+    selectedIncident.longitude!,
+  );
+
+  final routingService = ref.watch(routingServiceProvider);
+  return await routingService.getBestRoute(startLatLng, endLatLng);
 });
 
 /// Provider for active incidents list with real/mock coordinates
@@ -74,7 +118,6 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
     final result = await _repository.getActiveIncidents();
     result.fold(
       (error) {
-        // Fallback to initial mock if backend load fails in dev
         _loadInitialIncidents();
       },
       (incidents) {
@@ -82,7 +125,6 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
           if (incidents.isNotEmpty) {
             state = incidents;
           } else {
-            // If empty in development, load seed incidents
             _loadInitialIncidents();
           }
         }
@@ -100,7 +142,7 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
           }
         },
         onError: (e) {
-          // Silent catch for stream errors, retain current state
+          // Retain state on stream error
         },
       );
     } catch (_) {
@@ -129,7 +171,6 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       );
     }
 
-    // Also update locally immediately for snappy optimistic UI
     state = state.map((inc) {
       if (inc.id == incidentId) {
         return inc.copyWith(
@@ -152,9 +193,9 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
         status: IncidentStatus.responding,
         priority: 1,
         reporterId: 'usr_sarah',
-        latitude: 37.4282,
-        longitude: -122.1688,
-        campusBlock: 'Engineering Quad - Building 2',
+        latitude: 8.5582,
+        longitude: 39.2895,
+        campusBlock: 'Engineering Complex Block B',
         locationDescription: '2nd Floor, Room 204 near east stairwell',
         description: 'Student experiencing severe dizziness and shortness of breath. First aid kit requested.',
         createdAt: now.subtract(const Duration(minutes: 8)),
@@ -168,9 +209,9 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
         status: IncidentStatus.assigned,
         priority: 2,
         reporterId: 'usr_david',
-        latitude: 37.4265,
-        longitude: -122.1712,
-        campusBlock: 'Main University Library',
+        latitude: 8.5574,
+        longitude: 39.2925,
+        campusBlock: 'Main Campus Central Library',
         locationDescription: 'South Gate Entrance near bicycle racks',
         description: 'Suspicious unattended package reported by staff.',
         createdAt: now.subtract(const Duration(minutes: 25)),
@@ -183,11 +224,11 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
         status: IncidentStatus.arrived,
         priority: 1,
         reporterId: 'usr_alex',
-        latitude: 37.4295,
-        longitude: -122.1730,
-        campusBlock: 'Chemistry Lab B',
-        locationDescription: 'Ground Floor, Ventilation Exhaust Zone',
-        description: 'Chemical smoke detector activated. Area evacuated safely.',
+        latitude: 8.5645,
+        longitude: 39.2955,
+        campusBlock: 'University Stadium & Sports Arena',
+        locationDescription: 'North Grandstand Electrical Control Room',
+        description: 'Electrical smoke detector activated. Area evacuated safely.',
         createdAt: now.subtract(const Duration(minutes: 45)),
         updatedAt: now.subtract(const Duration(minutes: 5)),
         assignedAt: now.subtract(const Duration(minutes: 40)),
@@ -200,48 +241,29 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
         status: IncidentStatus.received,
         priority: 3,
         reporterId: 'usr_emma',
-        latitude: 37.4250,
-        longitude: -122.1670,
-        campusBlock: 'Student Union Hub',
+        latitude: 8.5540,
+        longitude: 39.2935,
+        campusBlock: 'Student Union & Cafeteria',
         locationDescription: 'Outdoor cafeteria seating area',
         description: 'Minor bicycle collision near walkway. Needs assessment.',
         createdAt: now.subtract(const Duration(hours: 1, minutes: 10)),
         updatedAt: now.subtract(const Duration(minutes: 30)),
       ),
+      Incident(
+        id: 'CS-1015',
+        type: EmergencyType.other,
+        status: IncidentStatus.created,
+        priority: 2,
+        reporterId: 'usr_rob',
+        latitude: 8.5625,
+        longitude: 39.3040,
+        campusBlock: 'Advanced Technology & Science Research Institute',
+        locationDescription: 'East Wing Lab Corridor',
+        description: 'Power grid fluctuation and water pipe leakage reported.',
+        createdAt: now.subtract(const Duration(minutes: 18)),
+        updatedAt: now.subtract(const Duration(minutes: 18)),
+      ),
     ];
-
-    _adaptCoordinatesToUserLocation();
-  }
-
-  Future<void> _adaptCoordinatesToUserLocation() async {
-    try {
-      final userPos = await ref.read(currentUserLocationProvider.future);
-      if (userPos != null && mounted) {
-        final baseLat = userPos.latitude;
-        final baseLng = userPos.longitude;
-
-        state = [
-          state[0].copyWith(
-            latitude: baseLat + 0.0018,
-            longitude: baseLng + 0.0012,
-          ),
-          state[1].copyWith(
-            latitude: baseLat - 0.0015,
-            longitude: baseLng - 0.0020,
-          ),
-          state[2].copyWith(
-            latitude: baseLat + 0.0028,
-            longitude: baseLng - 0.0016,
-          ),
-          state[3].copyWith(
-            latitude: baseLat - 0.0022,
-            longitude: baseLng + 0.0025,
-          ),
-        ];
-      }
-    } catch (_) {
-      // Keep base coordinates
-    }
   }
 
   void addIncident(Incident incident) {

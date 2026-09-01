@@ -7,6 +7,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/maps/campus_map_data.dart';
+import '../../../../core/maps/routing_service.dart';
 import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/models/incident.dart';
 import '../state/incidents_provider.dart';
@@ -32,9 +34,6 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
   late final MapController _mapController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-
-  // Default campus fallback coordinate
-  static const LatLng _defaultCenter = LatLng(37.4275, -122.1697);
 
   @override
   void initState() {
@@ -78,9 +77,11 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         if (pos != null && mounted) {
           _animatedMoveTo(LatLng(pos.latitude, pos.longitude), 16.5);
         } else if (mounted) {
+          // Snap to Campus EOC
+          _animatedMoveTo(kAdamaCampusCenter, 16.0);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Acquiring GPS location... Please ensure GPS permissions are enabled.'),
+              content: Text('Focusing on Adama Campus Safety Center (EOC).'),
               duration: Duration(seconds: 2),
             ),
           );
@@ -95,6 +96,8 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
 
     if (livePos != null) {
       points.add(LatLng(livePos.latitude, livePos.longitude));
+    } else {
+      points.add(kAdamaCampusCenter);
     }
 
     for (final inc in activeIncidents) {
@@ -104,7 +107,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
     }
 
     if (points.isEmpty) {
-      _animatedMoveTo(_defaultCenter, 15.5);
+      _animatedMoveTo(kAdamaCampusCenter, 15.5);
       return;
     }
 
@@ -127,7 +130,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
 
     final centerLat = (minLat + maxLat) / 2;
     final centerLng = (minLng + maxLng) / 2;
-    _animatedMoveTo(LatLng(centerLat, centerLng), 15.0);
+    _animatedMoveTo(LatLng(centerLat, centerLng), 15.2);
   }
 
   Color _getEmergencyColor(EmergencyType type) {
@@ -160,11 +163,123 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
     }
   }
 
+  void _showMapStyleBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (ctx) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final activeStyle = ref.watch(selectedMapStyleProvider);
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.layers_outlined, color: AppColors.primary),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Map Basemap Style',
+                          style: AppTypography.headlineMd.copyWith(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Choose high-definition map rendering tiles for campus operations:',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ...MapStyleOption.values.map((style) {
+                      final isSelected = activeStyle == style;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? style.accentColor.withValues(alpha: 0.12)
+                              : AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: isSelected
+                                ? style.accentColor
+                                : AppColors.outlineVariant,
+                            width: isSelected ? 2.0 : 1.0,
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: style.accentColor.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              style.icon,
+                              color: style.accentColor,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            style.label,
+                            style: AppTypography.labelMd.copyWith(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle, color: style.accentColor)
+                              : null,
+                          onTap: () {
+                            ref.read(selectedMapStyleProvider.notifier).state =
+                                style;
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final livePosAsync = ref.watch(userLivePositionProvider);
     final selectedFilter = ref.watch(selectedEmergencyTypeFilterProvider);
     final selectedIncident = ref.watch(selectedMapIncidentProvider);
+    final mapStyle = ref.watch(selectedMapStyleProvider);
+    final activeRouteAsync = ref.watch(activeIncidentRouteProvider);
+    final travelMode = ref.watch(activeTravelModeProvider);
 
     final filteredIncidents = selectedFilter == null
         ? widget.incidents
@@ -175,22 +290,30 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         : null;
 
     final initialCenter = userLatLng ??
-        (filteredIncidents.isNotEmpty && filteredIncidents.first.latitude != null && filteredIncidents.first.latitude != 0.0
-            ? LatLng(filteredIncidents.first.latitude!, filteredIncidents.first.longitude!)
-            : _defaultCenter);
+        (filteredIncidents.isNotEmpty &&
+                filteredIncidents.first.latitude != null &&
+                filteredIncidents.first.latitude != 0.0
+            ? LatLng(
+                filteredIncidents.first.latitude!,
+                filteredIncidents.first.longitude!,
+              )
+            : kAdamaCampusCenter);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(widget.isCompact ? AppRadius.md : 0),
       child: Stack(
         children: [
-          // Main Interactive Map
+          // Main Interactive FlutterMap
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: initialCenter,
               initialZoom: widget.isCompact ? 15.0 : 16.0,
-              minZoom: 4.0,
+              minZoom: 12.0, // Minimum zoom lock for Adama City bounds
               maxZoom: 19.0,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: kAdamaCampusBounds,
+              ),
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
@@ -201,27 +324,70 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
               },
             ),
             children: [
+              // Dynamic Tile Layer (Streets, Satellite, Dark Ops, Topography)
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: mapStyle.urlTemplate,
                 userAgentPackageName: 'com.campussafe.campussafe_mobile',
                 tileProvider: NetworkTileProvider(),
+                maxZoom: 19,
               ),
 
-              if (userLatLng != null && selectedIncident != null && selectedIncident.latitude != null)
+              // University Campus Safety Zone Perimeter Polygon
+              PolygonLayer(
+                polygons: [
+                  Polygon(
+                    points: kAdamaCampusPolygon,
+                    color: const Color(0xFF005FAF).withValues(alpha: 0.12),
+                    borderColor: const Color(0xFF005FAF).withValues(alpha: 0.75),
+                    borderStrokeWidth: 2.2,
+                  ),
+                ],
+              ),
+
+              // Multi-modal Best Route Polyline (OSRM Pedestrian / Curvature fallback)
+              if (selectedIncident != null &&
+                  selectedIncident.latitude != null &&
+                  activeRouteAsync.value != null)
+                PolylineLayer(
+                  polylines: [
+                    // Glow background outline
+                    Polyline(
+                      points: activeRouteAsync.value!.coordinates,
+                      strokeWidth: 7.0,
+                      color: _getEmergencyColor(selectedIncident.type)
+                          .withValues(alpha: 0.25),
+                    ),
+                    // Core route line
+                    Polyline(
+                      points: activeRouteAsync.value!.coordinates,
+                      strokeWidth: 4.0,
+                      color: _getEmergencyColor(selectedIncident.type),
+                    ),
+                  ],
+                )
+              else if (userLatLng != null &&
+                  selectedIncident != null &&
+                  selectedIncident.latitude != null)
+                // Immediate straight-line fallback while route calculation resolves
                 PolylineLayer(
                   polylines: [
                     Polyline(
                       points: [
                         userLatLng,
-                        LatLng(selectedIncident.latitude!, selectedIncident.longitude!),
+                        LatLng(
+                          selectedIncident.latitude!,
+                          selectedIncident.longitude!,
+                        ),
                       ],
                       strokeWidth: 3.5,
-                      color: _getEmergencyColor(selectedIncident.type).withValues(alpha: 0.8),
+                      color: _getEmergencyColor(selectedIncident.type)
+                          .withValues(alpha: 0.8),
                       pattern: const StrokePattern.dotted(),
                     ),
                   ],
                 ),
 
+              // Map Markers (User Beacon + Incident Pins + Campus Blocks)
               MarkerLayer(
                 markers: [
                   // User Live GPS Position Marker
@@ -250,7 +416,10 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: AppColors.primary,
-                                  border: Border.all(color: Colors.white, width: 2.8),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.8,
+                                  ),
                                   boxShadow: const [
                                     BoxShadow(
                                       color: Colors.black26,
@@ -271,8 +440,36 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                       ),
                     ),
 
+                  // Campus Landmark Pins
+                  if (!widget.isCompact)
+                    ...kAdamaCampusBlocks.map((block) {
+                      return Marker(
+                        point: block.coordinates,
+                        width: 28,
+                        height: 28,
+                        child: Tooltip(
+                          message: block.name,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1.2),
+                            ),
+                            child: const Icon(
+                              Icons.apartment_rounded,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+
+                  // Incident Markers
                   ...filteredIncidents.map((incident) {
-                    if (incident.latitude == null || incident.longitude == null || incident.latitude == 0.0) {
+                    if (incident.latitude == null ||
+                        incident.longitude == null ||
+                        incident.latitude == 0.0) {
                       return null;
                     }
 
@@ -287,7 +484,8 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                       height: isSelected ? 68 : 54,
                       child: GestureDetector(
                         onTap: () {
-                          ref.read(selectedMapIncidentProvider.notifier).state = incident;
+                          ref.read(selectedMapIncidentProvider.notifier).state =
+                              incident;
                           _animatedMoveTo(pos, 16.5);
                         },
                         child: AnimatedContainer(
@@ -352,9 +550,51 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             ],
           ),
 
+          // Campus Safety Zone Status Badge
           if (!widget.isCompact)
             Positioned(
               top: AppSpacing.sm,
+              left: AppSpacing.md,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  border: Border.all(color: const Color(0xFF005FAF), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 14,
+                      color: Color(0xFF005FAF),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Adama Campus Safety Zone',
+                      style: AppTypography.labelMd.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF005FAF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Emergency Category Filter Chips
+          if (!widget.isCompact)
+            Positioned(
+              top: 40,
               left: 0,
               right: 0,
               child: SingleChildScrollView(
@@ -365,11 +605,14 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                     _buildFilterChip(
                       label: 'All (${widget.incidents.length})',
                       isSelected: selectedFilter == null,
-                      onSelected: () => ref.read(selectedEmergencyTypeFilterProvider.notifier).state = null,
+                      onSelected: () => ref
+                          .read(selectedEmergencyTypeFilterProvider.notifier)
+                          .state = null,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     ...EmergencyType.values.map((type) {
-                      final count = widget.incidents.where((i) => i.type == type).length;
+                      final count =
+                          widget.incidents.where((i) => i.type == type).length;
                       if (count == 0) return const SizedBox.shrink();
 
                       return Padding(
@@ -380,8 +623,11 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                           color: _getEmergencyColor(type),
                           isSelected: selectedFilter == type,
                           onSelected: () {
-                            ref.read(selectedEmergencyTypeFilterProvider.notifier).state =
-                                selectedFilter == type ? null : type;
+                            ref
+                                .read(
+                                  selectedEmergencyTypeFilterProvider.notifier,
+                                )
+                                .state = selectedFilter == type ? null : type;
                           },
                         ),
                       );
@@ -391,11 +637,19 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
               ),
             ),
 
+          // Floating Tools Toolbar (Map Layer Switcher, Recenter GPS, Zoom, Fit All)
           Positioned(
             right: AppSpacing.md,
-            top: widget.isCompact ? AppSpacing.sm : 68,
+            top: widget.isCompact ? AppSpacing.sm : 88,
             child: Column(
               children: [
+                _buildMapToolButton(
+                  icon: Icons.layers_outlined,
+                  tooltip: 'Map Basemap Layer',
+                  onTap: () => _showMapStyleBottomSheet(context),
+                  accent: mapStyle != MapStyleOption.streets,
+                ),
+                const SizedBox(height: AppSpacing.xs),
                 _buildMapToolButton(
                   icon: Icons.my_location_rounded,
                   tooltip: 'Recenter GPS',
@@ -408,7 +662,10 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                   tooltip: 'Zoom in',
                   onTap: () {
                     final currentZoom = _mapController.camera.zoom;
-                    _mapController.move(_mapController.camera.center, currentZoom + 1);
+                    _mapController.move(
+                      _mapController.camera.center,
+                      currentZoom + 1,
+                    );
                   },
                 ),
                 const SizedBox(height: 4),
@@ -417,7 +674,10 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                   tooltip: 'Zoom out',
                   onTap: () {
                     final currentZoom = _mapController.camera.zoom;
-                    _mapController.move(_mapController.camera.center, currentZoom - 1);
+                    _mapController.move(
+                      _mapController.camera.center,
+                      currentZoom - 1,
+                    );
                   },
                 ),
                 if (!widget.isCompact) ...[
@@ -432,12 +692,19 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             ),
           ),
 
+          // Bottom Selected Incident Card with Multi-modal Transit Chips
           if (selectedIncident != null && !widget.isCompact)
             Positioned(
               bottom: AppSpacing.md,
               left: AppSpacing.md,
               right: AppSpacing.md,
-              child: _buildIncidentDetailCard(context, selectedIncident, userLatLng),
+              child: _buildIncidentDetailCard(
+                context,
+                selectedIncident,
+                userLatLng,
+                activeRouteAsync.value,
+                travelMode,
+              ),
             ),
         ],
       ),
@@ -461,7 +728,8 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: isSelected ? activeColor : Colors.white.withValues(alpha: 0.95),
+            color:
+                isSelected ? activeColor : Colors.white.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(AppRadius.full),
             border: Border.all(
               color: isSelected ? activeColor : AppColors.outlineVariant,
@@ -512,10 +780,12 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          width: 46,
-          height: 46,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: accent ? AppColors.primary : Colors.white.withValues(alpha: 0.95),
+            color: accent
+                ? AppColors.primary
+                : Colors.white.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(AppRadius.md),
             boxShadow: [
               BoxShadow(
@@ -527,7 +797,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
           ),
           child: Icon(
             icon,
-            size: 22,
+            size: 20,
             color: accent ? Colors.white : AppColors.onSurface,
           ),
         ),
@@ -539,17 +809,11 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
     BuildContext context,
     Incident incident,
     LatLng? userLocation,
+    RouteResult? routeResult,
+    TravelMode currentTravelMode,
   ) {
     final incColor = _getEmergencyColor(incident.type);
     final incIcon = _getEmergencyIcon(incident.type);
-
-    String? distanceText;
-    if (userLocation != null && incident.latitude != null && incident.longitude != null) {
-      distanceText = formatDistanceBetween(
-        userLocation,
-        LatLng(incident.latitude!, incident.longitude!),
-      );
-    }
 
     return Card(
       elevation: 6,
@@ -564,10 +828,12 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top Badges & Close Button
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: incColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppRadius.full),
@@ -589,7 +855,8 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(AppRadius.full),
@@ -616,6 +883,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             ),
             const SizedBox(height: AppSpacing.xs),
 
+            // Campus Block Title
             Text(
               incident.campusBlock ?? 'Campus Location',
               style: AppTypography.labelMd.copyWith(
@@ -626,14 +894,60 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            if (distanceText != null) ...[
+
+            // Multi-Modal Travel Time Selector & Route Stats
+            if (routeResult != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  _buildTravelModeChip(
+                    mode: TravelMode.walking,
+                    icon: Icons.directions_walk,
+                    label: routeResult.estimates.walkingText,
+                    current: currentTravelMode,
+                  ),
+                  const SizedBox(width: 6),
+                  _buildTravelModeChip(
+                    mode: TravelMode.bicycling,
+                    icon: Icons.directions_bike,
+                    label: routeResult.estimates.bicyclingText,
+                    current: currentTravelMode,
+                  ),
+                  const SizedBox(width: 6),
+                  _buildTravelModeChip(
+                    mode: TravelMode.driving,
+                    icon: Icons.directions_car,
+                    label: routeResult.estimates.drivingText,
+                    current: currentTravelMode,
+                  ),
+                  const Spacer(),
+                  Text(
+                    routeResult.estimates.formattedDistance,
+                    style: AppTypography.technicalSm.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (userLocation != null &&
+                incident.latitude != null &&
+                incident.longitude != null) ...[
               const SizedBox(height: 2),
               Row(
                 children: [
-                  const Icon(Icons.near_me_rounded, size: 13, color: AppColors.primary),
+                  const Icon(
+                    Icons.near_me_rounded,
+                    size: 13,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    distanceText,
+                    formatDistanceBetween(
+                      userLocation,
+                      LatLng(incident.latitude!, incident.longitude!),
+                    ),
                     style: AppTypography.technicalSm.copyWith(
                       color: AppColors.primary,
                       fontSize: 11,
@@ -643,7 +957,9 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                 ],
               ),
             ],
-            if (incident.description != null && incident.description!.isNotEmpty) ...[
+
+            if (incident.description != null &&
+                incident.description!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
                 incident.description!,
@@ -657,28 +973,36 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             ],
             const SizedBox(height: AppSpacing.sm),
 
+            // Action Buttons
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      if (incident.latitude != null && incident.longitude != null) {
+                      if (incident.latitude != null &&
+                          incident.longitude != null) {
                         MapLauncherUtil.openInGoogleMaps(
                           latitude: incident.latitude!,
                           longitude: incident.longitude!,
-                          label: '${incident.type.displayName} Incident - ${incident.campusBlock}',
+                          label:
+                              '${incident.type.displayName} Incident - ${incident.campusBlock}',
                         );
                       }
                     },
-                    icon: const Icon(Icons.map_outlined, size: 16),
+                    icon: const Icon(Icons.navigation_outlined, size: 16),
                     label: const Text(
-                      'Google Maps',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      'Directions',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.defaultRadius,
+                        ),
                       ),
                     ),
                   ),
@@ -690,19 +1014,66 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                     icon: const Icon(Icons.arrow_forward, size: 16),
                     label: const Text(
                       'Details',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: incColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.defaultRadius,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTravelModeChip({
+    required TravelMode mode,
+    required IconData icon,
+    required String label,
+    required TravelMode current,
+  }) {
+    final isSelected = mode == current;
+    return GestureDetector(
+      onTap: () {
+        ref.read(activeTravelModeProvider.notifier).state = mode;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : AppColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
+              ),
             ),
           ],
         ),
