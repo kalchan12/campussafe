@@ -28,7 +28,7 @@ const adminNav: NavItem[] = [
   { name: 'Settings', href: '/dashboard/settings', icon: 'settings' },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isCollapsed = false, onToggle }: { isCollapsed?: boolean; onToggle?: () => void }) {
   const pathname = usePathname();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const supabase = createClient();
@@ -69,8 +69,10 @@ export function Sidebar() {
       <Link
         key={item.name}
         href={item.href}
+        title={isCollapsed ? item.name : undefined}
         className={cn(
-          'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border-l-4',
+          'flex items-center rounded-lg transition-all duration-200 border-l-4',
+          isCollapsed ? 'justify-center px-0 py-3 mx-2' : 'gap-3 px-4 py-3 mx-0',
           active
             ? 'bg-secondary-container border-primary text-primary font-bold opacity-90'
             : 'border-transparent text-on-surface-variant hover:bg-surface-variant'
@@ -82,56 +84,93 @@ export function Sidebar() {
         >
           {item.icon}
         </span>
-        <span className="font-label-md text-label-md">{item.name}</span>
+        {!isCollapsed && <span className="font-label-md text-label-md">{item.name}</span>}
       </Link>
     );
   };
 
   return (
-    <aside className="w-64 bg-surface-container h-screen flex flex-col fixed left-0 top-0 py-gutter border-r border-outline-variant z-40">
-      <div className="px-6 mb-6">
-        <h1 className="font-headline-lg text-headline-lg font-bold text-primary">CampusSafe</h1>
-        <p className="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
-          {isAdmin ? 'System Administration' : 'Emergency Operations'}
-        </p>
+    <aside className={cn(
+      "bg-surface-container h-screen flex flex-col fixed left-0 top-0 py-gutter border-r border-outline-variant z-40 transition-all duration-300",
+      isCollapsed ? "w-[72px]" : "w-64"
+    )}>
+      <div className={cn("mb-6 flex flex-col", isCollapsed ? "px-2 items-center" : "px-6")}>
+        <div className={cn("flex items-center w-full mb-1", isCollapsed ? "justify-center mt-2" : "justify-between")}>
+          <h1 className={cn("font-headline-lg font-bold text-primary", isCollapsed ? "text-xl" : "text-headline-lg")}>
+            {isCollapsed ? 'CS' : 'CampusSafe'}
+          </h1>
+          {!isCollapsed && onToggle && (
+            <button 
+              onClick={onToggle}
+              className="p-1 -mr-2 rounded hover:bg-surface-variant text-on-surface-variant transition-colors"
+              title="Collapse sidebar"
+            >
+              <span className="material-symbols-outlined">menu_open</span>
+            </button>
+          )}
+        </div>
+        
+        {isCollapsed && onToggle && (
+           <button 
+             onClick={onToggle}
+             className="p-1.5 mt-3 rounded-lg hover:bg-surface-variant text-on-surface-variant transition-colors"
+             title="Expand sidebar"
+           >
+             <span className="material-symbols-outlined">menu</span>
+           </button>
+        )}
+
+        {!isCollapsed && (
+          <p className="font-label-md text-xs text-on-surface-variant uppercase tracking-wider font-semibold">
+            {isAdmin ? 'System Administration' : 'Emergency Operations'}
+          </p>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 space-y-4">
+      <nav className={cn("flex-1 overflow-y-auto space-y-4", isCollapsed ? "px-1" : "px-4")}>
         {/* Operations Section */}
         <div>
-          <p className="px-4 mb-2 text-[11px] font-label-md uppercase tracking-wider text-outline font-bold">
-            Operations
-          </p>
+          {!isCollapsed && (
+            <p className="px-4 mb-2 text-[11px] font-label-md uppercase tracking-wider text-outline font-bold">
+              Operations
+            </p>
+          )}
           <div className="space-y-1">
             {operationalNav.map(renderLink)}
           </div>
         </div>
 
         {/* Administration Section */}
-        <div>
-          <p className="px-4 mb-2 text-[11px] font-label-md uppercase tracking-wider text-outline font-bold">
-            Administration
-          </p>
-          <div className="space-y-1">
-            {adminNav.map(renderLink)}
+        {isAdmin && (
+          <div>
+            {!isCollapsed && (
+              <p className="px-4 mb-2 text-[11px] font-label-md uppercase tracking-wider text-outline font-bold">
+                Administration
+              </p>
+            )}
+            <div className="space-y-1">
+              {adminNav.map(renderLink)}
+            </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Role Indicator Footer */}
       {currentUser && (
-        <div className="p-4 mx-4 mt-auto border-t border-outline-variant/50 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+        <div className={cn("mt-auto border-t border-outline-variant/50 flex items-center", isCollapsed ? "p-2 mx-2 justify-center" : "p-4 mx-4 gap-3")}>
+          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
             {currentUser.full_name?.charAt(0) || 'U'}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-label-md text-xs font-semibold text-on-surface truncate">
-              {currentUser.full_name}
-            </p>
-            <span className="inline-block px-1.5 py-0.2 text-[10px] uppercase font-technical-sm font-semibold rounded bg-surface-variant text-on-surface-variant">
-              {currentUser.role}
-            </span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="font-label-md text-xs font-semibold text-on-surface truncate">
+                {currentUser.full_name}
+              </p>
+              <span className="inline-block px-1.5 py-0.2 text-[10px] uppercase font-technical-sm font-semibold rounded bg-surface-variant text-on-surface-variant">
+                {currentUser.role}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </aside>

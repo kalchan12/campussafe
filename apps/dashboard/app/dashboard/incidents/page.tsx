@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -110,11 +109,8 @@ export default function IncidentsPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav showSearch searchPlaceholder="Search IDs, Locations..." onSearch={setSearch} />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+    <DashboardLayout showSearch searchPlaceholder="Search IDs, Locations..." onSearch={setSearch}>
+          <div className="flex-1">
           <div className="max-w-[1280px] mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between">
@@ -289,8 +285,7 @@ export default function IncidentsPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
 
       {/* Operator Dispatch & Status Modal */}
       {selectedIncident && (
@@ -404,6 +399,6 @@ export default function IncidentsPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 }

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { CampusMap, type OperatorLocation } from '@/components/maps/campus-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -275,12 +274,8 @@ export default function MapPage() {
     : null;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav showSearch searchPlaceholder="Search incidents, assets..." />
-        <main className="flex-1 relative overflow-hidden">
-          {/* Map Canvas */}
+    <DashboardLayout showSearch searchPlaceholder="Search incidents, assets..." mainClassName="flex-1 relative overflow-hidden">
+      {/* Map Canvas */}
           <div className="absolute inset-0 bg-surface-variant">
             <div
               className="absolute inset-0"
@@ -587,9 +582,7 @@ export default function MapPage() {
               </div>
             )
           )}
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
 

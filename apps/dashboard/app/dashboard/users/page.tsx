@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { fetchUsers, updateUserRole, toggleUserActive, fetchUserStats } from '@/lib/data-service';
 import type { User, UserRole, UserFilter } from '@/types/user';
 import { USER_ROLE_LABELS, USER_ROLE_COLORS } from '@/types/user';
@@ -26,6 +27,26 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  const router = useRouter();
+  const supabase = createClient();
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (profile?.role !== 'administrator') {
+          router.replace('/dashboard');
+        }
+      } else {
+        router.replace('/login');
+      }
+    });
+  }, [router, supabase]);
 
   const loadData = async () => {
     const filter: UserFilter = {
@@ -80,18 +101,11 @@ export default function UserManagementPage() {
   }, [users]);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 min-h-screen">
-        <TopNav
-          title="User & Access Administration"
+    <DashboardLayout title="User & Access Administration"
           showSearch
           searchPlaceholder="Search by name, email, phone or block..."
-          onSearch={setSearch}
-        />
-
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          <div className="max-w-[1280px] mx-auto space-y-6">
+          onSearch={setSearch}>
+      <div className="max-w-[1280px] mx-auto space-y-6">
             {/* Header & Role summary banner */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -379,8 +393,6 @@ export default function UserManagementPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

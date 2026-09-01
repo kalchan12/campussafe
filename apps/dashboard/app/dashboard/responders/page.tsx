@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
-import { ResponderCard } from '@/components/responders/responder-card';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { fetchResponders } from '@/lib/data-service';
 import type { Responder, ResponderFilter } from '@/types/responder';
+import { timeAgo } from '@/lib/utils';
 
 export default function RespondersPage() {
   const [responders, setResponders] = useState<Responder[]>([]);
@@ -21,12 +20,8 @@ export default function RespondersPage() {
   }, [filter, search]);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav showSearch searchPlaceholder="Search responders..." onSearch={setSearch} />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          <div className="max-w-[1280px] mx-auto space-y-6">
+    <DashboardLayout showSearch searchPlaceholder="Search responders..." onSearch={setSearch}>
+      <div className="max-w-[1280px] mx-auto space-y-6">
             {/* Header */}
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Responders</h1>
@@ -70,15 +65,81 @@ export default function RespondersPage() {
               </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {responders.map((responder) => (
-                <ResponderCard key={responder.id} responder={responder} />
-              ))}
+            {/* Data Table */}
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-surface-variant/50 border-b border-outline-variant">
+                      <th className="px-6 py-4 font-label-md text-xs uppercase tracking-wider text-outline font-bold">Responder</th>
+                      <th className="px-6 py-4 font-label-md text-xs uppercase tracking-wider text-outline font-bold">Role</th>
+                      <th className="px-6 py-4 font-label-md text-xs uppercase tracking-wider text-outline font-bold">Status</th>
+                      <th className="px-6 py-4 font-label-md text-xs uppercase tracking-wider text-outline font-bold">Current Assignment</th>
+                      <th className="px-6 py-4 font-label-md text-xs uppercase tracking-wider text-outline font-bold text-right">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/50">
+                    {responders.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant font-body-md">
+                          No responders found matching your criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      responders.map((responder) => {
+                        const statusColor = 
+                          responder.status === 'available' ? 'bg-success/10 text-success' :
+                          responder.status === 'responding' ? 'bg-error/10 text-error' :
+                          responder.status === 'offline' ? 'bg-surface-variant text-on-surface-variant' :
+                          'bg-warning/10 text-warning-dark';
+                        
+                        return (
+                          <tr key={responder.id} className="hover:bg-surface-variant/30 transition-colors group">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center shrink-0">
+                                  <span className="font-label-md text-label-md text-primary font-bold">
+                                    {responder.name.split(' ').map(n => n[0]).join('')}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p className="font-body-md text-sm text-on-surface font-semibold group-hover:text-primary transition-colors">{responder.name}</p>
+                                  <p className="font-technical-sm text-xs text-on-surface-variant">{responder.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-medium text-on-surface capitalize text-sm">{responder.role}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusColor}`}>
+                                {responder.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              {responder.current_incident_type ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                                  <span className="font-medium text-on-surface capitalize text-sm">{responder.current_incident_type} Incident</span>
+                                </div>
+                              ) : (
+                                <span className="text-outline text-sm">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <span className="font-medium text-on-surface text-sm">
+                                {timeAgo(responder.last_active)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

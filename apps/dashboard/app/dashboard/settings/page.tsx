@@ -1,17 +1,12 @@
 'use client';
 
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          <div className="max-w-[1280px] mx-auto space-y-6">
+    <DashboardLayout >
+      <div className="max-w-[1280px] mx-auto space-y-6">
             {/* Header */}
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Settings</h1>
@@ -105,8 +100,6 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

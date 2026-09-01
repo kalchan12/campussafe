@@ -13,7 +13,7 @@ interface TopNavProps {
   actions?: React.ReactNode;
 }
 
-export function TopNav({ title = 'CampusSafe EOC', showSearch = false, searchPlaceholder = 'Search...', onSearch, actions }: TopNavProps) {
+export function TopNav({ title = '', showSearch = false, searchPlaceholder = 'Search...', onSearch, actions }: TopNavProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -60,22 +60,26 @@ export function TopNav({ title = 'CampusSafe EOC', showSearch = false, searchPla
   };
 
   return (
-    <header className="bg-surface sticky top-0 z-50 border-b border-outline-variant flex justify-between items-center px-margin-desktop py-4 h-20 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center">
-        <h2 className="font-headline-lg text-headline-lg font-bold text-primary">{title}</h2>
+    <header className="bg-surface sticky top-0 z-50 border-b border-outline-variant flex justify-between items-center px-4 py-4 h-20 shadow-[0_4px_12px_rgba(0,0,0,0.05)] relative">
+      <div className="flex items-center z-10">
+        {title && <h2 className="font-headline-lg text-headline-lg font-bold text-primary truncate">{title}</h2>}
       </div>
-      <div className="flex items-center gap-4">
-        {showSearch && (
-          <div className="relative">
+      
+      {showSearch && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative w-full max-w-xl pointer-events-auto">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">search</span>
             <input
               type="text"
               placeholder={searchPlaceholder}
               onChange={(e) => onSearch?.(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-label-md text-label-md w-64"
+              className="w-full pl-10 pr-4 py-2 border border-outline-variant rounded-full bg-surface-container-lowest text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors font-label-md text-label-md shadow-sm"
             />
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 z-10">
         {actions}
         <button
           type="button"

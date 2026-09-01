@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Badge } from '@/components/ui/badge';
 import { fetchReports } from '@/lib/data-service';
 import { REPORT_TYPE_LABELS, REPORT_STATUS_LABELS } from '@/types/report';
@@ -33,12 +32,8 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav showSearch searchPlaceholder="Search reports..." onSearch={setSearch} />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          <div className="max-w-[1280px] mx-auto space-y-6">
+    <DashboardLayout showSearch searchPlaceholder="Search reports..." onSearch={setSearch}>
+      <div className="max-w-[1280px] mx-auto space-y-6">
             {/* Header */}
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Safety Reports</h1>
@@ -134,8 +129,6 @@ export default function ReportsPage() {
               </table>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -30,9 +30,12 @@ export function formatDateTime(date: string): string {
   });
 }
 
-export function timeAgo(date: string): string {
-  const now = new Date();
+export function timeAgo(date: string | null | undefined): string {
+  if (!date) return 'Never';
   const then = new Date(date);
+  if (isNaN(then.getTime())) return 'Never';
+  
+  const now = new Date();
   const diffMs = now.getTime() - then.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);

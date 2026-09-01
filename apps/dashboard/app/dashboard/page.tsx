@@ -1,7 +1,6 @@
 'use client';
 
-import { Sidebar } from '@/components/layout/sidebar';
-import { TopNav } from '@/components/layout/top-nav';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -115,12 +114,8 @@ export default function DashboardPage() {
   const respondingResponders = responders.filter((r) => r.status === 'responding').length;
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-64 h-screen">
-        <TopNav />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
-          <div className="max-w-[1280px] mx-auto space-y-8">
+    <DashboardLayout >
+      <div className="max-w-[1280px] mx-auto space-y-8">
             {/* KPIs */}
             {stats && (
               <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -149,7 +144,7 @@ export default function DashboardPage() {
             )}
 
             {/* Live Campus Map */}
-            <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 h-[400px] flex flex-col relative overflow-hidden">
+            <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 h-[520px] flex flex-col relative overflow-hidden">
               <div className="flex justify-between items-center mb-4 z-10">
                 <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Live Campus Map</h3>
                 <div className="flex gap-2">
@@ -265,8 +260,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

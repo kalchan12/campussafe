@@ -545,6 +545,10 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 3. [x] **Phase 3: Mobile Offline Resilience & Background Location:** Queued failed SOS requests in SQLite (`sqflite`) for retry, and tracked responder background locations.
 4. [x] **Phase 4: Mobile Map Parity & Advanced Spatial Engine:** Ported Adama campus bounds, safety polygon overlay, OSRM multi-modal routing engine, and multi-style tile switcher to Flutter.
 
+### Future Scopes & Advanced UI enhancements
+- [ ] Implement Mapbox GL JS 3D Tracking Map with tilt, pitch, and 3D buildings for Web Dashboard.
+- [ ] Implement mapbox_maps_flutter 3D Map for Mobile App.
+
 ### Hardware & IoT Sprint (Next Week)
 - [ ] Prepare backend IoT connection APIs (REST/MQTT endpoints).
 - [ ] First ESP32 SOS station firmware.
