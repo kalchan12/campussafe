@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { getCurrentUser } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types/user';
 
 interface NavItem {
@@ -31,10 +31,30 @@ const adminNav: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    getCurrentUser().then(setCurrentUser);
-  }, []);
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          setCurrentUser({
+            id: user.id,
+            email: user.email || '',
+            full_name: profile.full_name,
+            role: profile.role,
+            campus_block: profile.campus_block,
+            created_at: profile.created_at,
+            updated_at: profile.updated_at,
+          });
+        }
+      }
+    });
+  }, [supabase]);
 
   const isAdmin = currentUser?.role === 'administrator';
 

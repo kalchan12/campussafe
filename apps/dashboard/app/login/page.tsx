@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn, saveUser } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,22 +12,25 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const supabase = createClient();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      const user = await signIn(email, password);
-      saveUser(user);
-      if (user.role === 'administrator') {
-        router.push('/dashboard/users');
-      } else {
-        router.push('/dashboard');
-      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+
       router.refresh();
-    } catch (err) {
-      setError('Invalid credentials. Try operator@campus.edu or admin@campus.edu / password');
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials.');
     } finally {
       setIsLoading(false);
     }

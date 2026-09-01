@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, signOut } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types/user';
 
 interface TopNavProps {
@@ -18,10 +18,30 @@ export function TopNav({ title = 'CampusSafe EOC', showSearch = false, searchPla
   const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    getCurrentUser().then(setUser);
-  }, []);
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (profile) {
+          setUser({
+             id: user.id,
+             email: user.email || '',
+             full_name: profile.full_name,
+             role: profile.role,
+             campus_block: profile.campus_block,
+             created_at: profile.created_at,
+             updated_at: profile.updated_at,
+          });
+        }
+      }
+    });
+  }, [supabase]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,7 +54,7 @@ export function TopNav({ title = 'CampusSafe EOC', showSearch = false, searchPla
   }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     router.push('/login');
     router.refresh();
   };

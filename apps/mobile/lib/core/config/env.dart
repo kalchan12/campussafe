@@ -5,12 +5,12 @@ class Env {
 
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://hiqssgqpjyheehwfaxla.supabase.co',
   );
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '',
+    defaultValue: 'sb_publishable_AsMrqQuhsyqhI99F-sqheQ_sLVu1kob',
   );
 
   static Future<void> init() async {
