@@ -276,7 +276,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
   Widget build(BuildContext context) {
     final livePosAsync = ref.watch(userLivePositionProvider);
     final selectedFilter = ref.watch(selectedEmergencyTypeFilterProvider);
-    final selectedIncident = ref.watch(selectedMapIncidentProvider);
+    final selectedIncident = ref.watch(selectedMapIncidentProvider) ?? widget.initialSelectedIncident;
     final mapStyle = ref.watch(selectedMapStyleProvider);
     final activeRouteAsync = ref.watch(activeIncidentRouteProvider);
     final travelMode = ref.watch(activeTravelModeProvider);
@@ -285,7 +285,6 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
         ? widget.incidents
         : widget.incidents.where((i) => i.type == selectedFilter).toList();
 
-    final selectedIncident = ref.watch(selectedMapIncidentProvider) ?? widget.initialSelectedIncident;
     final responderId = selectedIncident?.assignedResponderId;
     final responderData = responderId != null 
         ? ref.watch(responderLocationProvider(responderId)).value
