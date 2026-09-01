@@ -3,49 +3,60 @@ import type { Responder, ResponderFilter } from '@/types/responder';
 
 export async function getResponders(filter?: ResponderFilter): Promise<Responder[]> {
   let query = supabase
-    .from('responders')
+    .from('profiles')
     .select(`
       id,
-      user_id,
-      type,
-      availability,
-      current_incident_id,
-      latitude,
-      longitude,
-      last_location_update,
+      full_name,
+      email,
+      phone,
+      role,
       created_at,
-      profiles!inner(
-        full_name,
-        email,
-        phone
+      responders (
+        id,
+        availability,
+        current_incident_id,
+        latitude,
+        longitude,
+        last_location_update
       )
-    `);
-
-  if (filter?.status?.length) {
-    query = query.in('availability', filter.status);
-  }
-  if (filter?.role?.length) {
-    query = query.in('type', filter.role);
-  }
+    `)
+    .in('role', ['medical_responder', 'security_responder']);
 
   const { data, error } = await query;
   if (error) throw error;
 
-  let mapped = (data || []).map((row: any) => ({
-    id: row.id,
-    user_id: row.user_id,
-    name: row.profiles?.full_name || 'Unknown',
-    email: row.profiles?.email || '',
-    phone: row.profiles?.phone || '',
-    role: row.type,
-    status: row.availability,
-    current_incident_id: row.current_incident_id,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    last_location_update: row.last_location_update,
-    last_active: row.last_location_update,
-    created_at: row.created_at
-  }));
+  let mapped = (data || []).map((profile: any) => {
+    // Left join yields an array of responder records for this profile. 
+    // Usually 0 or 1 record per profile.
+    const responderState = profile.responders?.[0] || {};
+    
+    return {
+      id: responderState.id || profile.id, // Fallback to profile id if no responder record exists yet
+      user_id: profile.id,
+      name: profile.full_name || 'Unknown',
+      email: profile.email || '',
+      phone: profile.phone || '',
+      role: profile.role, // 'medical_responder' or 'security_responder'
+      status: responderState.availability || 'offline',
+      current_incident_id: responderState.current_incident_id,
+      latitude: responderState.latitude,
+      longitude: responderState.longitude,
+      last_location_update: responderState.last_location_update,
+      last_active: responderState.last_location_update,
+      created_at: profile.created_at
+    };
+  });
+
+  if (filter?.status?.length) {
+    mapped = mapped.filter(m => filter.status!.includes(m.status));
+  }
+  
+  if (filter?.role?.length) {
+    // The UI uses 'medical' and 'security' for filtering
+    mapped = mapped.filter(m => 
+      filter.role!.some(r => m.role.includes(r))
+    );
+  }
 
   if (filter?.search) {
     const s = filter.search.toLowerCase();
@@ -61,27 +72,44 @@ export async function getResponders(filter?: ResponderFilter): Promise<Responder
 
 export async function getResponderById(id: string): Promise<Responder | null> {
   const { data, error } = await supabase
-    .from('responders')
-    .select('*, profiles(full_name, email, phone)')
+    .from('profiles')
+    .select(`
+      id,
+      full_name,
+      email,
+      phone,
+      role,
+      created_at,
+      responders (
+        id,
+        availability,
+        current_incident_id,
+        latitude,
+        longitude,
+        last_location_update
+      )
+    `)
     .eq('id', id)
     .single();
 
   if (error) throw error;
   if (!data) return null;
 
+  const responderState = data.responders?.[0] || {};
+
   return {
-    id: data.id,
-    user_id: data.user_id,
-    name: data.profiles?.full_name || 'Unknown',
-    email: data.profiles?.email || '',
-    phone: data.profiles?.phone || '',
-    role: data.type,
-    status: data.availability,
-    current_incident_id: data.current_incident_id,
-    latitude: data.latitude,
-    longitude: data.longitude,
-    last_location_update: data.last_location_update,
-    last_active: data.last_location_update,
+    id: responderState.id || data.id,
+    user_id: data.id,
+    name: data.full_name || 'Unknown',
+    email: data.email || '',
+    phone: data.phone || '',
+    role: data.role,
+    status: responderState.availability || 'offline',
+    current_incident_id: responderState.current_incident_id,
+    latitude: responderState.latitude,
+    longitude: responderState.longitude,
+    last_location_update: responderState.last_location_update,
+    last_active: responderState.last_location_update,
     created_at: data.created_at
   };
 }
