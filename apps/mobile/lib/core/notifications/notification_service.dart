@@ -24,7 +24,14 @@ const _androidChannel = AndroidNotificationChannel(
 );
 
 class NotificationService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get _messaging {
+    try {
+      return FirebaseMessaging.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final NotificationTokenService _tokenService;
@@ -39,7 +46,7 @@ class NotificationService {
   Future<Result<void>> initialize({String? userId}) async {
     try {
       // Request permissions
-      final settings = await _messaging.requestPermission(
+      final settings = await _messaging?.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -47,7 +54,7 @@ class NotificationService {
         criticalAlert: true,
       );
 
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      if (settings?.authorizationStatus == AuthorizationStatus.denied) {
         return const Left(
           AuthError(message: 'Notification permission denied'),
         );
@@ -60,16 +67,16 @@ class NotificationService {
       await _refreshToken(userId);
 
       // Listen for token refresh
-      _messaging.onTokenRefresh.listen((token) => _refreshToken(userId, token: token));
+      _messaging?.onTokenRefresh.listen((token) => _refreshToken(userId, token: token));
 
       // Handle foreground messages
-      FirebaseMessaging.onMessage.listen(_handleForeground);
-
-      // Handle notification taps while app is in background (but not terminated)
-      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+      try {
+        FirebaseMessaging.onMessage.listen(_handleForeground);
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+      } catch (_) {}
 
       // Handle notification taps when app was terminated
-      final initialMessage = await _messaging.getInitialMessage();
+      final initialMessage = await _messaging?.getInitialMessage();
       if (initialMessage != null) {
         _handleMessageOpenedApp(initialMessage);
       }
@@ -86,7 +93,7 @@ class NotificationService {
 
   Future<void> _refreshToken(String? userId, {String? token}) async {
     try {
-      final fcmToken = token ?? await _messaging.getToken();
+      final fcmToken = token ?? await _messaging?.getToken();
       if (fcmToken == null) return;
       _currentToken = fcmToken;
       if (userId != null) {
@@ -202,13 +209,13 @@ class NotificationService {
   // ---------- Topics ----------
 
   Future<void> subscribeToTopic(String topic) async {
-    await _messaging.subscribeToTopic(topic);
+    await _messaging?.subscribeToTopic(topic);
   }
 
   Future<void> unsubscribeFromTopic(String topic) async {
-    await _messaging.unsubscribeFromTopic(topic);
+    await _messaging?.unsubscribeFromTopic(topic);
   }
 
   /// Returns the current FCM token (useful for debugging).
-  Future<String?> getToken() async => _messaging.getToken();
+  Future<String?> getToken() async => _messaging?.getToken();
 }

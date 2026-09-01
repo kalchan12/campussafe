@@ -22,10 +22,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase (required before FCM can be used)
-  await Firebase.initializeApp();
-
-  // Register the background message handler BEFORE the app starts
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // try {
+  //   await Firebase.initializeApp();
+  //   // Register the background message handler BEFORE the app starts
+  //   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // } catch (e) {
+  //   debugPrint('Firebase initialization failed: $e');
+  // }
 
   // Initialize Supabase (no-op when SUPABASE_URL/ANON_KEY are not set)
   await Env.init();

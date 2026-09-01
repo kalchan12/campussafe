@@ -2,21 +2,25 @@ import 'package:dartz/dartz.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/env.dart';
 import '../../../../core/errors/app_error.dart';
 import '../../../../shared/models/responder.dart';
 
 final responderRepositoryProvider = Provider<ResponderRepository>((ref) {
-  return ResponderRepository(Supabase.instance.client);
+  return ResponderRepository(Env.isConfigured ? Env.supabase : null);
 });
 
 class ResponderRepository {
-  final SupabaseClient _supabase;
+  final SupabaseClient? _client;
 
-  ResponderRepository(this._supabase);
+  ResponderRepository(this._client);
+
+  bool get _isAvailable => _client != null;
 
   Future<Result<void>> updateLocation(String userId, double latitude, double longitude) async {
+    if (!_isAvailable) return Left(NetworkError.noConnection());
     try {
-      final response = await _supabase
+      final response = await _client!
           .from('responders')
           .update({
             'latitude': latitude,
@@ -40,8 +44,9 @@ class ResponderRepository {
   }
 
   Future<Result<Responder>> setAvailability(String userId, String type, bool isAvailable) async {
+    if (!_isAvailable) return Left(NetworkError.noConnection());
     try {
-      final response = await _supabase
+      final response = await _client!
           .from('responders')
           .upsert({
             'user_id': userId,
