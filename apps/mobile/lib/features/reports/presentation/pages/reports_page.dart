@@ -138,43 +138,68 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
       ),
       body: Column(
         children: [
-          // Search Input
+          // Modern Search Input
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
             child: Container(
-              height: 44,
+              height: 48,
               decoration: BoxDecoration(
                 color: AppColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                  color: AppColors.outlineVariant.withValues(alpha: 0.7),
                 ),
               ),
               child: TextField(
                 controller: _searchController,
+                textAlignVertical: TextAlignVertical.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onSurface,
+                ),
                 onChanged: (value) {
                   ref.read(alertsSearchQueryProvider.notifier).state = value;
+                  setState(() {});
                 },
                 decoration: InputDecoration(
+                  isDense: true,
                   hintText: activeTab == AlertsTabMode.broadcasts
                       ? 'Search campus broadcasts & alerts...'
                       : activeTab == AlertsTabMode.myReports
                           ? 'Search your submitted reports...'
                           : 'Search emergency protocols...',
-                  hintStyle: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                  prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.onSurfaceVariant),
+                  hintStyle: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 12, right: 8),
+                    child: Icon(
+                      Icons.search_rounded,
+                      size: 21,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 42,
+                    minHeight: 44,
+                  ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 16),
+                          icon: const Icon(Icons.cancel_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                          splashRadius: 18,
                           onPressed: () {
                             _searchController.clear();
                             ref.read(alertsSearchQueryProvider.notifier).state = '';
+                            setState(() {});
                           },
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
               ),
             ),
