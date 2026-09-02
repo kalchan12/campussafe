@@ -202,7 +202,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/emergency/active/:id',
         name: 'activeEmergency',
-        builder: (context, state) => ActiveEmergencyPage(
+        builder: (context, state) => IncidentDetailPage(
           incidentId: state.pathParameters['id']!,
         ),
       ),

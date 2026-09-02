@@ -47,13 +47,15 @@ class SosNotifier extends StateNotifier<SosState> {
   }
 
   Future<void> fetchLocation() async {
-    state = state.copyWith(isLocationLoading: true);
+    state = state.copyWith(isLocationLoading: true, error: null);
     final result = await _locationService.getCurrentLocation();
     result.fold(
       (error) {
         state = state.copyWith(
           isLocationLoading: false,
-          locationAddress: 'Location unavailable (${error.message})',
+          latitude: null,
+          longitude: null,
+          locationAddress: 'GPS unavailable (${error.message}) - Campus fallback active',
         );
       },
       (position) {
@@ -82,15 +84,26 @@ class SosNotifier extends StateNotifier<SosState> {
       priority = 2;
     }
 
+    final hasExactGps = state.latitude != null && state.longitude != null;
+    final effectiveLat = state.latitude ?? 8.5582;
+    final effectiveLng = state.longitude ?? 39.2895;
+    final effectiveDesc = description ?? (hasExactGps
+        ? 'Emergency SOS Alert triggered via Mobile App'
+        : 'Emergency SOS Alert triggered via Mobile App (Exact GPS unavailable - dispatched to ASTU campus central zone)');
+    final effectiveLocationDesc = state.locationAddress ??
+        (hasExactGps
+            ? 'Lat: ${effectiveLat.toStringAsFixed(4)}, Lng: ${effectiveLng.toStringAsFixed(4)}'
+            : 'ASTU Campus Central (GPS unavailable)');
+
     final payload = {
       'reporterId': userId,
       'type': emergencyType.value,
       'priority': priority,
-      'latitude': state.latitude,
-      'longitude': state.longitude,
-      'locationDescription': state.locationAddress,
-      'campusBlock': campusBlock ?? state.campusBlock,
-      'description': description ?? 'Emergency SOS Alert triggered via Mobile App',
+      'latitude': effectiveLat,
+      'longitude': effectiveLng,
+      'locationDescription': effectiveLocationDesc,
+      'campusBlock': campusBlock ?? state.campusBlock ?? 'ASTU Campus Grounds',
+      'description': effectiveDesc,
       'source': isGuest ? 'guest_report' : 'mobile',
     };
 
@@ -133,11 +146,11 @@ class SosNotifier extends StateNotifier<SosState> {
         status: IncidentStatus.created,
         priority: priority,
         reporterId: userId ?? 'guest_user',
-        latitude: state.latitude ?? 8.5565,
-        longitude: state.longitude ?? 39.2910,
-        locationDescription: state.locationAddress ?? 'Campus Central Zone',
+        latitude: effectiveLat,
+        longitude: effectiveLng,
+        locationDescription: effectiveLocationDesc,
         campusBlock: campusBlock ?? 'Administration Block & EOC',
-        description: description ?? 'Emergency SOS Alert triggered via Mobile App',
+        description: effectiveDesc,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
