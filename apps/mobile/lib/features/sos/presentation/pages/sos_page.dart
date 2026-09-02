@@ -18,6 +18,9 @@ class SOSPage extends ConsumerStatefulWidget {
 
 class _SOSPageState extends ConsumerState<SOSPage> {
   int _selectedTypeIndex = -1;
+  final _locationFormKey = GlobalKey<FormState>();
+  final _campusBlockController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   final List<Map<String, dynamic>> _emergencyTypes = [
     {
@@ -56,6 +59,13 @@ class _SOSPageState extends ConsumerState<SOSPage> {
       'containerColor': const Color(0xFFE0F2F1),
     },
   ];
+
+  @override
+  void dispose() {
+    _campusBlockController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -478,191 +488,303 @@ class _SOSPageState extends ConsumerState<SOSPage> {
     );
   }
 
-  // 4. Location Confirm View with Retry & Fallback
+  // 4. Location Confirm View with Retry, Building/Room, and Description inputs
   Widget _buildLocationConfirmView(SosState sosState) {
     final hasCoords = sosState.latitude != null && sosState.longitude != null;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Confirm Incident Location',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.onSurface,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Responders need your precise location. If GPS is unavailable, campus center fallback is used.',
-            style: TextStyle(
-              fontSize: 13.5,
-              color: AppColors.onSurfaceVariant,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Location Status Card (Solid White with Contrast)
-          Card(
-            elevation: 1.5,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: hasCoords
-                    ? AppColors.success.withValues(alpha: 0.4)
-                    : AppColors.outlineVariant.withValues(alpha: 0.8),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Form(
+        key: _locationFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Incident Location & Details',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.onSurface,
+                letterSpacing: -0.3,
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: (hasCoords ? AppColors.success : AppColors.warning)
-                          .withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      hasCoords ? Icons.location_on_rounded : Icons.location_searching_rounded,
-                      size: 28,
-                      color: hasCoords ? AppColors.success : AppColors.warning,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+            const SizedBox(height: 4),
+            Text(
+              hasCoords
+                  ? 'GPS location acquired. You may optionally specify your room number or notes.'
+                  : 'GPS was not detected. Please specify your campus building & room to dispatch help.',
+              style: TextStyle(
+                fontSize: 13.5,
+                color: hasCoords ? AppColors.onSurfaceVariant : const Color(0xFFC62828),
+                height: 1.35,
+                fontWeight: hasCoords ? FontWeight.normal : FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
 
-                  if (sosState.isLocationLoading) ...[
-                    const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Acquiring precise GPS location...',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ] else ...[
+            // Location Status Card (Solid White with Contrast)
+            Card(
+              elevation: 1.5,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: hasCoords
+                      ? AppColors.success.withValues(alpha: 0.4)
+                      : const Color(0xFFFFB74D),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: hasCoords ? AppColors.success : AppColors.warning,
+                            color: (hasCoords ? AppColors.success : AppColors.warning)
+                                .withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          hasCoords ? 'GPS Location Locked' : 'Location Fallback Active',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
+                          child: Icon(
+                            hasCoords ? Icons.location_on_rounded : Icons.location_searching_rounded,
+                            size: 24,
                             color: hasCoords ? AppColors.success : const Color(0xFFE65100),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: hasCoords ? AppColors.success : const Color(0xFFE65100),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    hasCoords ? 'GPS Detected & Locked' : 'GPS Not Detected',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: hasCoords ? AppColors.success : const Color(0xFFE65100),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                hasCoords
+                                    ? (sosState.locationAddress ?? 'Lat: ${sosState.latitude!.toStringAsFixed(4)}, Lng: ${sosState.longitude!.toStringAsFixed(4)}')
+                                    : 'Campus Center fallback active. Insert room below.',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                          tooltip: 'Refetch GPS',
+                          onPressed: () {
+                            ref.read(sosNotifierProvider.notifier).fetchLocation();
+                          },
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      hasCoords
-                          ? (sosState.locationAddress ?? 'Lat: ${sosState.latitude!.toStringAsFixed(4)}, Lng: ${sosState.longitude!.toStringAsFixed(4)}')
-                          : 'Exact GPS unavailable. Emergency will be dispatched to ASTU Campus grounds.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.9),
-                        height: 1.35,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Refetch / Retry Button
-                    TextButton.icon(
-                      onPressed: () {
-                        ref.read(sosNotifierProvider.notifier).fetchLocation();
-                      },
-                      icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
-                      label: const Text(
-                        'Retry GPS Capture',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
+                    if (sosState.isLocationLoading) ...[
+                      const SizedBox(height: 12),
+                      const LinearProgressIndicator(minHeight: 3),
+                    ],
                   ],
-                ],
-              ),
-            ),
-          ),
-
-          const Spacer(),
-
-          // Primary Send SOS Button
-          SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ref.read(sosNotifierProvider.notifier).sendSOS();
-              },
-              icon: const Icon(Icons.emergency_rounded, size: 20, color: Colors.white),
-              label: const Text(
-                'Send SOS Alert Now',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.critical,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
                 ),
-                elevation: 2,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 46,
-            child: OutlinedButton(
-              onPressed: () {
-                ref.read(sosNotifierProvider.notifier).reset();
+            const SizedBox(height: 18),
+
+            // 1. Campus Building Block & Room (Required if no GPS, Optional if GPS locked)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'BUILDING BLOCK & ROOM',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: hasCoords
+                        ? AppColors.surfaceContainerHigh
+                        : AppColors.critical.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    hasCoords ? 'OPTIONAL' : 'REQUIRED (NO GPS)',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: hasCoords ? AppColors.onSurfaceVariant : AppColors.critical,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _campusBlockController,
+              validator: (value) {
+                if (!hasCoords && (value == null || value.trim().isEmpty)) {
+                  return 'Please specify your building block, room, or landmark';
+                }
+                return null;
               },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
-                shape: RoundedRectangleBorder(
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+              decoration: InputDecoration(
+                hintText: 'e.g. Block 4, Room 204 or Engineering East Quad',
+                hintStyle: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                prefixIcon: const Icon(Icons.business_rounded, size: 20, color: AppColors.primary),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: !hasCoords ? AppColors.critical.withValues(alpha: 0.6) : AppColors.outlineVariant,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: !hasCoords ? AppColors.critical.withValues(alpha: 0.6) : AppColors.outlineVariant,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                 ),
               ),
-              child: const Text(
-                'Back',
-                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+
+            // 2. Situation Details / Description (Optional)
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'SITUATION DETAILS (OPTIONAL)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurfaceVariant,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Text(
+                  'OPTIONAL',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _descriptionController,
+              maxLines: 3,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.onSurface),
+              decoration: InputDecoration(
+                hintText: 'Briefly describe the condition (e.g., student collapsed, fire smoke visible, physical threat)...',
+                hintStyle: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            // Primary Send SOS Button
+            SizedBox(
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  if (_locationFormKey.currentState!.validate()) {
+                    final blockText = _campusBlockController.text.trim();
+                    final descText = _descriptionController.text.trim();
+                    ref.read(sosNotifierProvider.notifier).sendSOS(
+                          campusBlock: blockText.isNotEmpty
+                              ? blockText
+                              : (hasCoords ? 'ASTU Campus Grounds' : 'ASTU Campus Center'),
+                          description: descText.isNotEmpty ? descText : null,
+                        );
+                  }
+                },
+                icon: const Icon(Icons.emergency_rounded, size: 20, color: Colors.white),
+                label: const Text(
+                  'Send SOS Alert Now',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.critical,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 46,
+              child: OutlinedButton(
+                onPressed: () {
+                  ref.read(sosNotifierProvider.notifier).reset();
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Back',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

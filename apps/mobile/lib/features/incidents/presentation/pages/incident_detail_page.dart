@@ -361,17 +361,17 @@ class IncidentDetailPage extends ConsumerWidget {
                               ),
                             ),
                             onPressed: () {
-                              if (incident.latitude != null && incident.longitude != null) {
-                                MapLauncherUtil.openInGoogleMaps(
-                                  latitude: incident.latitude!,
-                                  longitude: incident.longitude!,
-                                  label: '${incident.type.displayName} - ${incident.campusBlock}',
-                                );
-                              }
+                              final lat = incident.latitude ?? 8.5582;
+                              final lng = incident.longitude ?? 39.2895;
+                              MapLauncherUtil.openInGoogleMaps(
+                                latitude: lat,
+                                longitude: lng,
+                                label: '${incident.type.displayName} - ${incident.campusBlock ?? "Campus"}',
+                              );
                             },
                             icon: const Icon(Icons.map_rounded, size: 18),
                             label: const Text(
-                              'Open in Google Maps',
+                              'Open in Maps',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -388,16 +388,16 @@ class IncidentDetailPage extends ConsumerWidget {
                               ),
                             ),
                             onPressed: () {
-                              if (incident.latitude != null && incident.longitude != null) {
-                                MapLauncherUtil.openGoogleMapsDirections(
-                                  latitude: incident.latitude!,
-                                  longitude: incident.longitude!,
-                                );
-                              }
+                              final lat = incident.latitude ?? 8.5582;
+                              final lng = incident.longitude ?? 39.2895;
+                              MapLauncherUtil.openGoogleMapsDirections(
+                                latitude: lat,
+                                longitude: lng,
+                              );
                             },
                             icon: const Icon(Icons.directions_rounded, size: 18),
                             label: const Text(
-                              'Get Directions',
+                              'Start Navigation',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),

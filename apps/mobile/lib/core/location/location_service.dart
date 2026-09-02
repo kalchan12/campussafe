@@ -19,19 +19,37 @@ class LocationService {
 
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        // Try last known position even if service is disabled
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) {
+          return Right(lastKnown);
+        }
         return Left(LocationError.serviceDisabled());
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: AppConstants.locationTimeout,
-      );
-
-      if (position.accuracy > AppConstants.minimumLocationAccuracy) {
-        return Left(LocationError.accuracyLow());
+      // 1. Fast check: try last known position first
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      
+      // 2. Fetch fresh position with reasonable timeout
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 5),
+        );
+        return Right(position);
+      } catch (freshError) {
+        // If fresh GPS fails/times out, use last known position if available
+        if (lastKnown != null) {
+          return Right(lastKnown);
+        }
+        
+        if (freshError.toString().contains('timeout')) {
+          return Left(LocationError.timeout());
+        }
+        return Left(LocationError(
+          message: 'GPS fix unavailable (${freshError.toString()})',
+        ));
       }
-
-      return Right(position);
     } catch (e) {
       if (e.toString().contains('timeout')) {
         return Left(LocationError.timeout());
