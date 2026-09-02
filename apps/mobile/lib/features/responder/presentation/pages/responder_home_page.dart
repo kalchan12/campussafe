@@ -14,6 +14,7 @@ class ResponderHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final incidents = ref.watch(incidentsListProvider);
+    final isLoading = ref.watch(incidentsLoadingProvider);
     final authState = ref.watch(authNotifierProvider);
     final isOnDuty = ref.watch(responderDutyProvider);
     final userId = authState.userId;
@@ -164,7 +165,32 @@ class ResponderHomePage extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              if (availableIncidents.isEmpty)
+              if (isLoading && incidents.isEmpty)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Fetching live incidents...',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else if (availableIncidents.isEmpty)
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24),

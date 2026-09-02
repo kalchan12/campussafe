@@ -13,6 +13,7 @@ class AvailableIncidentsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allIncidents = ref.watch(incidentsListProvider);
+    final isLoading = ref.watch(incidentsLoadingProvider);
     final authState = ref.watch(authNotifierProvider);
     final userId = authState.userId;
 
@@ -25,53 +26,74 @@ class AvailableIncidentsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Available Incidents'),
       ),
-      body: availableIncidents.isEmpty
+      body: isLoading && allIncidents.isEmpty
           ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 64,
-                    color: Colors.green,
-                  ),
+                  CircularProgressIndicator(color: AppColors.primary),
                   SizedBox(height: 16),
                   Text(
-                    'No Available Incidents',
+                    'Fetching available incidents...',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurfaceVariant,
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'All incidents have been assigned or resolved',
-                    style: TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: availableIncidents.length,
-              itemBuilder: (context, index) {
-                final incident = availableIncidents[index];
-                return _AvailableIncidentCard(
-                  incident: incident,
-                  onAccept: () async {
-                    await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
-                          incidentId: incident.id,
-                          status: IncidentStatus.assigned,
-                          responderId: userId,
-                        );
-                    if (context.mounted) {
-                      context.push('/responder/incident/${incident.id}');
-                    }
-                  },
-                  onDecline: () {},
-                );
-              },
-            ),
+          : availableIncidents.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: Colors.green,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No Available Incidents',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'All incidents have been assigned or resolved',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(incidentsListProvider.notifier).refresh(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: availableIncidents.length,
+                    itemBuilder: (context, index) {
+                      final incident = availableIncidents[index];
+                      return _AvailableIncidentCard(
+                        incident: incident,
+                        onAccept: () async {
+                          await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
+                                incidentId: incident.id,
+                                status: IncidentStatus.assigned,
+                                responderId: userId,
+                              );
+                          if (context.mounted) {
+                            context.push('/responder/incident/${incident.id}');
+                          }
+                        },
+                        onDecline: () {},
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

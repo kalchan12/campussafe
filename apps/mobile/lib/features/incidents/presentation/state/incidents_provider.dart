@@ -96,6 +96,9 @@ final activeIncidentRouteProvider = FutureProvider<RouteResult?>((ref) async {
   return await routingService.getBestRoute(startLatLng, endLatLng);
 });
 
+/// Provider indicating if incidents are actively being fetched/loaded from the backend
+final incidentsLoadingProvider = StateProvider<bool>((ref) => true);
+
 /// Provider for active incidents list with real coordinates
 final incidentsListProvider = StateNotifierProvider<IncidentsNotifier, List<Incident>>((ref) {
   final repository = ref.watch(incidentRepositoryProvider);
@@ -117,18 +120,28 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       _subscribeToRealtime();
     } else {
       state = [];
+      Future.microtask(() {
+        ref.read(incidentsLoadingProvider.notifier).state = false;
+      });
     }
   }
 
   Future<void> _loadFromBackend() async {
+    Future.microtask(() {
+      ref.read(incidentsLoadingProvider.notifier).state = true;
+    });
     final result = await _repository.getActiveIncidents();
     result.fold(
       (error) {
-        state = [];
+        if (mounted) {
+          state = [];
+          ref.read(incidentsLoadingProvider.notifier).state = false;
+        }
       },
       (incidents) {
         if (mounted) {
           state = incidents;
+          ref.read(incidentsLoadingProvider.notifier).state = false;
         }
       },
     );
