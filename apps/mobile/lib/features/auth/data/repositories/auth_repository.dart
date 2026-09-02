@@ -32,7 +32,18 @@ class AuthRepository {
       if (response.user == null) {
         return const Left(AuthError(message: 'Sign-in failed'));
       }
-      return _fetchProfile(response.user!.id);
+      final profileResult = await _fetchProfile(response.user!.id);
+      return profileResult.fold(
+        (_) => Right(app.User(
+          id: response.user!.id,
+          email: response.user!.email ?? email,
+          fullName: response.user!.userMetadata?['full_name'] as String? ?? email.split('@').first,
+          role: app.UserRole.fromString(response.user!.userMetadata?['role'] as String? ?? 'student'),
+          createdAt: DateTime.tryParse(response.user!.createdAt) ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        )),
+        (user) => Right(user),
+      );
     } on supa.AuthException catch (e) {
       return Left(AuthError(message: e.message));
     } catch (e) {
@@ -63,17 +74,34 @@ class AuthRepository {
       }
       // Upsert the profile row (also handled by the DB trigger, but
       // explicit upsert ensures campus_block and role are captured)
-      await _client!.from('profiles').upsert({
-        'id': response.user!.id,
-        'email': email,
-        'full_name': fullName,
-        'phone': phone,
-        'role': role ?? 'student',
-        'campus_block': campusBlock,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-      return _fetchProfile(response.user!.id);
+      try {
+        await _client!.from('profiles').upsert({
+          'id': response.user!.id,
+          'email': email,
+          'full_name': fullName,
+          'phone': phone,
+          'role': role ?? 'student',
+          'campus_block': campusBlock,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {
+        // DB trigger fallback
+      }
+      final profileResult = await _fetchProfile(response.user!.id);
+      return profileResult.fold(
+        (_) => Right(app.User(
+          id: response.user!.id,
+          email: email,
+          fullName: fullName,
+          phone: phone,
+          role: app.UserRole.fromString(role ?? 'student'),
+          campusBlock: campusBlock,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        )),
+        (user) => Right(user),
+      );
     } on supa.AuthException catch (e) {
       return Left(AuthError(message: e.message));
     } catch (e) {

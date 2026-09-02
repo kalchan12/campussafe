@@ -30,12 +30,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
     // Dev bypass: if Supabase is not configured, skip auth
     if (!Env.isConfigured) {
       context.go('/home');
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
 
     final notifier = ref.read(authNotifierProvider.notifier);
     await notifier.signIn(
@@ -45,7 +46,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!mounted) return;
     final authState = ref.read(authNotifierProvider);
-    if (authState.error != null) {
+    if (authState.isAuthenticated) {
+      context.go('/home');
+    } else if (authState.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authState.error!),

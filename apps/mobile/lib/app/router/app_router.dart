@@ -6,6 +6,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/registration_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/state/auth_notifier.dart';
+import '../../features/auth/presentation/state/auth_state.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/sos/presentation/pages/sos_page.dart';
 import '../../features/sos/presentation/pages/active_emergency_page.dart';

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/env.dart';
 import '../../../../shared/models/user.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../data/repositories/profile_repository.dart';
 
 class ProfileState extends Equatable {
