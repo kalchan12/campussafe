@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../profile/presentation/state/profile_notifier.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/utils/phone_launcher.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/cards.dart';
 import '../../../../shared/widgets/status_badge.dart';
@@ -24,225 +25,381 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: AppSpacing.containerMargin,
-            right: AppSpacing.containerMargin,
-            top: AppSpacing.lg,
+          padding: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 20,
             bottom: 104 + AppSpacing.safeAreaBottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting & Campus Status
-              Column(
+              // Greeting & Campus Status Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final profileState = ref.watch(profileNotifierProvider);
-                      final authState = ref.watch(authNotifierProvider);
-                      final displayName = profileState.user?.fullName ?? 
-                          (authState.email != null ? authState.email!.split('@').first : (isGuest ? 'Guest' : 'Student'));
-                      return Text(
-                        'Hello, $displayName',
-                        style: AppTypography.displayLgMobile.copyWith(
-                          color: AppColors.onSurface,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      border: Border.all(color: AppColors.outlineVariant),
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.check_circle,
-                          color: AppColors.primary,
-                          size: 18,
-                          fill: 1.0,
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final profileState = ref.watch(profileNotifierProvider);
+                            final authState = ref.watch(authNotifierProvider);
+                            final displayName = profileState.user?.fullName ?? 
+                                (authState.email != null ? authState.email!.split('@').first : (isGuest ? 'Guest' : 'Student'));
+                            return Text(
+                              'Hello, $displayName',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.onSurface,
+                                letterSpacing: -0.5,
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'Campus: Secure',
-                          style: AppTypography.labelMd.copyWith(
-                            color: AppColors.onSurface,
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            border: Border.all(
+                              color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              StatusDot(
+                                color: AppColors.success,
+                                size: 8,
+                                isPulsing: true,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'ASTU Campus: Secure & Active',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
+                  InkWell(
+                    onTap: () => context.go('/profile'),
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              // EMERGENCY SOS ACTION (Dominant Element)
-              Center(
+              const SizedBox(height: 24),
+
+              // EMERGENCY SOS ACTION (Dominant Lifesaver Element)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
                   children: [
                     EmergencyButton(
                       onTriggered: () => _showSOSConfirmation(context, ref),
-                      size: 180,
+                      size: 175,
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Press and hold for 3 seconds to request immediate help.',
-                      style: AppTypography.bodyMd.copyWith(
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Press and hold for 3 seconds to request immediate dispatch',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.onSurfaceVariant,
+                        height: 1.35,
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 12),
+                    // Quick Direct Dial Shortcut
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        PhoneLauncherUtil.launchCall(
+                          context: context,
+                          phoneNumber: '811',
+                          contactName: 'Campus Police (Emergency)',
+                          isEmergency: true,
+                        );
+                      },
+                      icon: const Icon(Icons.phone_in_talk_rounded, size: 15, color: AppColors.critical),
+                      label: const Text(
+                        'Direct Police Dial (811)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.critical,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        side: BorderSide(color: AppColors.critical.withValues(alpha: 0.4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
-              // Quick Emergency Types (Bento Grid Style)
-              SectionHeader(
-                title: 'Quick Emergency Types',
+              const SizedBox(height: 24),
+
+              // Quick Emergency Types Header
+              const Text(
+                'Quick Emergency Types',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                  letterSpacing: -0.2,
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: 12),
+
+              // Quick Emergency Types Bento Grid
               BentoGrid(
                 crossAxisCount: 2,
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                childAspectRatio: 1.2,
+                spacing: 10,
+                runSpacing: 10,
+                childAspectRatio: 1.25,
                 children: [
-                  _buildEmergencyTypeCard(context, ref, 'Medical', Icons.medical_services, AppColors.error, AppColors.errorContainer),
-                  _buildEmergencyTypeCard(context, ref, 'Security', Icons.local_police, AppColors.primary, AppColors.primaryContainer),
-                  _buildEmergencyTypeCard(context, ref, 'Fire', Icons.fire_extinguisher, AppColors.warning, AppColors.warningContainer),
-                  _buildEmergencyTypeCard(context, ref, 'General', Icons.support, AppColors.information, AppColors.informationContainer),
+                  _buildEmergencyTypeCard(
+                    context,
+                    ref,
+                    label: 'Medical',
+                    subtitle: 'Ambulance / First Aid',
+                    icon: Icons.medical_services_rounded,
+                    color: AppColors.error,
+                    containerColor: AppColors.errorContainer,
+                  ),
+                  _buildEmergencyTypeCard(
+                    context,
+                    ref,
+                    label: 'Security',
+                    subtitle: 'Campus Police',
+                    icon: Icons.security_rounded,
+                    color: const Color(0xFF1565C0),
+                    containerColor: const Color(0xFFE3F2FD),
+                  ),
+                  _buildEmergencyTypeCard(
+                    context,
+                    ref,
+                    label: 'Fire Hazard',
+                    subtitle: 'Smoke & Alarms',
+                    icon: Icons.local_fire_department_rounded,
+                    color: const Color(0xFFE65100),
+                    containerColor: const Color(0xFFFFE0B2),
+                  ),
+                  _buildEmergencyTypeCard(
+                    context,
+                    ref,
+                    label: 'General Help',
+                    subtitle: 'Crisis & Support',
+                    icon: Icons.support_agent_rounded,
+                    color: const Color(0xFF00695C),
+                    containerColor: const Color(0xFFE0F2F1),
+                  ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              // Status Card (Safety Network)
-              AppCard(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.cell_tower,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'Safety Network',
-                          style: AppTypography.labelMd.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+              const SizedBox(height: 20),
+
+              // Safety Network Status Card
+              Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Row: Icon + Title + Online Badge
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.cell_tower_rounded,
+                              color: AppColors.primary,
+                              size: 17,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Row(
-                            children: [
-                              StatusDot(
-                                color: AppColors.primary,
-                                size: 8,
-                                isPulsing: true,
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Campus Safety Network',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5,
+                                color: AppColors.onSurface,
                               ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                'Connected',
-                                style: AppTypography.technicalSm.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 52,
-                          height: 32,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                left: 0,
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: AppColors.secondaryContainer,
-                                  child: Text(
-                                    '1',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.onSecondaryContainer,
-                                    ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.wifi, size: 11, color: AppColors.success),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Online',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                              Positioned(
-                                left: 20,
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: AppColors.tertiaryContainer,
-                                  child: Text(
-                                    '2',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.onTertiaryContainer,
-                                    ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Info row with responder badge & GPS tracking text
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.security_rounded, size: 14, color: AppColors.primary),
+                                SizedBox(width: 5),
+                                Text(
+                                  '3 Responders Active',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.onSurface,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '2 ',
-                                style: AppTypography.bodyMd.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.onSurface,
-                                ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Live GPS Beacon active',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.onSurfaceVariant,
                               ),
-                              TextSpan(
-                                text: 'Nearby Responders',
-                                style: AppTypography.bodyMd.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Quick Shortcuts (Safety Guides & Hazard Reports)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      title: 'Safety Guides',
+                      subtitle: 'Helplines & SOPs',
+                      icon: Icons.menu_book_rounded,
+                      iconColor: const Color(0xFF1565C0),
+                      onTap: () => context.go('/reports'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      title: 'Report Hazard',
+                      subtitle: 'Confidential alert',
+                      icon: Icons.add_moderator_rounded,
+                      iconColor: const Color(0xFFE65100),
+                      onTap: () => context.push('/reports/new'),
+                    ),
+                  ),
+                ],
+              ),
+
               if (isGuest) ...[
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: 20),
                 AppCard(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
@@ -281,31 +438,41 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildEmergencyTypeCard(
     BuildContext context,
-    WidgetRef ref,
-    String label,
-    IconData icon,
-    Color color,
-    Color containerColor,
-  ) {
+    WidgetRef ref, {
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required Color containerColor,
+  }) {
     return InkWell(
       onTap: () {
         ref.read(sosNotifierProvider.notifier).selectType(label);
         context.push('/sos');
       },
-      borderRadius: BorderRadius.circular(AppRadius.lg),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainer,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: containerColor,
@@ -313,17 +480,94 @@ class HomePage extends ConsumerWidget {
               child: Center(
                 child: Icon(
                   icon,
-                  size: 20,
+                  size: 22,
                   color: color,
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: AppTypography.labelMd.copyWith(
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
                 color: AppColors.onSurface,
-                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],
@@ -347,7 +591,7 @@ class HomePage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
           ),
           PrimaryButton(
             label: 'Yes, Send SOS',
