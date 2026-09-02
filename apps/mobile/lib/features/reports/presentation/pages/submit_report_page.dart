@@ -187,8 +187,10 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
                         : AppColors.outlineVariant.withValues(alpha: 0.7),
                   ),
                 ),
-                child: SwitchListTile.adaptive(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                child: Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   secondary: Container(
                     width: 36,
                     height: 36,
@@ -227,6 +229,7 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
                       _isAnonymous = value;
                     });
                   },
+                ),
                 ),
               ),
               const SizedBox(height: 20),

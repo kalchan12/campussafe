@@ -228,26 +228,28 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                             width: isSelected ? 2.0 : 1.0,
                           ),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: style.accentColor.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: style.accentColor.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                style.icon,
+                                color: style.accentColor,
+                                size: 20,
+                              ),
                             ),
-                            child: Icon(
-                              style.icon,
-                              color: style.accentColor,
-                              size: 20,
-                            ),
-                          ),
-                          title: Text(
-                            style.label,
-                            style: AppTypography.labelMd.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: AppColors.onSurface,
+                            title: Text(
+                              style.label,
+                              style: AppTypography.labelMd.copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
+                                color: AppColors.onSurface,
                             ),
                           ),
                           trailing: isSelected
@@ -258,6 +260,7 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
                                 style;
                             Navigator.of(ctx).pop();
                           },
+                        ),
                         ),
                       );
                     }),
