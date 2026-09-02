@@ -423,18 +423,21 @@ class _SettingsSection extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            children: [
-              for (int i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i < children.length - 1)
-                  const Divider(
-                    height: 1,
-                    indent: 52,
-                    color: AppColors.outlineVariant,
-                  ),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: [
+                for (int i = 0; i < children.length; i++) ...[
+                  children[i],
+                  if (i < children.length - 1)
+                    const Divider(
+                      height: 1,
+                      indent: 52,
+                      color: AppColors.outlineVariant,
+                    ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
