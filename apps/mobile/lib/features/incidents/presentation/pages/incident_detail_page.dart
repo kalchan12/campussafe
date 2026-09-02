@@ -86,6 +86,19 @@ class IncidentDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text('Incident #${incident.id}'),
         actions: [
+          if (incident.isActive)
+            TextButton.icon(
+              onPressed: () => _showResolveConfirmation(context, ref, incident),
+              icon: const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.success),
+              label: const Text(
+                'Resolve',
+                style: TextStyle(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ),
           if (incident.latitude != null && incident.longitude != null)
             IconButton(
               icon: const Icon(Icons.map_outlined),
@@ -105,6 +118,48 @@ class IncidentDetailPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Resolved Status Banner if Incident is already resolved
+            if (!incident.isActive) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Emergency Resolved',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.success,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Removed from active live map • Archived in campus safety history',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Status & Priority Header Card
             Card(
               elevation: 2,
@@ -470,8 +525,174 @@ class IncidentDetailPage extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // User Resolution Action
+            if (incident.isActive) ...[
+              SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showResolveConfirmation(context, ref, incident),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    elevation: 1.5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                    ),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 20, color: Colors.white),
+                  label: const Text(
+                    'I am Safe • Mark Incident as Resolved',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              const Text(
+                'Marking as resolved removes the emergency pin from the active map and archives it in safety history.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                height: 46,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text(
+                    'Return to Emergencies & History',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.lg),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showResolveConfirmation(BuildContext context, WidgetRef ref, Incident incident) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        icon: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.verified_user_rounded,
+            color: AppColors.success,
+            size: 28,
+          ),
+        ),
+        title: const Text(
+          'Mark Emergency as Resolved?',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: const Text(
+          'Are you safe and would like to resolve this incident? It will immediately disappear from active campus maps and stay archived in your incident history.',
+          style: TextStyle(
+            fontSize: 13.5,
+            color: AppColors.onSurfaceVariant,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.8),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Keep Active',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(dialogCtx);
+                    await ref.read(incidentsListProvider.notifier).updateIncidentStatus(
+                          incidentId: incident.id,
+                          status: IncidentStatus.resolved,
+                        );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Incident #${incident.id} marked as resolved & archived.'),
+                          backgroundColor: AppColors.success,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Yes, Resolve',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

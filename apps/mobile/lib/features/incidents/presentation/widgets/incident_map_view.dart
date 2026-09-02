@@ -280,10 +280,10 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
     final mapStyle = ref.watch(selectedMapStyleProvider);
     final activeRouteAsync = ref.watch(activeIncidentRouteProvider);
     final travelMode = ref.watch(activeTravelModeProvider);
-
+    final activeIncidentsList = widget.incidents.where((i) => i.isActive).toList();
     final filteredIncidents = selectedFilter == null
-        ? widget.incidents
-        : widget.incidents.where((i) => i.type == selectedFilter).toList();
+        ? activeIncidentsList
+        : activeIncidentsList.where((i) => i.type == selectedFilter).toList();
 
     final responderId = selectedIncident?.assignedResponderId;
     final responderData = responderId != null 
