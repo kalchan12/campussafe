@@ -45,9 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     if (!mounted) return;
     final authState = ref.read(authNotifierProvider);
-    if (authState.isAuthenticated) {
-      context.go('/home');
-    } else if (authState.error != null) {
+    if (authState.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authState.error!),
@@ -154,9 +152,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       builder: (context, ref, _) {
                         final isLoading =
                             ref.watch(authNotifierProvider).isLoading;
-                        return PrimaryButton(
-                          label: isLoading ? 'Signing in…' : 'Sign In',
-                          onPressed: isLoading ? null : _handleLogin,
+                        return SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                              ),
+                            ),
+                            onPressed: isLoading ? null : _handleLogin,
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
                         );
                       },
                     ),

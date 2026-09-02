@@ -34,19 +34,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _notifService.associateTokenWithUser(currentUser.id);
       }
 
-      // Listen for auth state changes (e.g. token refresh, sign-out)
+      // Listen for background session changes (sign-out, token refresh)
       Env.supabase.auth.onAuthStateChange.listen((event) {
-        final user = event.session?.user;
-        if (user != null) {
-          state = state.copyWith(
-            isAuthenticated: true,
-            isGuest: false,
-            userId: user.id,
-            email: user.email,
-            error: null,
-          );
-        } else if (event.event == supa.AuthChangeEvent.signedOut) {
+        if (event.event == supa.AuthChangeEvent.signedOut) {
           state = const AuthState();
+        } else if (event.event == supa.AuthChangeEvent.tokenRefreshed) {
+          final user = event.session?.user;
+          if (user != null) {
+            state = state.copyWith(
+              isAuthenticated: true,
+              isGuest: false,
+              userId: user.id,
+              email: user.email,
+            );
+          }
         }
       });
     }
