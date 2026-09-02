@@ -426,44 +426,47 @@ class ProfilePage extends ConsumerWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
               ),
-              child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 18),
-            ),
-            title: const Text(
-              'App Settings & Notifications',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
-            onTap: () => context.push('/settings'),
-          ),
-          const Divider(height: 1, color: AppColors.outlineVariant),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
+              title: const Text(
+                'App Settings & Notifications',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 18),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
+              onTap: () => context.push('/settings'),
             ),
-            title: const Text(
-              'Security & Password',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            const Divider(height: 1, color: AppColors.outlineVariant),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 18),
+              ),
+              title: const Text(
+                'Security & Password',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
+              onTap: () => context.push('/settings'),
             ),
-            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.onSurfaceVariant),
-            onTap: () => context.push('/settings'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
