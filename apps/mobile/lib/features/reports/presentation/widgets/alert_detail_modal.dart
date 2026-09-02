@@ -213,13 +213,13 @@ class AlertDetailModal extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      final url = Uri.parse('tel:911');
+                      final url = Uri.parse('tel:811');
                       if (await canLaunchUrl(url)) {
                         await launchUrl(url);
                       }
                     },
                     icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
-                    label: const Text('Campus Security', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: const Text('Campus Police (811)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       foregroundColor: AppColors.critical,

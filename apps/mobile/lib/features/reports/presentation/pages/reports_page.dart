@@ -220,66 +220,44 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
     AlertCategory? selectedCategory,
     List<CampusAlert> allAlerts,
   ) {
-    final isAllSelected = selectedCategory == null;
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
-        children: [
-          FilterChip(
-            label: Text(
-              'All (${allAlerts.length})',
-              style: TextStyle(
-                color: isAllSelected ? Colors.white : AppColors.onSurface,
-                fontWeight: isAllSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-            selected: isAllSelected,
-            selectedColor: AppColors.primary,
-            checkmarkColor: Colors.white,
-            backgroundColor: AppColors.surfaceContainerLow,
-            side: BorderSide(
-              color: isAllSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
-            ),
-            onSelected: (_) {
-              ref.read(selectedAlertCategoryFilterProvider.notifier).state = null;
-            },
-          ),
-          const SizedBox(width: 8),
-          ...AlertCategory.values.map((cat) {
-            final count = allAlerts.where((a) => a.category == cat).length;
-            if (count == 0) return const SizedBox.shrink();
+        children: AlertCategory.values.map((cat) {
+          final count = allAlerts.where((a) => a.category == cat).length;
+          if (count == 0) return const SizedBox.shrink();
 
-            final isSelected = selectedCategory == cat;
+          final isSelected = selectedCategory == cat;
 
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(
-                  '${cat.displayName} ($count)',
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.onSurface,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 12,
-                  ),
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                '${cat.displayName} ($count)',
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 12,
                 ),
-                selected: isSelected,
-                selectedColor: AppColors.primary,
-                checkmarkColor: Colors.white,
-                backgroundColor: AppColors.surfaceContainerLow,
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
-                ),
-                onSelected: (_) {
-                  ref.read(selectedAlertCategoryFilterProvider.notifier).state =
-                      isSelected ? null : cat;
-                },
               ),
-            );
-          }),
-        ],
+              selected: isSelected,
+              selectedColor: AppColors.primary,
+              checkmarkColor: Colors.white,
+              backgroundColor: AppColors.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              side: BorderSide(
+                color: isSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
+              ),
+              onSelected: (_) {
+                ref.read(selectedAlertCategoryFilterProvider.notifier).state =
+                    isSelected ? null : cat;
+              },
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -289,66 +267,44 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
     ReportStatus? selectedStatus,
     List<SafetyReport> allReports,
   ) {
-    final isAllSelected = selectedStatus == null;
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
-        children: [
-          FilterChip(
-            label: Text(
-              'All (${allReports.length})',
-              style: TextStyle(
-                color: isAllSelected ? Colors.white : AppColors.onSurface,
-                fontWeight: isAllSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-            selected: isAllSelected,
-            selectedColor: AppColors.primary,
-            checkmarkColor: Colors.white,
-            backgroundColor: AppColors.surfaceContainerLow,
-            side: BorderSide(
-              color: isAllSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
-            ),
-            onSelected: (_) {
-              ref.read(selectedReportStatusFilterProvider.notifier).state = null;
-            },
-          ),
-          const SizedBox(width: 8),
-          ...ReportStatus.values.map((status) {
-            final count = allReports.where((r) => r.status == status).length;
-            if (count == 0) return const SizedBox.shrink();
+        children: ReportStatus.values.map((status) {
+          final count = allReports.where((r) => r.status == status).length;
+          if (count == 0) return const SizedBox.shrink();
 
-            final isSelected = selectedStatus == status;
+          final isSelected = selectedStatus == status;
 
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(
-                  '${status.displayName} ($count)',
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.onSurface,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 12,
-                  ),
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                '${status.displayName} ($count)',
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.onSurface,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 12,
                 ),
-                selected: isSelected,
-                selectedColor: AppColors.primary,
-                checkmarkColor: Colors.white,
-                backgroundColor: AppColors.surfaceContainerLow,
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
-                ),
-                onSelected: (_) {
-                  ref.read(selectedReportStatusFilterProvider.notifier).state =
-                      isSelected ? null : status;
-                },
               ),
-            );
-          }),
-        ],
+              selected: isSelected,
+              selectedColor: AppColors.primary,
+              checkmarkColor: Colors.white,
+              backgroundColor: AppColors.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              side: BorderSide(
+                color: isSelected ? AppColors.primary : AppColors.outlineVariant.withValues(alpha: 0.6),
+              ),
+              onSelected: (_) {
+                ref.read(selectedReportStatusFilterProvider.notifier).state =
+                    isSelected ? null : status;
+              },
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -356,34 +312,58 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
   Widget _buildBroadcastsList(List<CampusAlert> alerts) {
     if (alerts.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.notifications_off_outlined,
-              size: 56,
-              color: AppColors.onSurfaceVariant,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'No Broadcasts Found',
-              style: AppTypography.headlineMd.copyWith(color: AppColors.onSurface),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'There are no active broadcasts matching your filter.',
-              style: TextStyle(color: AppColors.onSurfaceVariant),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.notifications_off_outlined,
+                  size: 36,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No Broadcasts Found',
+                textAlign: TextAlign.center,
+                style: AppTypography.headlineMd.copyWith(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'There are no active campus emergency broadcasts or notices matching your selected category.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.containerMargin,
-        AppSpacing.sm,
-        AppSpacing.containerMargin,
+        16,
+        12,
+        16,
         80 + AppSpacing.safeAreaBottom,
       ),
       itemCount: alerts.length,
@@ -396,9 +376,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
   Widget _buildReportsList(BuildContext context, List<SafetyReport> reports) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.containerMargin,
-        AppSpacing.sm,
-        AppSpacing.containerMargin,
+        16,
+        12,
+        16,
         80 + AppSpacing.safeAreaBottom,
       ),
       children: [
@@ -411,19 +391,19 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
             side: const BorderSide(color: AppColors.outlineVariant),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.shield_outlined, color: AppColors.primary, size: 22),
                 ),
-                const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: 12),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,7 +415,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
                       SizedBox(height: 2),
                       Text(
                         '100% confidential or anonymous hazard reporting for all students and staff.',
-                        style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                        style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, height: 1.3),
                       ),
                     ],
                   ),
@@ -447,6 +427,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                     ),
@@ -460,24 +441,50 @@ class _ReportsPageState extends ConsumerState<ReportsPage> with SingleTickerProv
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 14),
 
         if (reports.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
             child: Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.task_alt, size: 48, color: AppColors.onSurfaceVariant),
-                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.fact_check_outlined,
+                      size: 36,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'No Submitted Reports',
-                    style: AppTypography.headlineMd.copyWith(color: AppColors.onSurface),
+                    textAlign: TextAlign.center,
+                    style: AppTypography.headlineMd.copyWith(
+                      color: AppColors.onSurface,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 17,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   const Text(
-                    'All your submitted safety concerns and status updates appear here.',
-                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                    'All safety concerns, hazard reports, and status updates you submit will appear here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),

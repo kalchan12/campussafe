@@ -99,14 +99,14 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             onPressed: () {
               PhoneLauncherUtil.launchCall(
                 context: context,
-                phoneNumber: '911',
+                phoneNumber: '811',
                 contactName: 'Campus Police (Emergency)',
                 isEmergency: true,
               );
             },
             icon: const Icon(Icons.phone_in_talk, size: 16, color: AppColors.sosRed),
             label: const Text(
-              'Direct Dial Campus Police (911)',
+              'Direct Dial Campus Police (811)',
               style: TextStyle(color: AppColors.sosRed, fontWeight: FontWeight.bold),
             ),
           ),
