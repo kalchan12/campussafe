@@ -87,15 +87,17 @@ export function getCampusOperatorLocation(
 export function getIncidentMarkers(
   incidents: { id: string; latitude: number; longitude: number; type: string; status: string }[]
 ): MapMarker[] {
-  return incidents.map((inc) => ({
-    id: inc.id,
-    latitude: inc.latitude,
-    longitude: inc.longitude,
-    type: 'incident' as const,
-    label: `${inc.type} - ${inc.status}`,
-    status: inc.status,
-    color: getIncidentColor(inc.status),
-  }));
+  return incidents
+    .filter((inc) => !['resolved', 'cancelled'].includes(inc.status) && inc.latitude && inc.longitude)
+    .map((inc) => ({
+      id: inc.id,
+      latitude: inc.latitude,
+      longitude: inc.longitude,
+      type: 'incident' as const,
+      label: `${inc.type} - ${inc.status}`,
+      status: inc.status,
+      color: getIncidentColor(inc.status),
+    }));
 }
 
 export function getResponderMarkers(
