@@ -27,6 +27,22 @@ class ProfileRepository {
           .single();
       return Right(User.fromJson(data));
     } catch (e) {
+      // Fallback to auth metadata if profile row doesn't exist yet
+      final currentUser = _client!.auth.currentUser;
+      if (currentUser != null && currentUser.id == userId) {
+        final email = currentUser.email ?? 'student@campus.edu';
+        final fullName = currentUser.userMetadata?['full_name'] as String? ?? email.split('@').first;
+        final roleStr = currentUser.userMetadata?['role'] as String? ?? 'student';
+        
+        return Right(User(
+          id: userId,
+          email: email,
+          fullName: fullName,
+          role: UserRole.fromString(roleStr),
+          createdAt: DateTime.tryParse(currentUser.createdAt) ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+        ));
+      }
       return Left(NetworkError(message: 'Failed to load profile: $e'));
     }
   }

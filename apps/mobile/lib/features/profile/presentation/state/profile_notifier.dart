@@ -52,6 +52,14 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   final ProfileRepository _repository;
 
   ProfileNotifier(this._ref, this._repository) : super(const ProfileState()) {
+    // Listen for auth changes to reload profile (e.g. after login/logout)
+    _ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      if (previous?.userId != next.userId || previous?.isAuthenticated != next.isAuthenticated) {
+        loadProfile();
+      }
+    });
+    
+    // Initial load
     loadProfile();
   }
 

@@ -25,14 +25,26 @@ import '../../shared/widgets/navigation.dart';
 /// Routes accessible without authentication
 const _publicRoutes = ['/', '/login', '/register', '/forgot-password', '/guest', '/sos'];
 
+/// A ChangeNotifier that triggers GoRouter's refreshListenable when auth state changes
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  RouterNotifier(this._ref) {
+    _ref.listen<AuthState>(
+      authNotifierProvider,
+      (_, __) => notifyListeners(),
+    );
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Rebuild the router when auth state changes
-  final authState = ref.watch(authNotifierProvider);
+  final notifier = RouterNotifier(ref);
 
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: false,
+    refreshListenable: notifier,
     redirect: (context, routerState) {
+      final authState = ref.read(authNotifierProvider);
       final path = routerState.uri.path;
       final isPublic = _publicRoutes.any((r) => path.startsWith(r));
       final isAuthenticated = authState.isAuthenticated;
