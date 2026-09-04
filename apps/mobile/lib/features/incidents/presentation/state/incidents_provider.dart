@@ -171,6 +171,16 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
     }
   }
 
+  /// Reconnect after app resume — re-subscribes the Supabase Realtime
+  /// channel (which dies when the OS drops websockets in background)
+  /// and reloads the current incidents list from the backend.
+  Future<void> reconnect() async {
+    if (Env.isConfigured) {
+      _subscribeToRealtime();
+      await _loadFromBackend();
+    }
+  }
+
   Future<void> updateIncidentStatus({
     required String incidentId,
     required IncidentStatus status,

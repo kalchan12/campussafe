@@ -545,6 +545,13 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 3. [x] **Phase 3: Mobile Offline Resilience & Background Location:** Queued failed SOS requests in SQLite (`sqflite`) for retry, and tracked responder background locations.
 4. [x] **Phase 4: Mobile Map Parity & Advanced Spatial Engine:** Ported Adama campus bounds, safety polygon overlay, OSRM multi-modal routing engine, and multi-style tile switcher to Flutter.
 
+### Mobile Reliability & Stability Sprint (Completed)
+1. [x] **App Lifecycle Observer:** Added `WidgetsBindingObserver` to `CampusSafeApp` — on resume: reconnects Supabase Realtime websockets, syncs pending queued incidents, and reloads active incidents from backend. Fixes state loss when switching apps.
+2. [x] **Native Splash Screen Fix:** Aligned Android native splash background (`launch_background.xml`, `styles.xml`) from white to dark navy (`#00084D`) matching Flutter's splash gradient. Added `values-v31/styles.xml` for Android 12+ splash API. Eliminates white flash on startup.
+3. [x] **Auth-Aware Splash Navigation:** `SplashScreen` now reads `authNotifierProvider` and navigates to `/home` if authenticated, `/login` if not. Uses `AppConstants.splashDuration` instead of hardcoded 3s.
+4. [x] **Android 11+ Intent Queries:** Added `<queries>` for `tel:`, `https:`, and `geo:` schemes in `AndroidManifest.xml` so `url_launcher`/`canLaunchUrl` works on Android 11+ devices. Fixes APK not working on other phones.
+5. [x] **Router Auth Protection Fix:** Changed `_publicRoutes` check from `startsWith` to `contains` (exact match). Previously `'/'` in the list made every route public since all paths start with `/`. Critical security fix.
+
 ### Future Scopes & Advanced UI enhancements
 - [ ] Implement Mapbox GL JS 3D Tracking Map with tilt, pitch, and 3D buildings for Web Dashboard.
 - [ ] Implement mapbox_maps_flutter 3D Map for Mobile App.
