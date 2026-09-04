@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/colors.dart';
+import '../../../core/constants/constants.dart';
 import '../../../core/constants/design_tokens.dart';
+import '../../../features/auth/presentation/state/auth_notifier.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -52,9 +55,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToNext() async {
-    // Smoother transition with 3.0s duration
-    await Future.delayed(const Duration(milliseconds: 3000));
-    if (mounted) {
+    // Wait for animation and splash duration to complete
+    await Future.delayed(AppConstants.splashDuration);
+
+    if (!mounted) return;
+
+    // Check auth state and navigate accordingly
+    final authState = ref.read(authNotifierProvider);
+
+    if (authState.isAuthenticated) {
+      context.go('/home');
+    } else if (authState.isGuest) {
+      context.go('/home');
+    } else {
       context.go('/login');
     }
   }
