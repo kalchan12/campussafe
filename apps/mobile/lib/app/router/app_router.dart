@@ -9,7 +9,6 @@ import '../../features/auth/presentation/state/auth_notifier.dart';
 import '../../features/auth/presentation/state/auth_state.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/sos/presentation/pages/sos_page.dart';
-import '../../features/sos/presentation/pages/active_emergency_page.dart';
 import '../../features/incidents/presentation/pages/incidents_page.dart';
 import '../../features/incidents/presentation/pages/incident_detail_page.dart';
 import '../../features/reports/presentation/pages/reports_page.dart';
@@ -47,7 +46,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, routerState) {
       final authState = ref.read(authNotifierProvider);
       final path = routerState.uri.path;
-      final isPublic = _publicRoutes.any((r) => path.startsWith(r));
+      final isPublic = _publicRoutes.contains(path);
       final isAuthenticated = authState.isAuthenticated;
       final isGuest = authState.isGuest;
 
