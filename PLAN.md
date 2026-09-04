@@ -84,11 +84,11 @@ Demo/Documentation
 - [x] API/service layer.
 
 ## IoT
-- [ ] ESP32 board selection.
-- [ ] Firmware structure.
-- [ ] Device identity format.
-- [ ] Event format.
-- [ ] Hardware test workflow.
+- [ ] ESP8266 NodeMCU board selection & setup.
+- [ ] Firmware structure (Arduino IDE / C++).
+- [ ] Device identity format (e.g. SOS-ENG-01, SENSOR-LIB-01, CAM-GATE-01).
+- [ ] Event format (JSON over HTTPS).
+- [ ] Breadboard prototype test workflow.
 
 # Phase 1 — Architecture and Data Model
 
@@ -286,42 +286,43 @@ Optional:
 - [ ] Reconnection handling.
 - [ ] Offline/error states.
 
-# Phase 8 — IoT
+# Phase 8 — IoT (Simplified Architecture)
 
-## SOS Station
-- [ ] ESP32.
-- [ ] Physical button.
-- [ ] LEDs.
-- [ ] Buzzer.
-- [ ] Device ID.
-- [ ] Wi-Fi.
-- [ ] Backend communication.
-- [ ] SOS event.
-- [ ] Heartbeat.
-- [ ] Dashboard status.
+## Manual SOS Station (ESP8266 NodeMCU)
+- [ ] ESP8266 board configuration.
+- [ ] Physical push button with hardware/software debounce.
+- [ ] Status LED (visual feedback).
+- [ ] Buzzer (audio feedback).
+- [ ] Optional: I2C status display.
+- [ ] Device identity (`SOS-ENG-01`).
+- [ ] Wi-Fi connectivity & reconnect handling.
+- [ ] HTTPS POST to Supabase REST API.
+- [ ] SOS triggered event creation (`device_events` & `incidents`).
+- [ ] Periodic heartbeat telemetry (`HEARTBEAT`).
+- [ ] Web dashboard device status integration.
 
-## Environmental Node
-- [ ] DHT22.
-- [ ] MQ-2.
-- [ ] PIR.
-- [ ] Telemetry.
-- [ ] Backend ingestion.
-- [ ] Device status.
-- [ ] Event rules.
+## Automatic Sensor Node (ESP8266 NodeMCU)
+- [ ] ESP8266 board configuration.
+- [ ] Dual-sensor support (maximum 2 physical sensors per board).
+- [ ] Heat / temperature detection sensor (Sensor 1).
+- [ ] Smoke / gas detection sensor (Sensor 2).
+- [ ] Calibration and threshold breach detection logic.
+- [ ] Wi-Fi connectivity & HTTPS event dispatch.
+- [ ] Automatic incident trigger on confirmed threshold breach.
+- [ ] Heartbeat & telemetry reporting.
 
-## Security Node
-- [ ] RC522.
-- [ ] RFID tags.
-- [ ] Reed switch.
-- [ ] PIR.
-- [ ] Access events.
-- [ ] Suspicious-event logic.
+## Independent Camera Node (ESP32-CAM)
+- [ ] ESP32-CAM module standalone configuration.
+- [ ] Independent Wi-Fi connection (communicates directly with backend, not via ESP8266).
+- [ ] Camera capture & event trigger logic.
+- [ ] HTTPS event dispatch to backend / Supabase.
+- [ ] Dashboard integration.
 
-## Optional Warning Node
-- [ ] Buzzer.
-- [ ] LEDs.
-- [ ] Backend command.
-- [ ] Acknowledgement.
+## Obsolete / Deferred Hardware Architecture
+- [-] Multi-sensor environmental node with PIR (deferred to avoid hardware complexity).
+- [-] RC522 RFID reader security/access node (removed from prototype scope).
+- [-] Magnetic reed switch security node (removed from prototype scope).
+- [-] Separate warning node with actuators (integrated directly as local LED/buzzer feedback).
 
 # Phase 9 — Anonymous Reporting
 
@@ -403,7 +404,7 @@ Student → SOS → Location → Incident → Medical responder
 
 ### Scenario 2 — Physical SOS
 ```text
-Button → ESP32 → Wi-Fi → Backend → Incident
+Button → ESP8266 → Wi-Fi → Backend → Incident
 → Dashboard → Responder
 ```
 
@@ -412,10 +413,15 @@ Button → ESP32 → Wi-Fi → Backend → Incident
 Guest → Anonymous report → Location → Dashboard → Security
 ```
 
-### Scenario 4 — IoT Event
+### Scenario 4 — Automatic Sensor Incident
 ```text
-Sensor → ESP32 → Backend → Event processing → Alert
-→ Dashboard + responder
+Sensor (Heat/Gas) → ESP8266 → Threshold Breach → Wi-Fi → Backend → Incident
+→ Dashboard + Responder Alert
+```
+
+### Scenario 5 — Independent Camera Event
+```text
+Camera Trigger → ESP32-CAM (independent Wi-Fi) → Backend → Dashboard
 ```
 
 ---
@@ -556,11 +562,12 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 - [ ] Implement Mapbox GL JS 3D Tracking Map with tilt, pitch, and 3D buildings for Web Dashboard.
 - [ ] Implement mapbox_maps_flutter 3D Map for Mobile App.
 
-### Hardware & IoT Sprint (Next Week)
-- [ ] Prepare backend IoT connection APIs (REST/MQTT endpoints).
-- [ ] First ESP32 SOS station firmware.
-- [ ] Environmental IoT nodes.
-- [ ] Security/access IoT nodes.
+### Hardware & IoT Sprint (Next Phase — Simplified Architecture)
+- [ ] Backend IoT ingestion API (Supabase REST endpoint for device events).
+- [ ] ESP8266 Manual SOS Station firmware (push button + debounce + LED + buzzer + Wi-Fi).
+- [ ] ESP8266 Automatic Sensor Node firmware (up to 2 sensors: heat/gas + threshold logic).
+- [ ] ESP32-CAM independent network device prototype (independent Wi-Fi + event trigger).
+- [ ] Breadboard integration and bench testing.
 
 ### Finalization
 - [ ] Security hardening & production checklist.

@@ -129,10 +129,11 @@ iot/
 ```
 
 Owns:
-- ESP32 firmware.
-- SOS stations.
-- Sensors.
-- Device communication.
+- ESP8266 NodeMCU & ESP32-CAM firmware.
+- SOS stations (physical push button).
+- Sensor nodes (heat/gas, max 2 sensors per ESP8266).
+- ESP32-CAM independent camera event node.
+- Device communication (Wi-Fi / HTTPS).
 - Heartbeats.
 - Device telemetry/events.
 
@@ -169,8 +170,8 @@ Database     → PostgreSQL
 Auth         → Supabase Auth
 Realtime     → Supabase Realtime
 Storage      → Supabase Storage
-IoT          → ESP32
-Firmware     → C/C++
+IoT          → ESP8266 NodeMCU / ESP32-CAM
+Firmware     → C/C++ (Arduino IDE)
 Network      → Wi-Fi / HTTPS
 Location     → Mobile GPS
 ```

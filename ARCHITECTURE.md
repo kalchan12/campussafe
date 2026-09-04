@@ -24,11 +24,11 @@ The three components communicate through the backend rather than directly coupli
                     ┌─────────────────┼─────────────────┐
                     │                 │                 │
                     ▼                 ▼                 ▼
-             ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-             │   MOBILE    │   │  DASHBOARD  │   │     IoT     │
-             │ Flutter     │   │ Next.js     │   │ ESP32       │
-             │ / Dart      │   │ React/TS    │   │ C/C++       │
-             └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
+              ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+              │   MOBILE    │   │  DASHBOARD  │   │     IoT     │
+              │ Flutter     │   │ Next.js     │   │ ESP8266 /   │
+              │ / Dart      │   │ React/TS    │   │ ESP32-CAM   │
+              └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
                     │                 │                 │
                     └─────────────────┼─────────────────┘
                                       │
@@ -134,8 +134,9 @@ Changing these requires checking every consumer.
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Storage | Supabase Storage where required |
-| IoT | ESP32 |
-| Firmware | C/C++ |
+| IoT (Primary) | ESP8266 NodeMCU |
+| IoT (Camera) | ESP32-CAM (independent) |
+| Firmware | C/C++ (Arduino IDE) |
 | Network | Wi-Fi / HTTPS |
 | Location | Mobile GPS/location services |
 | Version Control | Git / GitHub |
@@ -166,9 +167,9 @@ campussafe/
 │   └── configuration/
 │
 ├── iot/
-│   ├── sos-station/
-│   ├── environmental-node/
-│   └── security-node/
+│   ├── sos-station/         # ESP8266 — SOS push button + feedback
+│   ├── sensor-node/         # ESP8266 — up to 2 sensors (heat/gas)
+│   └── esp32-cam/           # ESP32-CAM — independent camera device
 │
 ├── packages/
 │   └── shared/
@@ -313,41 +314,133 @@ Backend
 
 # 7. IoT Architecture
 
-ESP32 devices are event/telemetry producers.
+The IoT layer consists of physical devices that generate events and send them to the backend over Wi-Fi. Devices are event producers only — they do not receive commands or run bidirectional communication.
+
+## Hardware Strategy
 
 ```text
-Sensor / Button
-      │
-      ▼
-   ESP32
-      │
-      ├── Device validation
-      ├── Event creation
-      ├── Timestamp
-      └── Connectivity handling
-      │
-      ▼
-    Wi-Fi
-      │
-      ▼
- Backend/API
-      │
-      ▼
- Incident / Device Event
+Primary Controller:  ESP8266 NodeMCU
+Camera Device:       ESP32-CAM (independent, own Wi-Fi)
+Auxiliary:           Arduino boards only if GPIO/I/O limits require
+Prototyping:         Breadboards and basic electronics
+Connectivity:        Wi-Fi → HTTPS → Supabase REST API
 ```
 
-## SOS Station
+## Device Types
 
-Prototype components may include:
+### 1. Manual SOS Station (ESP8266)
 
-- ESP32.
-- Physical push button.
-- LED.
-- Buzzer.
-- Power source.
-- Wi-Fi connectivity.
+A physical panic button station deployed at fixed campus locations.
 
-Example event:
+```text
+┌──────────────────────────────────────┐
+│          SOS STATION (ESP8266)       │
+│                                      │
+│   Push Button ──→ Debounce           │
+│                      │               │
+│                      ▼               │
+│               Create Event           │
+│                      │               │
+│              ┌───────┼───────┐       │
+│              ▼       ▼       ▼       │
+│            LED    Buzzer   Wi-Fi     │
+│         (feedback)        → HTTPS    │
+│                           → Supabase │
+└──────────────────────────────────────┘
+```
+
+Components:
+- ESP8266 NodeMCU.
+- Physical SOS push button.
+- LED (visual feedback).
+- Buzzer (audio feedback).
+- Optional: I2C display for status.
+
+### 2. Automatic Sensor Node (ESP8266)
+
+Detects environmental incidents using up to **two sensors** connected to one ESP8266.
+
+```text
+┌──────────────────────────────────────┐
+│        SENSOR NODE (ESP8266)         │
+│                                      │
+│   Sensor 1 ──→ Read                  │
+│   Sensor 2 ──→ Read                  │
+│                  │                   │
+│                  ▼                   │
+│          Threshold Check             │
+│                  │                   │
+│             ┌────┴────┐              │
+│             ▼         ▼              │
+│          Normal    Incident          │
+│         (no-op)       │              │
+│                       ▼              │
+│                   Wi-Fi → HTTPS      │
+│                         → Supabase   │
+└──────────────────────────────────────┘
+```
+
+Current sensor focus:
+- Heat / temperature detection.
+- Gas / smoke detection.
+
+Maximum: 2 sensors per ESP8266 board to avoid hardware complexity.
+
+### 3. ESP32-CAM (Independent Device)
+
+The ESP32-CAM operates as an **independent IoT device** with its own Wi-Fi connection. It does not communicate through the ESP8266.
+
+```text
+┌──────────────────────────────────────┐
+│        ESP32-CAM (Independent)       │
+│                                      │
+│   Camera ──→ Capture                 │
+│                 │                    │
+│                 ▼                    │
+│          Event Detection             │
+│                 │                    │
+│                 ▼                    │
+│          Wi-Fi → HTTPS               │
+│                → Supabase            │
+└──────────────────────────────────────┘
+```
+
+The ESP32-CAM may act as a camera-based event source. Its exact capabilities depend on the implementation phase.
+
+## IoT Data Flow
+
+All IoT devices follow the same backend integration pattern:
+
+```text
+Physical Event (button press / sensor reading / camera trigger)
+       │
+       ▼
+   ESP8266 or ESP32-CAM
+       │
+       ├── Local feedback (LED / buzzer)
+       ├── Create event payload (JSON)
+       └── Device validation
+       │
+       ▼
+     Wi-Fi
+       │
+       ▼
+  HTTPS POST → Supabase REST API
+       │
+       ▼
+  Backend validates event
+       │
+       ├── Insert into device_events table
+       ├── Create incident (if SOS or threshold breach)
+       └── Trigger realtime notification
+       │
+       ▼
+  Dashboard + Mobile consume via Realtime
+```
+
+## Event Payload Format
+
+All devices send events in a standard JSON format:
 
 ```json
 {
@@ -359,33 +452,40 @@ Example event:
 }
 ```
 
-## Environmental Node
+Sensor node example:
 
-Possible sensors:
-
-- DHT22.
-- MQ-2.
-- PIR.
-
-Sensor readings should not automatically be treated as confirmed emergencies without appropriate rules.
-
-## Security Node
-
-Possible components:
-
-- RC522 RFID reader.
-- RFID tags.
-- PIR.
-- Magnetic reed switch.
-
-Events may include:
-
-```text
-ACCESS_GRANTED
-ACCESS_DENIED
-DOOR_OPENED
-MOTION_DETECTED
+```json
+{
+  "device_id": "SENSOR-LIB-01",
+  "event_type": "SMOKE_DETECTED",
+  "timestamp": "2026-01-01T12:05:00Z",
+  "location_id": "library-block",
+  "payload": {
+    "sensor": "MQ-2",
+    "reading": 850,
+    "threshold": 500,
+    "unit": "ppm"
+  }
+}
 ```
+
+## Modularity
+
+The architecture is designed so additional ESP8266 boards or sensors can be added later without redesigning the backend:
+
+- Each device has a unique `device_id`.
+- The `device_type` field in the `devices` table distinguishes device roles.
+- The `device_events` table accepts events from any registered device.
+- New sensor types can be added by extending the `event_type` check constraint.
+- New device types can be added by extending the `device_type` check constraint.
+
+## IoT Security
+
+- Devices must not be treated as automatically trustworthy.
+- Validate all device events on the backend.
+- A sensor reading is not automatically a confirmed emergency.
+- Device authentication should be implemented when feasible (API key or device token).
+- Device credentials must never be hardcoded in public firmware repositories.
 
 ---
 

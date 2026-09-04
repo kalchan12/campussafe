@@ -67,34 +67,26 @@ Authorized operators can:
 
 ### 3. IoT / Hardware Layer
 
-Prototype devices use ESP32.
+Prototype devices use ESP8266 NodeMCU as the primary controller and ESP32-CAM as an independent camera device.
 
-Possible devices:
+**SOS Station (ESP8266)**
+- ESP8266 NodeMCU.
+- Physical SOS push button.
+- LED (visual feedback).
+- Buzzer (audio feedback).
+- Optional: I2C display for status.
 
-**SOS Station**
-- ESP32
-- Physical SOS button
-- LEDs
-- Buzzer
+**Sensor Node (ESP8266)**
+- ESP8266 NodeMCU.
+- Up to 2 sensors (currently focused on heat/gas detection).
+- Automatic incident detection when sensor thresholds are breached.
 
-**Environmental Node**
-- ESP32
-- MQ-2 smoke/gas sensor
-- DHT22 temperature/humidity sensor
-- PIR motion sensor
+**ESP32-CAM (Independent)**
+- ESP32-CAM module with own Wi-Fi connection.
+- Operates independently from the ESP8266 boards.
+- Camera-based event source.
 
-**Security/Access Node**
-- ESP32
-- RC522 RFID reader
-- RFID tags
-- Magnetic reed switch
-- PIR sensor
-
-**Optional Warning Node**
-- ESP32
-- Buzzer
-- LEDs
-- Optional display
+Arduino boards may be used if GPIO/I/O limitations require them. Breadboards and basic electronics are used for prototyping.
 
 Hardware is prototype/educational equipment and is not certified life-safety equipment.
 
@@ -218,8 +210,8 @@ Anonymous reporting is different from SOS: SOS is an emergency-response mechanis
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Storage | Supabase Storage where required |
-| IoT | ESP32 |
-| Firmware | C/C++ |
+| IoT | ESP8266 NodeMCU / ESP32-CAM |
+| Firmware | C/C++ (Arduino IDE) |
 | Networking | Wi-Fi / HTTPS |
 | Location | Mobile GPS/location services |
 | Version Control | Git / GitHub |
@@ -268,8 +260,9 @@ The prototype should demonstrate:
 - Real-time dashboard.
 - Campus map.
 - Anonymous reporting.
-- At least one ESP32 SOS station.
-- At least one sensor/device prototype.
+- At least one ESP8266 SOS station.
+- At least one ESP8266 sensor prototype (up to 2 sensors: heat/gas).
+- Optional independent ESP32-CAM event node.
 - Incident history.
 - Audit logging.
 

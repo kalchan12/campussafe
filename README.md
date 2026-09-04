@@ -10,7 +10,7 @@ CampusSafe is a campus-wide emergency communication, incident coordination, and 
         ┌─────────────────────┼─────────────────────┐
         │                     │                     │
         ▼                     ▼                     ▼
-   Flutter Mobile       Web Dashboard          ESP32 Nodes
+   Flutter Mobile       Web Dashboard      IoT (ESP8266/CAM)
         │                     │                     │
         └─────────────────────┼─────────────────────┘
                               │
@@ -50,7 +50,7 @@ CampusSafe is a campus-wide emergency communication, incident coordination, and 
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Push Notifications | Firebase Cloud Messaging (FCM) |
-| IoT | ESP32 / C++ |
+| IoT | ESP8266 NodeMCU, ESP32-CAM / C++ (Arduino) |
 | Location | Mobile GPS (geolocator) |
 
 ---
@@ -67,7 +67,7 @@ campussafe/
 │   ├── functions/       # Supabase Edge Functions
 │   │   └── send-notification/   # Server-side FCM delivery
 │   └── seed/            # Development seed data
-├── iot/                 # ESP32 firmware (future)
+├── iot/                 # ESP8266 & ESP32-CAM firmware
 ├── packages/shared/     # Shared types and contracts
 ├── docs/                # Architecture docs and ADRs
 ├── .env.example         # Environment variable template
