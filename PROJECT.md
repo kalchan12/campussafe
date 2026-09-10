@@ -67,26 +67,31 @@ Authorized operators can:
 
 ### 3. IoT / Hardware Layer
 
-Prototype devices use ESP8266 NodeMCU as the primary controller and ESP32-CAM as an independent camera device.
+Prototype devices use an ESP8266 NodeMCU Amica v2 as the main controller (sensing + communication), an Arduino Uno R3 as a dedicated display controller, and ESP32-CAM as an independent camera device.
 
-**SOS Station (ESP8266)**
-- ESP8266 NodeMCU.
+**Main Controller Station (ESP8266 Amica v2)**
+- ESP8266 NodeMCU Amica v2.
 - Physical SOS push button.
+- Up to 2 sensors (currently focused on heat/gas detection: MQ-2 + DHT11).
 - LED (visual feedback).
-- Buzzer (audio feedback).
-- Optional: I2C display for status.
-
-**Sensor Node (ESP8266)**
-- ESP8266 NodeMCU.
-- Up to 2 sensors (currently focused on heat/gas detection).
+- Sends events to Supabase via Wi-Fi HTTPS.
+- Sends display data to Arduino via Serial.
 - Automatic incident detection when sensor thresholds are breached.
+
+**Display Controller (Arduino Uno R3)**
+- Arduino Uno R3.
+- 2× LCD displays.
+- LCD 1: SOS push button status display.
+- LCD 2: Sensor readings display (gas ppm, temperature °C).
+- Status LEDs.
+- Receives all data from ESP8266 via Serial (no network access).
 
 **ESP32-CAM (Independent)**
 - ESP32-CAM module with own Wi-Fi connection.
-- Operates independently from the ESP8266 boards.
+- Operates independently from the ESP8266 and Arduino.
 - Camera-based event source.
 
-Arduino boards may be used if GPIO/I/O limitations require them. Breadboards and basic electronics are used for prototyping.
+The Arduino Uno R3 is used as a dedicated display controller because driving two LCDs requires more GPIO pins than the ESP8266 can provide. Breadboards, resistors, and basic electronics are used for prototyping.
 
 Hardware is prototype/educational equipment and is not certified life-safety equipment.
 
@@ -210,7 +215,7 @@ Anonymous reporting is different from SOS: SOS is an emergency-response mechanis
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Storage | Supabase Storage where required |
-| IoT | ESP8266 NodeMCU / ESP32-CAM |
+| IoT | ESP8266 NodeMCU Amica v2 / Arduino Uno R3 / ESP32-CAM |
 | Firmware | C/C++ (Arduino IDE) |
 | Networking | Wi-Fi / HTTPS |
 | Location | Mobile GPS/location services |
@@ -260,8 +265,8 @@ The prototype should demonstrate:
 - Real-time dashboard.
 - Campus map.
 - Anonymous reporting.
-- At least one ESP8266 SOS station.
-- At least one ESP8266 sensor prototype (up to 2 sensors: heat/gas).
+- ESP8266 Amica v2 main controller station (SOS button + heat/gas sensors).
+- Arduino Uno R3 display controller (2× LCD: SOS status + sensor readings).
 - Optional independent ESP32-CAM event node.
 - Incident history.
 - Audit logging.

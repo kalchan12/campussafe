@@ -27,7 +27,8 @@ The three components communicate through the backend rather than directly coupli
               ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
               │   MOBILE    │   │  DASHBOARD  │   │     IoT     │
               │ Flutter     │   │ Next.js     │   │ ESP8266 /   │
-              │ / Dart      │   │ React/TS    │   │ ESP32-CAM   │
+              │ / Dart      │   │ React/TS    │   │ Arduino /   │
+              │             │   │             │   │ ESP32-CAM   │
               └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
                     │                 │                 │
                     └─────────────────┼─────────────────┘
@@ -134,7 +135,8 @@ Changing these requires checking every consumer.
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Storage | Supabase Storage where required |
-| IoT (Primary) | ESP8266 NodeMCU |
+| IoT (Main Controller) | ESP8266 NodeMCU Amica v2 |
+| IoT (Display Controller) | Arduino Uno R3 |
 | IoT (Camera) | ESP32-CAM (independent) |
 | Firmware | C/C++ (Arduino IDE) |
 | Network | Wi-Fi / HTTPS |
@@ -167,8 +169,8 @@ campussafe/
 │   └── configuration/
 │
 ├── iot/
-│   ├── sos-station/         # ESP8266 — SOS push button + feedback
-│   ├── sensor-node/         # ESP8266 — up to 2 sensors (heat/gas)
+│   ├── main-controller/     # ESP8266 Amica v2 — push button + sensors + Supabase
+│   ├── display-controller/  # Arduino Uno R3 — 2× LCD displays
 │   └── esp32-cam/           # ESP32-CAM — independent camera device
 │
 ├── packages/
@@ -314,111 +316,118 @@ Backend
 
 # 7. IoT Architecture
 
-The IoT layer consists of physical devices that generate events and send them to the backend over Wi-Fi. Devices are event producers only — they do not receive commands or run bidirectional communication.
+The IoT layer consists of physical devices that detect events and communicate them to the backend over Wi-Fi. The architecture uses a **two-board design**: an ESP8266 as the main controller (sensing + communication) and an Arduino Uno R3 as a dedicated display controller.
 
 ## Hardware Strategy
 
 ```text
-Primary Controller:  ESP8266 NodeMCU
-Camera Device:       ESP32-CAM (independent, own Wi-Fi)
-Auxiliary:           Arduino boards only if GPIO/I/O limits require
-Prototyping:         Breadboards and basic electronics
-Connectivity:        Wi-Fi → HTTPS → Supabase REST API
+Main Controller:       ESP8266 NodeMCU Amica v2
+Display Controller:    Arduino Uno R3
+Camera Device:         ESP32-CAM (independent, own Wi-Fi)
+Prototyping:           Breadboards, resistors, LEDs
+Connectivity:          Wi-Fi → HTTPS → Supabase REST API
+Inter-board Comm:      Serial (UART) — ESP8266 → Arduino
 ```
 
-## Device Types
+## Device Architecture
 
-### 1. Manual SOS Station (ESP8266)
+### 1. Main Controller (ESP8266 Amica v2)
 
-A physical panic button station deployed at fixed campus locations.
+The ESP8266 is the single intelligent controller that handles all sensing, event detection, and backend communication.
 
 ```text
-┌──────────────────────────────────────┐
-│          SOS STATION (ESP8266)       │
-│                                      │
-│   Push Button ──→ Debounce           │
-│                      │               │
-│                      ▼               │
-│               Create Event           │
-│                      │               │
-│              ┌───────┼───────┐       │
-│              ▼       ▼       ▼       │
-│            LED    Buzzer   Wi-Fi     │
-│         (feedback)        → HTTPS    │
-│                           → Supabase │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│         MAIN CONTROLLER (ESP8266 Amica v2)           │
+│                                                      │
+│   [Push Button] ──→ Debounce ──→ SOS Event           │
+│   [MQ-2 Gas]    ──→ Read     ──→ Threshold Check     │
+│   [DHT11 Temp]  ──→ Read     ──→ Threshold Check     │
+│   [Status LED]  ←── Visual Feedback                  │
+│                                                      │
+│              Event Detected?                         │
+│         ┌──────────┴──────────┐                      │
+│         ▼                     ▼                      │
+│   Push Button            Sensor Alert                │
+│   (SOS_TRIGGERED)        (SMOKE/HEAT)                │
+│                                                      │
+│         ┌─────────────┬─────────────┐                │
+│         ▼             ▼             ▼                │
+│       Wi-Fi        Serial       LED/Buzzer           │
+│       HTTPS        → Arduino    (local feedback)     │
+│       → Supabase   (display)                         │
+└──────────────────────────────────────────────────────┘
 ```
 
-Components:
-- ESP8266 NodeMCU.
-- Physical SOS push button.
-- LED (visual feedback).
-- Buzzer (audio feedback).
-- Optional: I2C display for status.
+Responsibilities:
+- Detect physical SOS push button press (with debounce).
+- Read MQ-2 gas sensor (analog).
+- Read DHT11 temperature sensor (digital).
+- Evaluate sensor thresholds for automatic incident detection.
+- Send event payloads to Supabase via HTTPS POST over Wi-Fi.
+- Send display commands to Arduino Uno R3 via Serial (UART).
+- Provide local LED feedback.
+- Send periodic heartbeat telemetry.
 
-### 2. Automatic Sensor Node (ESP8266)
+### 2. Display Controller (Arduino Uno R3)
 
-Detects environmental incidents using up to **two sensors** connected to one ESP8266.
+The Arduino is a dedicated display-only device. It has **no network connectivity** and receives all information from the ESP8266 via Serial.
 
 ```text
-┌──────────────────────────────────────┐
-│        SENSOR NODE (ESP8266)         │
-│                                      │
-│   Sensor 1 ──→ Read                  │
-│   Sensor 2 ──→ Read                  │
-│                  │                   │
-│                  ▼                   │
-│          Threshold Check             │
-│                  │                   │
-│             ┌────┴────┐              │
-│             ▼         ▼              │
-│          Normal    Incident          │
-│         (no-op)       │              │
-│                       ▼              │
-│                   Wi-Fi → HTTPS      │
-│                         → Supabase   │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│         DISPLAY CONTROLLER (Arduino Uno R3)          │
+│                                                      │
+│   Serial RX ←── ESP8266 (commands/data)              │
+│                    │                                 │
+│         ┌──────────┴──────────┐                      │
+│         ▼                     ▼                      │
+│   [LCD 1: SOS Status]   [LCD 2: Sensor Data]         │
+│   - READY / TRIGGERED   - Gas: 120 ppm               │
+│   - Timestamp           - Temp: 32°C                 │
+│   - Event count         - Status: NORMAL/ALERT       │
+│                                                      │
+│   [Status LEDs] ←── Visual indicators                │
+└──────────────────────────────────────────────────────┘
 ```
 
-Current sensor focus:
-- Heat / temperature detection.
-- Gas / smoke detection.
-
-Maximum: 2 sensors per ESP8266 board to avoid hardware complexity.
+Responsibilities:
+- Receive display commands from ESP8266 via Serial.
+- Parse incoming messages and update the appropriate LCD.
+- LCD 1: Show SOS push button status (READY, TRIGGERED, event count).
+- LCD 2: Show sensor readings (gas ppm, temperature °C, NORMAL/ALERT).
+- Drive status LEDs for visual feedback.
 
 ### 3. ESP32-CAM (Independent Device)
 
-The ESP32-CAM operates as an **independent IoT device** with its own Wi-Fi connection. It does not communicate through the ESP8266.
+The ESP32-CAM operates as an **independent IoT device** with its own Wi-Fi connection. It does not communicate through the ESP8266 or Arduino.
 
 ```text
-┌──────────────────────────────────────┐
-│        ESP32-CAM (Independent)       │
-│                                      │
-│   Camera ──→ Capture                 │
-│                 │                    │
-│                 ▼                    │
-│          Event Detection             │
-│                 │                    │
-│                 ▼                    │
-│          Wi-Fi → HTTPS               │
-│                → Supabase            │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│         ESP32-CAM (Independent)                      │
+│                                                      │
+│   Camera ──→ Capture                                 │
+│                 │                                    │
+│                 ▼                                    │
+│          Event Detection                             │
+│                 │                                    │
+│                 ▼                                    │
+│          Wi-Fi → HTTPS                               │
+│                → Supabase                            │
+└──────────────────────────────────────────────────────┘
 ```
 
 The ESP32-CAM may act as a camera-based event source. Its exact capabilities depend on the implementation phase.
 
-## IoT Data Flow
-
-All IoT devices follow the same backend integration pattern:
+## System Data Flow
 
 ```text
-Physical Event (button press / sensor reading / camera trigger)
+Physical Event (button press / sensor reading)
        │
        ▼
-   ESP8266 or ESP32-CAM
+   ESP8266 Amica v2 (Main Controller)
        │
        ├── Local feedback (LED / buzzer)
        ├── Create event payload (JSON)
+       ├── Serial → Arduino Uno R3 (display update)
        └── Device validation
        │
        ▼
@@ -436,30 +445,53 @@ Physical Event (button press / sensor reading / camera trigger)
        │
        ▼
   Dashboard + Mobile consume via Realtime
+
+
+  Arduino Uno R3 (Display Controller)
+       │
+       ├── Receives Serial data from ESP8266
+       ├── Parses command type (SOS / SENSOR)
+       ├── Updates LCD 1 (SOS status)
+       └── Updates LCD 2 (sensor readings)
+```
+
+## Inter-Board Communication Protocol
+
+The ESP8266 sends structured text commands to the Arduino via Serial (UART):
+
+```text
+SOS:TRIGGERED:1694000000\n     → Arduino updates LCD 1
+SENSOR:GAS:450:ppm\n          → Arduino updates LCD 2 (gas reading)
+SENSOR:TEMP:38:C\n             → Arduino updates LCD 2 (temperature)
+STATUS:READY\n                 → Arduino resets LCD 1 to ready state
+ALERT:GAS\n                    → Arduino shows alert on LCD 2
+ALERT:TEMP\n                   → Arduino shows alert on LCD 2
 ```
 
 ## Event Payload Format
 
-All devices send events in a standard JSON format:
+All events sent to Supabase follow the standard JSON format:
 
 ```json
 {
-  "device_id": "SOS-ENG-01",
+  "device_id": "STATION-ENG-01",
   "event_type": "SOS_TRIGGERED",
   "timestamp": "2026-01-01T12:00:00Z",
   "location_id": "engineering-block",
-  "payload": {}
+  "payload": {
+    "source": "physical_push_button"
+  }
 }
 ```
 
-Sensor node example:
+Sensor alert example:
 
 ```json
 {
-  "device_id": "SENSOR-LIB-01",
+  "device_id": "STATION-ENG-01",
   "event_type": "SMOKE_DETECTED",
   "timestamp": "2026-01-01T12:05:00Z",
-  "location_id": "library-block",
+  "location_id": "engineering-block",
   "payload": {
     "sensor": "MQ-2",
     "reading": 850,
@@ -471,13 +503,13 @@ Sensor node example:
 
 ## Modularity
 
-The architecture is designed so additional ESP8266 boards or sensors can be added later without redesigning the backend:
+The architecture is designed so additional stations can be added later without redesigning the backend:
 
-- Each device has a unique `device_id`.
+- Each station has a unique `device_id`.
 - The `device_type` field in the `devices` table distinguishes device roles.
 - The `device_events` table accepts events from any registered device.
 - New sensor types can be added by extending the `event_type` check constraint.
-- New device types can be added by extending the `device_type` check constraint.
+- The Arduino display controller is a local peripheral — it does not affect the backend contract.
 
 ## IoT Security
 
@@ -486,8 +518,11 @@ The architecture is designed so additional ESP8266 boards or sensors can be adde
 - A sensor reading is not automatically a confirmed emergency.
 - Device authentication should be implemented when feasible (API key or device token).
 - Device credentials must never be hardcoded in public firmware repositories.
+- The Arduino Uno R3 has no network access and poses no network security risk.
+
 
 ---
+
 
 # 8. Backend Architecture
 

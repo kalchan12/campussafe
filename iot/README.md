@@ -6,97 +6,178 @@ This directory contains the firmware, wiring guides, and hardware documentation 
 
 ## 1. Hardware Strategy
 
-The hardware layer is streamlined into a minimal, reliable, and modular architecture:
+The IoT layer uses an **optimized two-board architecture**:
 
-- **Primary Controller:** ESP8266 NodeMCU (v2/v3, CP2102/CH340).
-- **Prototyping Environment:** Breadboards, jumper wires, pull-up/pull-down resistors, and basic discrete electronics.
-- **Sensor Limit:** Up to **two physical sensors** connected to an ESP8266 board to prevent GPIO contention and hardware complexity.
-- **Independent Camera:** **ESP32-CAM** operates as an independent IoT device with its own dedicated Wi-Fi connection, communicating directly with the backend.
-- **Auxiliary I/O:** Arduino boards (Uno/Nano) are used only if GPIO or ADC channel limits strictly require them.
-- **Feedback:** Local LED indicators and active buzzer for immediate acknowledgement.
-- **Optional Display:** 0.96" SSD1306 OLED or 1602 LCD via I2C (SDA/SCL) where visual status is desired.
+| Board | Role | Network |
+|---|---|---|
+| **ESP8266 NodeMCU Amica v2** | Main Controller — push button + sensors + Supabase | Wi-Fi (HTTPS) |
+| **Arduino Uno R3** | Display Controller — 2× LCD displays + status LEDs | None (Serial RX only) |
+| **ESP32-CAM** | Independent camera event node (future) | Wi-Fi (HTTPS) |
+
+**Rationale:** The push button and two sensors (MQ-2 analog + DHT11 digital) consume very few GPIO pins, so one ESP8266 handles all sensing. Driving two LCD displays requires more GPIO/I2C bandwidth than the ESP8266 can comfortably provide alongside its sensing and Wi-Fi duties, so an Arduino Uno R3 serves as a dedicated display controller. This eliminates one ESP8266 from the design while maintaining clear separation of concerns.
+
+**Prototyping:** Breadboards, resistors, LEDs, and basic discrete electronics. The design has been validated in the **Wokwi VS Code extension** simulator.
 
 ---
 
-## 2. Hardware Scenarios
+## 2. System Architecture
 
 ```text
-┌───────────────────────────┐      ┌───────────────────────────┐      ┌───────────────────────────┐
-│     Manual SOS Station    │      │   Automatic Sensor Node   │      │         ESP32-CAM         │
-│     (ESP8266 NodeMCU)     │      │     (ESP8266 NodeMCU)     │      │   (Independent Device)    │
-│                           │      │                           │      │                           │
-│  [Push Button] ─→ Debounce│      │  [Sensor 1: Heat/Temp]    │      │  [OV2640 Camera Sensor]   │
-│  [LED] ─→ Visual Feedback │      │  [Sensor 2: Gas/Smoke]    │      │  [Onboard Flash LED]      │
-│  [Buzzer] ─→ Audio Alert  │      │  [Threshold Check Engine] │      │  [Event Detection Logic]  │
-│  [Optional I2C Display]   │      │                           │      │                           │
-└─────────────┬─────────────┘      └─────────────┬─────────────┘      └─────────────┬─────────────┘
-              │ Wi-Fi                            │ Wi-Fi                            │ Wi-Fi
-              │ (HTTPS POST)                     │ (HTTPS POST)                     │ (HTTPS POST)
-              ▼                                  ▼                                  ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       SUPABASE BACKEND                                          │
-│                         (REST API: /rest/v1/device_events & Realtime)                           │
-└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│              ESP8266 Amica v2 (Main Controller)             │
+│                                                             │
+│   [Push Button] ──→ Debounce ──→ SOS_TRIGGERED event        │
+│   [MQ-2 Gas]    ──→ Read     ──→ Threshold check            │
+│   [DHT11 Temp]  ──→ Read     ──→ Threshold check            │
+│   [Status LED]  ←── Visual Feedback                         │
+│   [Buzzer]      ←── Audio Feedback                          │
+│                                                             │
+│   ──→ Wi-Fi HTTPS POST → Supabase REST API                  │
+│   ──→ Serial TX → Arduino RX (display commands)             │
+└──────────────┬──────────────────────────┬───────────────────┘
+               │ Wi-Fi                    │ Serial (UART)
+               ▼                          ▼
+    ┌───────────────────┐      ┌────────────────────────────┐
+    │  SUPABASE BACKEND │      │    Arduino Uno R3          │
+    │  (REST API +      │      │    (Display Controller)    │
+    │   Realtime)       │      │                            │
+    └───────────────────┘      │  [LCD 1] ← SOS Status     │
+                               │  [LCD 2] ← Sensor Data    │
+                               │  [LEDs]  ← Status         │
+                               └────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│              ESP32-CAM (Independent Device — Future)        │
+│   [Camera] ──→ Capture ──→ Wi-Fi ──→ HTTPS ──→ Supabase    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Scenario 1: Manual SOS Station (`iot/sos-station/`)
-- **Controller:** ESP8266 NodeMCU
-- **Components:**
-  - Physical momentary push button (industrial or arcade-style button with 10kΩ pull-up/pull-down resistor or internal pull-up)
-  - Status LED (Green = Wi-Fi Connected, Red = SOS Triggered)
-  - Active Buzzer (audible trigger confirmation)
-  - Optional I2C OLED display (showing connection status and SOS confirmation)
-- **Workflow:**
-  1. User presses physical SOS button.
-  2. Software debounce confirms deliberate press (e.g. holding for 500ms–1s).
-  3. ESP8266 triggers local buzzer and red LED.
-  4. ESP8266 issues an HTTPS POST request over campus Wi-Fi directly to Supabase.
-  5. Backend generates a critical `incident` and logs a `device_event` (`SOS_TRIGGERED`).
-  6. Responders and Operators receive instant updates via Supabase Realtime and FCM push notifications.
+---
 
-### Scenario 2: Automatic Incident Detection (`iot/sensor-node/`)
-- **Controller:** ESP8266 NodeMCU
-- **Sensors:** Up to **two physical sensors**:
-  - **Sensor 1 (Heat/Temperature):** Analog/digital heat detection (e.g., thermistor, LM35, or DHT sensor).
-  - **Sensor 2 (Gas/Smoke):** Gas/smoke sensor (e.g., MQ-2 or MQ-135).
-- **Workflow:**
-  1. ESP8266 periodically samples connected sensors (every 2–5 seconds).
-  2. Onboard threshold logic checks if readings exceed critical safety levels.
-  3. If threshold is breached for consecutive samples (filtering transient noise), an automatic incident event is triggered.
-  4. Local buzzer/LED alert warns people in immediate proximity.
-  5. HTTPS POST is sent to Supabase with sensor readings in JSON payload.
-  6. Backend creates an emergency incident (`type: fire` or `hazard`) and alerts operators.
+## 3. Directory Structure
 
-### Independent Camera Node (`iot/esp32-cam/`)
-- **Controller:** ESP32-CAM module (with OV2640 camera).
-- **Network:** Independent Wi-Fi connection.
-- **Workflow:**
-  - Operates as a standalone camera event node.
-  - Does **not** route traffic through the ESP8266.
-  - Can stream snapshots or trigger security events directly to the Supabase Storage / backend REST endpoint.
+```text
+iot/
+├── main-controller/           # ESP8266 Amica v2 firmware
+│   └── main-controller.ino
+├── display-controller/        # Arduino Uno R3 firmware
+│   └── display-controller.ino
+├── esp32-cam/                 # ESP32-CAM firmware (future)
+│   └── .gitkeep
+└── README.md                  # This file
+```
 
 ---
 
-## 3. Recommended Pinout Guidelines (ESP8266 NodeMCU)
+## 4. ESP8266 Amica v2 — Pinout
 
-The ESP8266 has limited GPIOs, with several having special boot state requirements (GPIO 0, 2, 15):
-
-| Function | NodeMCU Pin | ESP8266 GPIO | Electrical Notes |
+| Function | NodeMCU Pin | ESP8266 GPIO | Notes |
 |---|---|---|---|
-| **SOS Push Button** | `D5` | `GPIO 14` | Configured with `INPUT_PULLUP` or external 10kΩ resistor. Safe boot pin. |
-| **Status LED (Red/Green)** | `D6`, `D7` | `GPIO 12`, `GPIO 13` | Output through 220Ω–330Ω current limiting resistor. Safe boot pins. |
-| **Active Buzzer** | `D8` | `GPIO 15` | Must be pulled LOW at boot; drive with NPN transistor (2N2222) if buzzer draws >12mA. |
-| **Sensor 1 (Heat/Analog)**| `A0` | `ADC 0` | Dedicated 0–1.0V (0–3.3V on NodeMCU boards with internal divider). |
-| **Sensor 2 (Gas/Digital)**| `D2` | `GPIO 4` | Digital threshold input from comparator module or 1-Wire digital sensor. |
-| **Optional I2C Display**  | `D1` (SCL), `D2` (SDA) | `GPIO 5`, `GPIO 4` | Standard I2C bus with 4.7kΩ pull-ups. |
+| **SOS Push Button** | `D5` | `GPIO 14` | `INPUT_PULLUP`, safe boot pin |
+| **MQ-2 Gas Sensor** | `A0` | `ADC 0` | Analog 0–3.3V (NodeMCU internal divider) |
+| **DHT11 Temperature** | `D2` | `GPIO 4` | Digital, 1-Wire protocol |
+| **Status LED** | `D6` | `GPIO 12` | Output, 220Ω–330Ω resistor |
+| **Active Buzzer** | `D8` | `GPIO 15` | Must be LOW at boot; use NPN transistor if >12mA |
+| **Serial TX → Arduino** | `TX` | `GPIO 1` | 9600 baud, connect to Arduino RX |
 
 ---
 
-## 4. Network & Backend Data Protocol
+## 5. Arduino Uno R3 — Pinout
+
+| Function | Arduino Pin | Notes |
+|---|---|---|
+| **Serial RX ← ESP8266** | `Pin 0 (RX)` | 9600 baud, connect to ESP8266 TX |
+| **I2C SDA** | `A4` | Shared I2C bus for both LCDs |
+| **I2C SCL** | `A5` | Shared I2C bus for both LCDs |
+| **LCD 1 (SOS Status)** | I2C `0x27` | 16×2 character LCD |
+| **LCD 2 (Sensor Data)** | I2C `0x26` | 16×2 character LCD (address adjusted) |
+| **SOS Status LED** | `Pin 8` | Red LED, 220Ω resistor |
+| **Sensor Alert LED** | `Pin 9` | Yellow LED, 220Ω resistor |
+| **Ready LED** | `Pin 10` | Green LED, 220Ω resistor |
+
+> **Note:** I2C addresses vary by LCD module. Use an I2C scanner sketch to determine your actual addresses and update the firmware constants accordingly.
+
+---
+
+## 6. Serial Communication Protocol
+
+The ESP8266 sends structured text commands to the Arduino via Serial (UART) at **9600 baud**. Each command is a newline-terminated string.
+
+| Command | Format | Action |
+|---|---|---|
+| SOS Triggered | `SOS:TRIGGERED:<timestamp>\n` | Arduino updates LCD 1 with SOS alert |
+| Gas Reading | `SENSOR:GAS:<reading>:ppm\n` | Arduino updates LCD 2 gas value |
+| Temp Reading | `SENSOR:TEMP:<reading>:C\n` | Arduino updates LCD 2 temperature |
+| System Ready | `STATUS:READY\n` | Arduino resets LCD 1 to ready state |
+| System Booting | `STATUS:BOOTING\n` | Arduino shows booting message |
+| Gas Alert | `ALERT:GAS\n` | Arduino flashes LCD 2, shows gas alert |
+| Temp Alert | `ALERT:TEMP\n` | Arduino flashes LCD 2, shows heat alert |
+
+### Example Serial Stream
+
+```text
+STATUS:BOOTING
+STATUS:READY
+SENSOR:GAS:120:ppm
+SENSOR:TEMP:28:C
+SENSOR:GAS:135:ppm
+SENSOR:TEMP:29:C
+SOS:TRIGGERED:3600
+SENSOR:GAS:480:ppm
+ALERT:GAS
+SENSOR:TEMP:47:C
+ALERT:TEMP
+```
+
+---
+
+## 7. Wiring Guide
+
+### ESP8266 ↔ Arduino Connection
+
+```text
+ESP8266 TX (GPIO 1) ──────→ Arduino RX (Pin 0)
+ESP8266 GND ───────────────→ Arduino GND
+```
+
+> **Important:** Connect GND between both boards. Do NOT connect VCC between boards — each should be powered independently via USB.
+
+### ESP8266 Components
+
+```text
+Push Button:  One leg → D5 (GPIO 14), other leg → GND
+              (using INPUT_PULLUP, no external resistor needed)
+
+MQ-2 Sensor:  VCC → 3.3V, GND → GND, AOUT → A0
+
+DHT11:        VCC → 3.3V, GND → GND, DATA → D2 (GPIO 4)
+              (10kΩ pull-up between VCC and DATA recommended)
+
+Status LED:   Anode → D6 (GPIO 12) via 220Ω resistor, Cathode → GND
+
+Buzzer:       Positive → D8 (GPIO 15) via NPN transistor, Negative → GND
+```
+
+### Arduino Components
+
+```text
+LCD 1 (I2C):  VCC → 5V, GND → GND, SDA → A4, SCL → A5
+LCD 2 (I2C):  VCC → 5V, GND → GND, SDA → A4, SCL → A5
+
+SOS LED:      Anode → Pin 8 via 220Ω resistor, Cathode → GND
+Sensor LED:   Anode → Pin 9 via 220Ω resistor, Cathode → GND
+Ready LED:    Anode → Pin 10 via 220Ω resistor, Cathode → GND
+```
+
+---
+
+## 8. Supabase Backend Protocol
 
 ### HTTP Endpoint
-All devices communicate with the Supabase PostgREST endpoint:
-- **URL:** `https://<SUPABASE_PROJECT_ID>.supabase.co/rest/v1/device_events`
+
+All events are sent as HTTPS POST requests to Supabase:
+
+- **URL:** `https://<PROJECT_ID>.supabase.co/rest/v1/device_events`
 - **Method:** `POST`
 - **Headers:**
   - `apikey: <SUPABASE_ANON_OR_DEVICE_KEY>`
@@ -104,39 +185,41 @@ All devices communicate with the Supabase PostgREST endpoint:
   - `Content-Type: application/json`
   - `Prefer: return=representation`
 
-### Payload Schema: Manual SOS
+### Payload: SOS Triggered
+
 ```json
 {
-  "device_id": "SOS-ENG-01",
+  "device_id": "STATION-ENG-01",
   "event_type": "SOS_TRIGGERED",
   "location_id": "engineering-block",
   "payload": {
     "source": "physical_push_button",
-    "battery_level": 100,
     "uptime_seconds": 3600
   }
 }
 ```
 
-### Payload Schema: Automatic Sensor Incident
+### Payload: Sensor Alert
+
 ```json
 {
-  "device_id": "SENSOR-LIB-01",
+  "device_id": "STATION-ENG-01",
   "event_type": "SMOKE_DETECTED",
-  "location_id": "library-block",
+  "location_id": "engineering-block",
   "payload": {
-    "sensor_type": "MQ-2",
+    "sensor": "MQ-2",
     "reading": 620,
-    "threshold": 450,
+    "threshold": 400,
     "unit": "ppm"
   }
 }
 ```
 
-### Payload Schema: Heartbeat Telemetry
+### Payload: Heartbeat
+
 ```json
 {
-  "device_id": "SOS-ENG-01",
+  "device_id": "STATION-ENG-01",
   "event_type": "HEARTBEAT",
   "payload": {
     "rssi": -65,
@@ -148,9 +231,64 @@ All devices communicate with the Supabase PostgREST endpoint:
 
 ---
 
-## 5. Modularity & Scalability
+## 9. Setup Instructions
 
-1. **Independent Nodes:** Adding a new SOS station or sensor node only requires assigning a unique `device_id` (e.g. `SOS-ADMIN-02`, `SENSOR-DORM-01`) and registering it in the `devices` table.
-2. **Decoupled Backend:** The backend treats all incoming HTTP events neutrally based on `device_type` and `event_type`.
-3. **No Mesh Overhead:** Direct Wi-Fi station mode simplifies firmware, eliminating complex mesh routing protocols.
-4. **Independent Camera Nodes:** ESP32-CAM units can be deployed, upgraded, or removed without impacting the ESP8266 stations.
+### Prerequisites
+
+- [Arduino IDE](https://www.arduino.cc/en/software) 2.x or later
+- ESP8266 board package installed via Board Manager
+  - URL: `http://arduino.esp8266.com/stable/package_esp8266com_index.json`
+- Arduino Uno R3 board (built-in support)
+
+### Required Libraries
+
+| Library | Board | Install via |
+|---|---|---|
+| `ESP8266WiFi` | ESP8266 | Included with board package |
+| `ESP8266HTTPClient` | ESP8266 | Included with board package |
+| `ArduinoJson` | ESP8266 | Library Manager |
+| `DHT sensor library` | ESP8266 | Library Manager (Adafruit) |
+| `LiquidCrystal_I2C` | Arduino | Library Manager |
+| `Wire` | Arduino | Built-in |
+
+### Flashing
+
+1. **ESP8266 (Main Controller):**
+   - Board: `NodeMCU 1.0 (ESP-12E Module)`
+   - Upload Speed: `115200`
+   - Open `iot/main-controller/main-controller.ino`
+   - Update WiFi and Supabase credentials
+   - Upload
+
+2. **Arduino Uno R3 (Display Controller):**
+   - Board: `Arduino Uno`
+   - Open `iot/display-controller/display-controller.ino`
+   - Verify LCD I2C addresses match your hardware
+   - Upload
+
+> **Note:** Disconnect the Arduino RX wire from the ESP8266 TX pin before uploading to the Arduino, as the serial connection can interfere with USB programming.
+
+---
+
+## 10. Wokwi Simulation
+
+The optimized two-board architecture has been validated using the **Wokwi VS Code extension**. The simulation verifies:
+
+- Push button debounce and SOS event generation
+- MQ-2 gas sensor analog reading and threshold detection
+- DHT11 temperature reading and threshold detection
+- Serial communication protocol between ESP8266 and Arduino
+- LCD display updates for both SOS status and sensor data
+- LED and buzzer feedback behavior
+
+To run the simulation, use the Wokwi extension in VS Code with the project's simulation configuration.
+
+---
+
+## 11. Modularity & Scalability
+
+1. **Independent Stations:** Adding a new station requires assigning a unique `device_id` (e.g. `STATION-ADMIN-02`) and registering it in the `devices` table.
+2. **Decoupled Backend:** The backend treats all incoming events neutrally based on `device_type` and `event_type`.
+3. **No Mesh Overhead:** Direct Wi-Fi station mode simplifies firmware.
+4. **Independent Camera Nodes:** ESP32-CAM units can be deployed independently.
+5. **Display Controller is Local:** The Arduino display controller does not affect the backend contract — it is a local peripheral only.

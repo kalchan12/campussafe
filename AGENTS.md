@@ -129,9 +129,8 @@ iot/
 ```
 
 Owns:
-- ESP8266 NodeMCU & ESP32-CAM firmware.
-- SOS stations (physical push button).
-- Sensor nodes (heat/gas, max 2 sensors per ESP8266).
+- ESP8266 Amica v2 main controller firmware (push button + sensors).
+- Arduino Uno R3 display controller firmware (2× LCD).
 - ESP32-CAM independent camera event node.
 - Device communication (Wi-Fi / HTTPS).
 - Heartbeats.
@@ -170,7 +169,7 @@ Database     → PostgreSQL
 Auth         → Supabase Auth
 Realtime     → Supabase Realtime
 Storage      → Supabase Storage
-IoT          → ESP8266 NodeMCU / ESP32-CAM
+IoT          → ESP8266 NodeMCU Amica v2 / Arduino Uno R3 / ESP32-CAM
 Firmware     → C/C++ (Arduino IDE)
 Network      → Wi-Fi / HTTPS
 Location     → Mobile GPS

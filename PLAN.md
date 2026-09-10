@@ -84,10 +84,11 @@ Demo/Documentation
 - [x] API/service layer.
 
 ## IoT
-- [ ] ESP8266 NodeMCU board selection & setup.
+- [ ] ESP8266 Amica v2 + Arduino Uno R3 board setup.
 - [ ] Firmware structure (Arduino IDE / C++).
-- [ ] Device identity format (e.g. SOS-ENG-01, SENSOR-LIB-01, CAM-GATE-01).
+- [ ] Device identity format (e.g. STATION-ENG-01, CAM-GATE-01).
 - [ ] Event format (JSON over HTTPS).
+- [ ] Serial protocol format (ESP8266 → Arduino display commands).
 - [ ] Breadboard prototype test workflow.
 
 # Phase 1 — Architecture and Data Model
@@ -286,30 +287,31 @@ Optional:
 - [ ] Reconnection handling.
 - [ ] Offline/error states.
 
-# Phase 8 — IoT (Simplified Architecture)
+# Phase 8 — IoT (Optimized Two-Board Architecture)
 
-## Manual SOS Station (ESP8266 NodeMCU)
-- [ ] ESP8266 board configuration.
+## Main Controller Station (ESP8266 Amica v2)
+- [ ] ESP8266 Amica v2 board configuration.
 - [ ] Physical push button with hardware/software debounce.
+- [ ] MQ-2 gas sensor reading (analog).
+- [ ] DHT11 temperature sensor reading (digital).
 - [ ] Status LED (visual feedback).
 - [ ] Buzzer (audio feedback).
-- [ ] Optional: I2C status display.
-- [ ] Device identity (`SOS-ENG-01`).
+- [ ] Device identity (`STATION-ENG-01`).
 - [ ] Wi-Fi connectivity & reconnect handling.
 - [ ] HTTPS POST to Supabase REST API.
 - [ ] SOS triggered event creation (`device_events` & `incidents`).
+- [ ] Sensor threshold detection & automatic incident trigger.
+- [ ] Serial communication to Arduino Uno R3 (display commands).
 - [ ] Periodic heartbeat telemetry (`HEARTBEAT`).
 - [ ] Web dashboard device status integration.
 
-## Automatic Sensor Node (ESP8266 NodeMCU)
-- [ ] ESP8266 board configuration.
-- [ ] Dual-sensor support (maximum 2 physical sensors per board).
-- [ ] Heat / temperature detection sensor (Sensor 1).
-- [ ] Smoke / gas detection sensor (Sensor 2).
-- [ ] Calibration and threshold breach detection logic.
-- [ ] Wi-Fi connectivity & HTTPS event dispatch.
-- [ ] Automatic incident trigger on confirmed threshold breach.
-- [ ] Heartbeat & telemetry reporting.
+## Display Controller (Arduino Uno R3)
+- [ ] Arduino Uno R3 board configuration.
+- [ ] Serial receive from ESP8266.
+- [ ] LCD 1: SOS push button status display.
+- [ ] LCD 2: Sensor readings display (gas ppm, temperature °C).
+- [ ] Status LEDs for visual feedback.
+- [ ] Command parsing protocol (SOS/SENSOR/STATUS/ALERT).
 
 ## Independent Camera Node (ESP32-CAM)
 - [ ] ESP32-CAM module standalone configuration.
@@ -319,6 +321,8 @@ Optional:
 - [ ] Dashboard integration.
 
 ## Obsolete / Deferred Hardware Architecture
+- [-] Separate ESP8266 for SOS station only (consolidated into main controller).
+- [-] Separate ESP8266 for sensor node only (consolidated into main controller).
 - [-] Multi-sensor environmental node with PIR (deferred to avoid hardware complexity).
 - [-] RC522 RFID reader security/access node (removed from prototype scope).
 - [-] Magnetic reed switch security node (removed from prototype scope).
@@ -406,6 +410,7 @@ Student → SOS → Location → Incident → Medical responder
 ```text
 Button → ESP8266 → Wi-Fi → Backend → Incident
 → Dashboard → Responder
+ESP8266 → Serial → Arduino → LCD 1 (SOS TRIGGERED)
 ```
 
 ### Scenario 3 — Anonymous Report
@@ -417,6 +422,7 @@ Guest → Anonymous report → Location → Dashboard → Security
 ```text
 Sensor (Heat/Gas) → ESP8266 → Threshold Breach → Wi-Fi → Backend → Incident
 → Dashboard + Responder Alert
+ESP8266 → Serial → Arduino → LCD 2 (SENSOR ALERT)
 ```
 
 ### Scenario 5 — Independent Camera Event
@@ -562,12 +568,12 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 - [ ] Implement Mapbox GL JS 3D Tracking Map with tilt, pitch, and 3D buildings for Web Dashboard.
 - [ ] Implement mapbox_maps_flutter 3D Map for Mobile App.
 
-### Hardware & IoT Sprint (Next Phase — Simplified Architecture)
+### Hardware & IoT Sprint (Next Phase — Optimized Two-Board Architecture)
 - [ ] Backend IoT ingestion API (Supabase REST endpoint for device events).
-- [ ] ESP8266 Manual SOS Station firmware (push button + debounce + LED + buzzer + Wi-Fi).
-- [ ] ESP8266 Automatic Sensor Node firmware (up to 2 sensors: heat/gas + threshold logic).
+- [ ] ESP8266 Amica v2 Main Controller firmware (push button + MQ-2 + DHT11 + debounce + LED + Wi-Fi + Supabase + Serial to Arduino).
+- [ ] Arduino Uno R3 Display Controller firmware (Serial receive + 2× LCD + status LEDs).
 - [ ] ESP32-CAM independent network device prototype (independent Wi-Fi + event trigger).
-- [ ] Breadboard integration and bench testing.
+- [ ] Breadboard integration, Wokwi simulation validation, and bench testing.
 
 ### Finalization
 - [ ] Security hardening & production checklist.
