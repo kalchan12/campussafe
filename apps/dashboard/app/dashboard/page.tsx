@@ -33,16 +33,20 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [statsData, incidentsData, respondersData, devicesData] = await Promise.all([
-        fetchDashboardStats(),
-        fetchIncidents(),
-        fetchResponders(),
-        fetchDevices(),
-      ]);
-      setStats(statsData);
-      setIncidents(incidentsData);
-      setResponders(respondersData);
-      setDevices(devicesData);
+      try {
+        const [statsData, incidentsData, respondersData, devicesData] = await Promise.all([
+          fetchDashboardStats(),
+          fetchIncidents(),
+          fetchResponders(),
+          fetchDevices(),
+        ]);
+        setStats(statsData);
+        setIncidents(incidentsData);
+        setResponders(respondersData);
+        setDevices(devicesData);
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      }
     }
     loadData();
 

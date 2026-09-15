@@ -55,13 +55,17 @@ export default function IncidentsPage() {
 
   useEffect(() => {
     async function load() {
-      const [incidentsData, respondersData] = await Promise.all([
-        fetchIncidents({ ...filter, search }),
-        fetchResponders(),
-      ]);
-      setIncidents(incidentsData);
-      setResponders(respondersData);
-      setCurrentPage(1);
+      try {
+        const [incidentsData, respondersData] = await Promise.all([
+          fetchIncidents({ ...filter, search }),
+          fetchResponders(),
+        ]);
+        setIncidents(incidentsData);
+        setResponders(respondersData);
+        setCurrentPage(1);
+      } catch (err) {
+        console.error('Failed to load incidents or responders:', err);
+      }
     }
     load();
 
@@ -108,7 +112,7 @@ export default function IncidentsPage() {
       unsubDeleted();
       unsubCommunity();
     };
-  }, [filter, search, selectedIncident?.id]);
+  }, [filter, search]);
 
   const handleAssignResponder = async () => {
     if (!selectedIncident || !selectedResponderId) return;
