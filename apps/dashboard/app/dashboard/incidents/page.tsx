@@ -9,6 +9,7 @@ import {
   fetchResponders,
   assignResponderToIncident,
   updateIncidentStatus,
+  deleteIncident,
 } from '@/lib/data-service';
 import { realtimeService } from '@/lib/realtime';
 import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
@@ -31,6 +32,7 @@ export default function IncidentsPage() {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -63,9 +65,18 @@ export default function IncidentsPage() {
       }
     });
 
+    const unsubDeleted = realtimeService.subscribe('INCIDENT_DELETED', (payload) => {
+      const deleted = payload.data as unknown as Incident;
+      setIncidents((prev) => prev.filter((i) => i.id !== deleted.id));
+      if (selectedIncident && selectedIncident.id === deleted.id) {
+        setSelectedIncident(null);
+      }
+    });
+
     return () => {
       unsubCreated();
       unsubStatus();
+      unsubDeleted();
     };
   }, [filter, search]);
 
@@ -100,6 +111,21 @@ export default function IncidentsPage() {
     );
     setSelectedIncident(updated);
     setActionLoading(false);
+  };
+
+  const handleDeleteIncident = async () => {
+    if (!selectedIncident) return;
+    setActionLoading(true);
+    try {
+      await deleteIncident(selectedIncident.id);
+      setIncidents((prev) => prev.filter((i) => i.id !== selectedIncident.id));
+      setSelectedIncident(null);
+      setShowDeleteConfirm(false);
+    } catch (e) {
+      console.error('Failed to delete incident:', e);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const totalPages = Math.ceil(incidents.length / itemsPerPage);
@@ -190,6 +216,7 @@ export default function IncidentsPage() {
                           onClick={() => {
                             setSelectedIncident(incident);
                             setSelectedResponderId(incident.assigned_responder_id || '');
+                            setShowDeleteConfirm(false);
                           }}
                           className="border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer"
                         >
@@ -236,6 +263,7 @@ export default function IncidentsPage() {
                                 e.stopPropagation();
                                 setSelectedIncident(incident);
                                 setSelectedResponderId(incident.assigned_responder_id || '');
+                                setShowDeleteConfirm(false);
                               }}
                             >
                               Dispatch
@@ -395,6 +423,43 @@ export default function IncidentsPage() {
                   Cancel / False Alarm
                 </Button>
               </div>
+            </div>
+
+            {/* Delete Incident (Reporter Only) */}
+            <div className="pt-3 border-t border-outline-variant">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full text-center text-xs text-on-surface-variant hover:text-error transition-colors py-1.5"
+                >
+                  Delete this incident permanently...
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-error font-medium text-center">
+                    Are you sure? This will permanently remove this incident from the system.
+                    Only the person who reported this incident can perform this action.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      className="flex-1 text-xs"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={actionLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="flex-1 text-xs"
+                      onClick={handleDeleteIncident}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? 'Deleting...' : 'Yes, Delete Permanently'}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

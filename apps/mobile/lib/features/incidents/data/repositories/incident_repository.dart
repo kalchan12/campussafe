@@ -120,6 +120,21 @@ class IncidentRepository {
     }
   }
 
+  /// Deletes an incident permanently.
+  /// Only the reporter (creator) of the incident can delete it (enforced by RLS).
+  Future<Result<void>> deleteIncident(String incidentId) async {
+    if (!_isAvailable) return Left(NetworkError.noConnection());
+    try {
+      await _client!
+          .from('incidents')
+          .delete()
+          .eq('id', incidentId);
+      return const Right(null);
+    } catch (e) {
+      return Left(NetworkError(message: 'Failed to delete incident: $e'));
+    }
+  }
+
   /// Returns a real-time stream of incident changes.
   /// The stream emits the full updated list of active incidents whenever any
   /// incident row changes.

@@ -89,3 +89,12 @@ export async function getActiveIncidentsCount(): Promise<number> {
   if (error) throw error;
   return count || 0;
 }
+
+export async function deleteIncident(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('incidents')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}

@@ -7,6 +7,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../auth/presentation/state/auth_notifier.dart';
 import '../state/incidents_provider.dart';
 import '../widgets/incident_map_view.dart';
 
@@ -51,6 +52,7 @@ class IncidentDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final incidents = ref.watch(incidentsListProvider);
+    final currentUserId = ref.watch(authNotifierProvider).userId;
     final userPos = ref.watch(userLivePositionProvider).value;
 
     final incident = incidents.firstWhere(
@@ -70,6 +72,8 @@ class IncidentDetailPage extends ConsumerWidget {
         updatedAt: DateTime.now(),
       ),
     );
+
+    final isReporter = currentUserId != null && incident.reporterId == currentUserId;
 
     final incColor = _getEmergencyColor(incident.type);
     final incIcon = _getEmergencyIcon(incident.type);
@@ -98,6 +102,12 @@ class IncidentDetailPage extends ConsumerWidget {
                   fontSize: 13,
                 ),
               ),
+            ),
+          if (isReporter && incident.isActive)
+            IconButton(
+              onPressed: () => _showDeleteConfirmation(context, ref, incident),
+              icon: const Icon(Icons.delete_outline_rounded, size: 22, color: AppColors.error),
+              tooltip: 'Delete Incident',
             ),
           if (incident.latitude != null && incident.longitude != null)
             IconButton(
@@ -561,6 +571,39 @@ class IncidentDetailPage extends ConsumerWidget {
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
+              if (isReporter) ...[
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  height: 46,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showDeleteConfirmation(context, ref, incident),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                      ),
+                    ),
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    label: const Text(
+                      'Delete Incident (False Alarm)',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const Text(
+                  'Permanently removes this incident from the system. Use this only if the SOS was triggered by mistake.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ] else ...[
               SizedBox(
                 height: 46,
@@ -682,6 +725,124 @@ class IncidentDetailPage extends ConsumerWidget {
                   ),
                   child: const Text(
                     'Yes, Resolve',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, Incident incident) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        icon: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.delete_forever_rounded,
+            color: AppColors.error,
+            size: 28,
+          ),
+        ),
+        title: const Text(
+          'Delete This Incident?',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: const Text(
+          'This will permanently remove the incident from CampusSafe. This action cannot be undone. Use this only if the SOS was triggered by mistake or false alarm.',
+          style: TextStyle(
+            fontSize: 13.5,
+            color: AppColors.onSurfaceVariant,
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.8),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Keep It',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(dialogCtx);
+                    final success = await ref.read(incidentsListProvider.notifier).deleteIncident(incident.id);
+                    if (context.mounted) {
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Incident #${incident.id} has been permanently deleted.'),
+                            backgroundColor: AppColors.error,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                        Navigator.of(context).pop();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to delete incident. Only the reporter can delete it.'),
+                            backgroundColor: AppColors.error,
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Yes, Delete',
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.bold,

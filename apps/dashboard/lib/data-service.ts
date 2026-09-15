@@ -95,3 +95,6 @@ export async function assignResponderToIncident(
   return await backendIncidents.assignResponder(incidentId, responderId);
 }
 
+export async function deleteIncident(id: string): Promise<void> {
+  return await backendIncidents.deleteIncident(id);
+}

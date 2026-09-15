@@ -38,6 +38,13 @@ class RealtimeService {
         )
         .on(
           'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'incidents' },
+          (payload) => {
+            this.emit('INCIDENT_DELETED', payload.old as Record<string, unknown>);
+          }
+        )
+        .on(
+          'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'device_events' },
           (payload) => {
             this.emit('DEVICE_EVENT_RECEIVED', payload.new as Record<string, unknown>);
