@@ -8,6 +8,7 @@ import '../../../../core/location/location_service.dart';
 import '../../../../core/maps/campus_map_data.dart';
 import '../../../../core/maps/routing_service.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../../shared/models/incident_community_response.dart';
 import '../../data/repositories/incident_repository.dart';
 
 enum IncidentsViewMode {
@@ -68,6 +69,13 @@ final currentUserLocationProvider = FutureProvider<Position?>((ref) async {
 final responderLocationProvider = StreamProvider.family<Map<String, dynamic>?, String>((ref, responderId) {
   final repository = ref.watch(incidentRepositoryProvider);
   return repository.watchResponder(responderId);
+});
+
+/// Stream provider for watching community assistance and eyewitness responses in real-time.
+final incidentCommunityResponsesProvider =
+    StreamProvider.family<List<IncidentCommunityResponse>, String>((ref, incidentId) {
+  final repository = ref.watch(incidentRepositoryProvider);
+  return repository.watchCommunityResponses(incidentId);
 });
 
 /// Provider for multi-modal route path between current user/operator position and selected incident
@@ -224,6 +232,26 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
       state = state.where((inc) => inc.id != incidentId).toList();
       return true;
     }
+  }
+
+  Future<bool> submitCommunityResponse({
+    required String incidentId,
+    String? responderId,
+    required String responderName,
+    required CommunityResponseType responseType,
+    required String message,
+  }) async {
+    if (Env.isConfigured) {
+      final result = await _repository.submitCommunityResponse(
+        incidentId: incidentId,
+        responderId: responderId,
+        responderName: responderName,
+        responseType: responseType,
+        message: message,
+      );
+      return result.isRight();
+    }
+    return true;
   }
 
   @override

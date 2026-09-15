@@ -7,6 +7,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/utils/map_launcher.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../../shared/models/incident_community_response.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../state/incidents_provider.dart';
 import '../widgets/incident_map_view.dart';
@@ -74,6 +75,9 @@ class IncidentDetailPage extends ConsumerWidget {
     );
 
     final isReporter = currentUserId != null && incident.reporterId == currentUserId;
+    final isSecurityOrFire = incident.type == EmergencyType.security || incident.type == EmergencyType.fire;
+    final communityResponsesAsync = ref.watch(incidentCommunityResponsesProvider(incident.id));
+    final communityResponses = communityResponsesAsync.value ?? [];
 
     final incColor = _getEmergencyColor(incident.type);
     final incIcon = _getEmergencyIcon(incident.type);
@@ -535,6 +539,196 @@ class IncidentDetailPage extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+
+            // Community First Response & Eyewitness Updates Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                side: const BorderSide(color: AppColors.outlineVariant),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isSecurityOrFire
+                              ? Icons.visibility_rounded
+                              : Icons.volunteer_activism_rounded,
+                          color: isSecurityOrFire ? AppColors.warning : AppColors.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            isSecurityOrFire
+                                ? 'Eyewitness Reports & Situation'
+                                : 'Community First Response',
+                            style: AppTypography.labelMd.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: Text(
+                            '${communityResponses.length} update${communityResponses.length == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+
+                    // Safety guidance or Community callout banner
+                    if (isSecurityOrFire)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.shield_outlined, color: AppColors.warning, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Safety Notice: For security and fire incidents, do not intervene physically. Only Campus Police / Security handle on-scene resolution. You may submit eyewitness observations below.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurface,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.health_and_safety_outlined, color: AppColors.primary, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Nearby Assistance: Bystanders and students nearby can provide first aid or help escort this individual to the campus health center or safe zone.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurface,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Action buttons (if active)
+                    if (incident.isActive) ...[
+                      if (!isSecurityOrFire)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showOfferAssistanceDialog(context, ref, incident, currentUserId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                              ),
+                            ),
+                            icon: const Icon(Icons.handshake_rounded, size: 18),
+                            label: const Text(
+                              'I Can Assist • Offer Help',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showEyewitnessReportDialog(context, ref, incident, currentUserId),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.warning,
+                              side: const BorderSide(color: AppColors.warning),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                              ),
+                            ),
+                            icon: const Icon(Icons.rate_review_outlined, size: 18),
+                            label: const Text(
+                              'Submit Eyewitness Situation Report',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+
+                    // Responses list
+                    if (communityResponses.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Text(
+                          isSecurityOrFire
+                              ? 'No eyewitness reports recorded yet.'
+                              : 'No peer assistance or first aid logged yet.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: communityResponses.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final resp = communityResponses[index];
+                          return _buildCommunityResponseItem(resp);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
 
             // User Resolution Action
@@ -857,6 +1051,335 @@ class IncidentDetailPage extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _buildCommunityResponseItem(IncidentCommunityResponse resp) {
+    Color badgeColor;
+    IconData iconData;
+    switch (resp.responseType) {
+      case CommunityResponseType.offeringAssistance:
+        badgeColor = const Color(0xFF1E88E5);
+        iconData = Icons.directions_run_rounded;
+        break;
+      case CommunityResponseType.escortingToSafety:
+        badgeColor = const Color(0xFF00897B);
+        iconData = Icons.transfer_within_a_station_rounded;
+        break;
+      case CommunityResponseType.firstAidProvided:
+        badgeColor = AppColors.success;
+        iconData = Icons.medical_services_rounded;
+        break;
+      case CommunityResponseType.eyewitnessReport:
+        badgeColor = const Color(0xFFD84315);
+        iconData = Icons.visibility_rounded;
+        break;
+      case CommunityResponseType.otherAssistance:
+        badgeColor = AppColors.primary;
+        iconData = Icons.volunteer_activism_rounded;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(iconData, size: 12, color: badgeColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      resp.responseType.displayName,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: badgeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                DateFormat('h:mm a').format(resp.createdAt),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            resp.message,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'By ${resp.responderName}',
+            style: const TextStyle(
+              fontSize: 10.5,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOfferAssistanceDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Incident incident,
+    String? currentUserId,
+  ) {
+    CommunityResponseType selectedType = CommunityResponseType.offeringAssistance;
+    final noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.volunteer_activism_rounded, color: AppColors.primary, size: 22),
+              SizedBox(width: 8),
+              Text(
+                'Offer Assistance',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How are you able to help this person right now?',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 12),
+                _AssistanceOptionTile(
+                  title: '🏃 On my way to assist',
+                  subtitle: 'I am nearby and heading to the scene',
+                  isSelected: selectedType == CommunityResponseType.offeringAssistance,
+                  onTap: () => setState(() => selectedType = CommunityResponseType.offeringAssistance),
+                ),
+                const SizedBox(height: 8),
+                _AssistanceOptionTile(
+                  title: '🏥 Escorting to clinic / safe place',
+                  subtitle: 'Assisting the person to campus health center',
+                  isSelected: selectedType == CommunityResponseType.escortingToSafety,
+                  onTap: () => setState(() => selectedType = CommunityResponseType.escortingToSafety),
+                ),
+                const SizedBox(height: 8),
+                _AssistanceOptionTile(
+                  title: '🩹 Providing first aid / supplies',
+                  subtitle: 'Applying basic first aid on scene',
+                  isSelected: selectedType == CommunityResponseType.firstAidProvided,
+                  onTap: () => setState(() => selectedType = CommunityResponseType.firstAidProvided),
+                ),
+                const SizedBox(height: 8),
+                _AssistanceOptionTile(
+                  title: '💬 Other support',
+                  subtitle: 'General help or scene support',
+                  isSelected: selectedType == CommunityResponseType.otherAssistance,
+                  onTap: () => setState(() => selectedType = CommunityResponseType.otherAssistance),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: noteController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Optional details / notes',
+                    hintText: 'e.g. Bringing ice pack from Dorm 2',
+                    hintStyle: const TextStyle(fontSize: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                final note = noteController.text.trim();
+                final message = note.isNotEmpty
+                    ? note
+                    : selectedType == CommunityResponseType.escortingToSafety
+                        ? 'Escorting person to campus clinic / safe location'
+                        : selectedType == CommunityResponseType.firstAidProvided
+                            ? 'Provided on-scene first aid support'
+                            : 'On the way to assist';
+
+                Navigator.pop(dialogCtx);
+                final success = await ref
+                    .read(incidentsListProvider.notifier)
+                    .submitCommunityResponse(
+                      incidentId: incident.id,
+                      responderId: currentUserId,
+                      responderName: 'Community Volunteer',
+                      responseType: selectedType,
+                      message: message,
+                    );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success
+                          ? 'Thank you! Your assistance update has been logged.'
+                          : 'Failed to record assistance. Please try again.'),
+                      backgroundColor: success ? AppColors.success : AppColors.error,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Submit Assistance'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEyewitnessReportDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Incident incident,
+    String? currentUserId,
+  ) {
+    final reportController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.visibility_rounded, color: AppColors.warning, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'Eyewitness Report',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.shield_outlined, size: 16, color: AppColors.warning),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Do not approach or endanger yourself. Observe safely from a distance.',
+                        style: TextStyle(fontSize: 11.5, color: AppColors.onSurface),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Describe what you see to help campus security:',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reportController,
+                maxLines: 4,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'e.g. 2 people in jackets running toward West Gate; campus guards approaching.',
+                  hintStyle: const TextStyle(fontSize: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              final text = reportController.text.trim();
+              if (text.isEmpty) return;
+
+              Navigator.pop(dialogCtx);
+              final success = await ref
+                  .read(incidentsListProvider.notifier)
+                  .submitCommunityResponse(
+                    incidentId: incident.id,
+                    responderId: currentUserId,
+                    responderName: 'Eyewitness',
+                    responseType: CommunityResponseType.eyewitnessReport,
+                    message: text,
+                  );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? 'Eyewitness update submitted to Campus Security.'
+                        : 'Failed to submit report. Please try again.'),
+                    backgroundColor: success ? AppColors.success : AppColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Submit Observation'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _TimelineItem extends StatelessWidget {
@@ -952,3 +1475,71 @@ class _TimelineItem extends StatelessWidget {
     );
   }
 }
+
+class _AssistanceOptionTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _AssistanceOptionTile({
+    required this.title,
+    required this.subtitle,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.outlineVariant.withValues(alpha: 0.6),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isSelected ? AppColors.primary : AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

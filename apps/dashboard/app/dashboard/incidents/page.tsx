@@ -10,10 +10,12 @@ import {
   assignResponderToIncident,
   updateIncidentStatus,
   deleteIncident,
+  fetchCommunityResponses,
+  submitCommunityResponse,
 } from '@/lib/data-service';
 import { realtimeService } from '@/lib/realtime';
-import { EMERGENCY_TYPE_LABELS } from '@/types/incident';
-import type { Incident, IncidentFilter } from '@/types/incident';
+import { EMERGENCY_TYPE_LABELS, COMMUNITY_RESPONSE_LABELS } from '@/types/incident';
+import type { Incident, IncidentFilter, IncidentCommunityResponse, CommunityResponseType } from '@/types/incident';
 import type { Responder } from '@/types/responder';
 import { formatTime } from '@/lib/utils';
 
@@ -33,7 +35,23 @@ export default function IncidentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [communityResponses, setCommunityResponses] = useState<IncidentCommunityResponse[]>([]);
+  const [loadingResponses, setLoadingResponses] = useState(false);
+  const [newUpdateText, setNewUpdateText] = useState('');
+  const [submittingResponse, setSubmittingResponse] = useState(false);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    if (!selectedIncident) {
+      setCommunityResponses([]);
+      return;
+    }
+    setLoadingResponses(true);
+    fetchCommunityResponses(selectedIncident.id)
+      .then((data) => setCommunityResponses(data))
+      .catch((e) => console.error('Failed to load community responses', e))
+      .finally(() => setLoadingResponses(false));
+  }, [selectedIncident?.id]);
 
   useEffect(() => {
     async function load() {
@@ -73,12 +91,24 @@ export default function IncidentsPage() {
       }
     });
 
+    const unsubCommunity = realtimeService.subscribe('COMMUNITY_RESPONSE_ADDED', (payload) => {
+      const newResp = payload.data as unknown as IncidentCommunityResponse;
+      setCommunityResponses((prev) => {
+        if (prev.some((r) => r.id === newResp.id)) return prev;
+        if (selectedIncident && newResp.incident_id === selectedIncident.id) {
+          return [...prev, newResp];
+        }
+        return prev;
+      });
+    });
+
     return () => {
       unsubCreated();
       unsubStatus();
       unsubDeleted();
+      unsubCommunity();
     };
-  }, [filter, search]);
+  }, [filter, search, selectedIncident?.id]);
 
   const handleAssignResponder = async () => {
     if (!selectedIncident || !selectedResponderId) return;
@@ -125,6 +155,25 @@ export default function IncidentsPage() {
       console.error('Failed to delete incident:', e);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handlePostCommunityUpdate = async (type: CommunityResponseType = 'other_assistance') => {
+    if (!selectedIncident || !newUpdateText.trim()) return;
+    setSubmittingResponse(true);
+    try {
+      const resp = await submitCommunityResponse({
+        incident_id: selectedIncident.id,
+        responder_name: 'Operations Dispatch',
+        response_type: type,
+        message: newUpdateText.trim(),
+      });
+      setCommunityResponses((prev) => [...prev, resp]);
+      setNewUpdateText('');
+    } catch (e) {
+      console.error('Failed to post update:', e);
+    } finally {
+      setSubmittingResponse(false);
     }
   };
 
@@ -318,7 +367,7 @@ export default function IncidentsPage() {
       {/* Operator Dispatch & Status Modal */}
       {selectedIncident && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl max-w-xl max-h-[90vh] overflow-y-auto w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-start justify-between">
               <div>
                 <span className="font-label-md text-xs uppercase tracking-wider text-on-surface-variant">
@@ -421,6 +470,96 @@ export default function IncidentsPage() {
                   disabled={actionLoading || selectedIncident.status === 'cancelled'}
                 >
                   Cancel / False Alarm
+                </Button>
+              </div>
+            </div>
+
+            {/* Community First Response & Eyewitness Updates */}
+            <div className="pt-3 border-t border-outline-variant space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-primary text-base">
+                    {['security', 'fire'].includes(selectedIncident.type) ? 'visibility' : 'volunteer_activism'}
+                  </span>
+                  <span className="font-label-md text-xs font-bold text-on-surface">
+                    {['security', 'fire'].includes(selectedIncident.type)
+                      ? 'Eyewitness Situation Reports'
+                      : 'Community Assistance & First Response'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-on-surface-variant font-mono">
+                  {communityResponses.length} update{communityResponses.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {['security', 'fire'].includes(selectedIncident.type) ? (
+                <div className="p-2.5 rounded bg-amber-500/10 border border-amber-500/30 text-[12px] text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                  <span className="material-symbols-outlined text-base text-amber-600 mt-0.5">security</span>
+                  <span>
+                    <strong>Safety Notice:</strong> Direct civilian intervention is restricted for security/fire incidents. Displaying observational reports from bystanders.
+                  </span>
+                </div>
+              ) : (
+                <div className="p-2 rounded bg-primary/5 border border-primary/20 text-[12px] text-on-surface-variant flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base text-primary">handshake</span>
+                  <span>Nearby students/staff can provide first aid or escort victim to campus clinic.</span>
+                </div>
+              )}
+
+              {/* Feed List */}
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {loadingResponses ? (
+                  <p className="text-xs text-on-surface-variant text-center py-2">Loading updates...</p>
+                ) : communityResponses.length === 0 ? (
+                  <p className="text-xs text-on-surface-variant text-center py-3 italic bg-surface-container-low rounded">
+                    No community updates or eyewitness reports submitted yet.
+                  </p>
+                ) : (
+                  communityResponses.map((cr) => {
+                    const cfg = COMMUNITY_RESPONSE_LABELS[cr.response_type] || COMMUNITY_RESPONSE_LABELS.other_assistance;
+                    return (
+                      <div key={cr.id} className="p-2.5 rounded bg-surface-container-low border border-outline-variant text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cfg.color}`}>
+                            <span className="material-symbols-outlined text-xs">{cfg.icon}</span>
+                            {cfg.label}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant">
+                            {formatTime(cr.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-on-surface text-xs font-medium">{cr.message}</p>
+                        <p className="text-[10px] text-on-surface-variant">
+                          Reported by: <span className="font-semibold">{cr.responder_name || 'Anonymous User'}</span>
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Dispatch/Operator Log Entry */}
+              <div className="flex gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder={['security', 'fire'].includes(selectedIncident.type) ? "Log eyewitness observation..." : "Log community/first aid update..."}
+                  value={newUpdateText}
+                  onChange={(e) => setNewUpdateText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handlePostCommunityUpdate(['security', 'fire'].includes(selectedIncident.type) ? 'eyewitness_report' : 'other_assistance');
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 border border-outline-variant rounded bg-surface text-on-surface text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <Button
+                  variant="secondary"
+                  className="text-xs px-3 py-1.5"
+                  disabled={submittingResponse || !newUpdateText.trim()}
+                  onClick={() => handlePostCommunityUpdate(['security', 'fire'].includes(selectedIncident.type) ? 'eyewitness_report' : 'other_assistance')}
+                >
+                  {submittingResponse ? 'Posting...' : 'Post Log'}
                 </Button>
               </div>
             </div>

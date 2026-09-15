@@ -45,6 +45,13 @@ class RealtimeService {
         )
         .on(
           'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'incident_community_responses' },
+          (payload) => {
+            this.emit('COMMUNITY_RESPONSE_ADDED', payload.new as Record<string, unknown>);
+          }
+        )
+        .on(
+          'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'device_events' },
           (payload) => {
             this.emit('DEVICE_EVENT_RECEIVED', payload.new as Record<string, unknown>);

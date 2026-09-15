@@ -194,6 +194,7 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] Incident detail (Stitch live map drawer & incident cards).
 - [x] Live campus map (Dedicated interactive map with layer toggles, marker pulses, and detail drawer).
 - [x] Responder management (Responder directory with status indicators and search filters).
+- [x] Community first response & eyewitness situational reporting (dual-action for medical/accident peer help & security/fire observer notes).
 - [~] Assignment.
 - [~] Escalation.
 - [~] Resolution.

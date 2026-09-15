@@ -5,7 +5,7 @@ import * as backendReports from './backend/reports';
 import * as backendUsers from './backend/users';
 import { supabase } from './backend/supabase';
 
-import type { Incident, IncidentFilter } from '@/types/incident';
+import type { Incident, IncidentFilter, IncidentCommunityResponse } from '@/types/incident';
 import type { Responder, ResponderFilter } from '@/types/responder';
 import type { Device, DeviceFilter } from '@/types/device';
 import type { SafetyReport, ReportFilter } from '@/types/report';
@@ -98,3 +98,14 @@ export async function assignResponderToIncident(
 export async function deleteIncident(id: string): Promise<void> {
   return await backendIncidents.deleteIncident(id);
 }
+
+export async function fetchCommunityResponses(incidentId: string): Promise<IncidentCommunityResponse[]> {
+  return await backendIncidents.getCommunityResponses(incidentId);
+}
+
+export async function submitCommunityResponse(
+  response: Omit<IncidentCommunityResponse, 'id' | 'created_at'>
+): Promise<IncidentCommunityResponse> {
+  return await backendIncidents.addCommunityResponse(response);
+}
+

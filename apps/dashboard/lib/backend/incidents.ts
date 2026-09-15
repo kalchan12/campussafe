@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Incident, IncidentFilter } from '@/types/incident';
+import type { Incident, IncidentFilter, IncidentCommunityResponse } from '@/types/incident';
 
 export async function getIncidents(filter?: IncidentFilter): Promise<Incident[]> {
   let query = supabase
@@ -98,3 +98,34 @@ export async function deleteIncident(id: string): Promise<void> {
 
   if (error) throw error;
 }
+
+export async function getCommunityResponses(incidentId: string): Promise<IncidentCommunityResponse[]> {
+  const { data, error } = await supabase
+    .from('incident_community_responses')
+    .select('*')
+    .eq('incident_id', incidentId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addCommunityResponse(
+  response: Omit<IncidentCommunityResponse, 'id' | 'created_at'>
+): Promise<IncidentCommunityResponse> {
+  const { data, error } = await supabase
+    .from('incident_community_responses')
+    .insert({
+      incident_id: response.incident_id,
+      responder_id: response.responder_id || null,
+      responder_name: response.responder_name || 'Community Member',
+      response_type: response.response_type,
+      message: response.message,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+

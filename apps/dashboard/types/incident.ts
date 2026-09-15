@@ -104,3 +104,29 @@ export const EMERGENCY_TYPE_COLORS: Record<EmergencyType, string> = {
   accident: 'bg-yellow-100 text-yellow-800',
   other: 'bg-gray-100 text-gray-800',
 };
+
+export type CommunityResponseType =
+  | 'offering_assistance'
+  | 'escorting_to_safety'
+  | 'first_aid_provided'
+  | 'eyewitness_report'
+  | 'other_assistance';
+
+export interface IncidentCommunityResponse {
+  id: string;
+  incident_id: string;
+  responder_id?: string;
+  responder_name?: string;
+  response_type: CommunityResponseType;
+  message: string;
+  created_at: string;
+}
+
+export const COMMUNITY_RESPONSE_LABELS: Record<CommunityResponseType, { label: string; icon: string; color: string }> = {
+  offering_assistance: { label: 'Assistance Offered', icon: 'handshake', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  escorting_to_safety: { label: 'Escorting to Safety', icon: 'transfer_within_a_station', color: 'text-teal-600 bg-teal-50 border-teal-200' },
+  first_aid_provided: { label: 'First Aid Applied', icon: 'medical_services', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  eyewitness_report: { label: 'Eyewitness Report', icon: 'visibility', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  other_assistance: { label: 'Community Assistance', icon: 'volunteer_activism', color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+};
+

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/errors/app_error.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../../shared/models/incident_community_response.dart';
 
 final incidentRepositoryProvider = Provider<IncidentRepository>((ref) {
   return IncidentRepository(Env.isConfigured ? Env.supabase : null);
@@ -178,4 +179,66 @@ class IncidentRepository {
           return data.first;
         });
   }
+
+  /// Fetches community responses for an incident.
+  Future<Result<List<IncidentCommunityResponse>>> getCommunityResponses(String incidentId) async {
+    if (!_isAvailable) return Left(NetworkError.noConnection());
+    try {
+      final data = await _client!
+          .from('incident_community_responses')
+          .select()
+          .eq('incident_id', incidentId)
+          .order('created_at', ascending: true);
+      final list = (data as List)
+          .map((e) => IncidentCommunityResponse.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return Right(list);
+    } catch (e) {
+      return Left(NetworkError(message: 'Failed to load community updates: $e'));
+    }
+  }
+
+  /// Submits a community response or eyewitness report.
+  Future<Result<IncidentCommunityResponse>> submitCommunityResponse({
+    required String incidentId,
+    String? responderId,
+    required String responderName,
+    required CommunityResponseType responseType,
+    required String message,
+  }) async {
+    if (!_isAvailable) return Left(NetworkError.noConnection());
+    try {
+      final payload = <String, dynamic>{
+        'incident_id': incidentId,
+        if (responderId != null && responderId.isNotEmpty) 'responder_id': responderId,
+        'responder_name': responderName,
+        'response_type': responseType.value,
+        'message': message,
+      };
+      final data = await _client!
+          .from('incident_community_responses')
+          .insert(payload)
+          .select()
+          .single();
+      return Right(IncidentCommunityResponse.fromJson(data));
+    } catch (e) {
+      return Left(NetworkError(message: 'Failed to submit response: $e'));
+    }
+  }
+
+  /// Streams community responses for an incident in real-time.
+  Stream<List<IncidentCommunityResponse>> watchCommunityResponses(String incidentId) {
+    if (!_isAvailable) return Stream.value([]);
+    return _client!
+        .from('incident_community_responses')
+        .stream(primaryKey: ['id'])
+        .eq('incident_id', incidentId)
+        .order('created_at', ascending: true)
+        .map((data) {
+          return data
+              .map((e) => IncidentCommunityResponse.fromJson(e))
+              .toList();
+        });
+  }
 }
+
