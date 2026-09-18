@@ -67,7 +67,7 @@ Authorized operators can:
 
 ### 3. IoT / Hardware Layer
 
-Prototype devices use an ESP8266 NodeMCU Amica v2 as the main controller (sensing + communication), an Arduino Uno R3 as a dedicated display controller, and ESP32-CAM as an independent camera device.
+Prototype devices use an ESP8266 NodeMCU Amica v2 as the main controller (sensing + communication) and an Arduino Uno R3 as a dedicated display controller. (Note: The ESP32-CAM camera node was removed from project scope due to component procurement unavailability).
 
 **Main Controller Station (ESP8266 Amica v2)**
 - ESP8266 NodeMCU Amica v2.
@@ -85,11 +85,6 @@ Prototype devices use an ESP8266 NodeMCU Amica v2 as the main controller (sensin
 - LCD 2: Sensor readings display (gas ppm, temperature °C).
 - Status LEDs.
 - Receives all data from ESP8266 via Serial (no network access).
-
-**ESP32-CAM (Independent)**
-- ESP32-CAM module with own Wi-Fi connection.
-- Operates independently from the ESP8266 and Arduino.
-- Camera-based event source.
 
 The Arduino Uno R3 is used as a dedicated display controller because driving two LCDs requires more GPIO pins than the ESP8266 can provide. Breadboards, resistors, and basic electronics are used for prototyping.
 
@@ -215,7 +210,7 @@ Anonymous reporting is different from SOS: SOS is an emergency-response mechanis
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Storage | Supabase Storage where required |
-| IoT | ESP8266 NodeMCU Amica v2 / Arduino Uno R3 / ESP32-CAM |
+| IoT | ESP8266 NodeMCU Amica v2 / Arduino Uno R3 |
 | Firmware | C/C++ (Arduino IDE) |
 | Networking | Wi-Fi / HTTPS |
 | Location | Mobile GPS/location services |
@@ -267,7 +262,6 @@ The prototype should demonstrate:
 - Anonymous reporting.
 - ESP8266 Amica v2 main controller station (SOS button + heat/gas sensors).
 - Arduino Uno R3 display controller (2× LCD: SOS status + sensor readings).
-- Optional independent ESP32-CAM event node.
 - Incident history.
 - Audit logging.
 

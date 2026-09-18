@@ -27,8 +27,8 @@ The three components communicate through the backend rather than directly coupli
               ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
               │   MOBILE    │   │  DASHBOARD  │   │     IoT     │
               │ Flutter     │   │ Next.js     │   │ ESP8266 /   │
-              │ / Dart      │   │ React/TS    │   │ Arduino /   │
-              │             │   │             │   │ ESP32-CAM   │
+              │ / Dart      │   │ React/TS    │   │ Arduino Uno │
+              │             │   │             │   │             │
               └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
                     │                 │                 │
                     └─────────────────┼─────────────────┘
@@ -137,7 +137,6 @@ Changing these requires checking every consumer.
 | Storage | Supabase Storage where required |
 | IoT (Main Controller) | ESP8266 NodeMCU Amica v2 |
 | IoT (Display Controller) | Arduino Uno R3 |
-| IoT (Camera) | ESP32-CAM (independent) |
 | Firmware | C/C++ (Arduino IDE) |
 | Network | Wi-Fi / HTTPS |
 | Location | Mobile GPS/location services |
@@ -170,9 +169,7 @@ campussafe/
 │
 ├── iot/
 │   ├── main-controller/     # ESP8266 Amica v2 — push button + sensors + Supabase
-│   ├── display-controller/  # Arduino Uno R3 — 2× LCD displays
-│   └── esp32-cam/           # ESP32-CAM — independent camera device
-│
+│   └── display-controller/  # Arduino Uno R3 — 2× LCD displays
 ├── packages/
 │   └── shared/
 │       ├── types/
@@ -323,7 +320,6 @@ The IoT layer consists of physical devices that detect events and communicate th
 ```text
 Main Controller:       ESP8266 NodeMCU Amica v2
 Display Controller:    Arduino Uno R3
-Camera Device:         ESP32-CAM (independent, own Wi-Fi)
 Prototyping:           Breadboards, resistors, LEDs
 Connectivity:          Wi-Fi → HTTPS → Supabase REST API
 Inter-board Comm:      Serial (UART) — ESP8266 → Arduino
@@ -396,26 +392,8 @@ Responsibilities:
 - LCD 2: Show sensor readings (gas ppm, temperature °C, NORMAL/ALERT).
 - Drive status LEDs for visual feedback.
 
-### 3. ESP32-CAM (Independent Device)
-
-The ESP32-CAM operates as an **independent IoT device** with its own Wi-Fi connection. It does not communicate through the ESP8266 or Arduino.
-
-```text
-┌──────────────────────────────────────────────────────┐
-│         ESP32-CAM (Independent)                      │
-│                                                      │
-│   Camera ──→ Capture                                 │
-│                 │                                    │
-│                 ▼                                    │
-│          Event Detection                             │
-│                 │                                    │
-│                 ▼                                    │
-│          Wi-Fi → HTTPS                               │
-│                → Supabase                            │
-└──────────────────────────────────────────────────────┘
-```
-
-The ESP32-CAM may act as a camera-based event source. Its exact capabilities depend on the implementation phase.
+### 3. Removed / Deferred Components
+- **Camera Event Node (ESP32-CAM):** Removed from active project scope due to component procurement unavailability. Camera-based event verification is deferred to future hardware phases; visual documentation is supported directly through the mobile application.
 
 ## System Data Flow
 

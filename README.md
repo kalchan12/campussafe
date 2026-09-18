@@ -50,7 +50,7 @@ CampusSafe is a campus-wide emergency communication, incident coordination, and 
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Push Notifications | Firebase Cloud Messaging (FCM) |
-| IoT | ESP8266 Amica v2, Arduino Uno R3, ESP32-CAM / C++ (Arduino IDE) |
+| IoT | ESP8266 Amica v2, Arduino Uno R3 / C++ (Arduino IDE) |
 | Location | Mobile GPS (geolocator) |
 
 ---
@@ -67,7 +67,7 @@ campussafe/
 │   ├── functions/       # Supabase Edge Functions
 │   │   └── send-notification/   # Server-side FCM delivery
 │   └── seed/            # Development seed data
-├── iot/                 # ESP8266, Arduino Uno R3 & ESP32-CAM firmware
+├── iot/                 # ESP8266 & Arduino Uno R3 firmware
 ├── packages/shared/     # Shared types and contracts
 ├── docs/                # Architecture docs and ADRs
 ├── .env.example         # Environment variable template

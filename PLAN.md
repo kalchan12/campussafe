@@ -314,14 +314,8 @@ Optional:
 - [ ] Status LEDs for visual feedback.
 - [ ] Command parsing protocol (SOS/SENSOR/STATUS/ALERT).
 
-## Independent Camera Node (ESP32-CAM)
-- [ ] ESP32-CAM module standalone configuration.
-- [ ] Independent Wi-Fi connection (communicates directly with backend, not via ESP8266).
-- [ ] Camera capture & event trigger logic.
-- [ ] HTTPS event dispatch to backend / Supabase.
-- [ ] Dashboard integration.
-
 ## Obsolete / Deferred Hardware Architecture
+- [-] Independent Camera Node (ESP32-CAM) (removed from prototype scope — could not acquire hardware).
 - [-] Separate ESP8266 for SOS station only (consolidated into main controller).
 - [-] Separate ESP8266 for sensor node only (consolidated into main controller).
 - [-] Multi-sensor environmental node with PIR (deferred to avoid hardware complexity).
@@ -424,11 +418,6 @@ Guest → Anonymous report → Location → Dashboard → Security
 Sensor (Heat/Gas) → ESP8266 → Threshold Breach → Wi-Fi → Backend → Incident
 → Dashboard + Responder Alert
 ESP8266 → Serial → Arduino → LCD 2 (SENSOR ALERT)
-```
-
-### Scenario 5 — Independent Camera Event
-```text
-Camera Trigger → ESP32-CAM (independent Wi-Fi) → Backend → Dashboard
 ```
 
 ---
@@ -573,7 +562,6 @@ This section outlines the immediate Dashboard operations tasks to complete, in o
 - [ ] Backend IoT ingestion API (Supabase REST endpoint for device events).
 - [ ] ESP8266 Amica v2 Main Controller firmware (push button + MQ-2 + DHT11 + debounce + LED + Wi-Fi + Supabase + Serial to Arduino).
 - [ ] Arduino Uno R3 Display Controller firmware (Serial receive + 2× LCD + status LEDs).
-- [ ] ESP32-CAM independent network device prototype (independent Wi-Fi + event trigger).
 - [ ] Breadboard integration, Wokwi simulation validation, and bench testing.
 
 ### Finalization
