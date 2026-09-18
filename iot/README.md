@@ -1,55 +1,54 @@
 # CampusSafe — IoT & Hardware Architecture
 
-This directory contains the firmware, wiring guides, and hardware documentation for the CampusSafe IoT layer.
+This directory contains the production firmware, wiring specifications, Wokwi simulation files, and hardware documentation for the CampusSafe IoT hardware subsystem.
 
 ---
 
-## 1. Hardware Strategy
+## 1. Hardware Overview & Strategy
 
-The IoT layer uses an **optimized two-board architecture**:
+The system uses an **optimized dual-board architecture**:
 
-| Board | Role | Network |
-|---|---|---|
-| **ESP8266 NodeMCU Amica v2** | Main Controller — push button + sensors + Supabase | Wi-Fi (HTTPS) |
-| **Arduino Uno R3** | Display Controller — 2× LCD displays + status LEDs | None (Serial RX only) |
-| **ESP32-CAM** | Independent camera event node (future) | Wi-Fi (HTTPS) |
+| Board | Role | Network / Link | Primary Purpose |
+|---|---|---|---|
+| **NodeMCU ESP8266** (ESP-12E Module) | IoT Master Controller | Wi-Fi (HTTPS / TLS) | Push button input, MQ-2 gas sensing, DS18B20 temperature probe, local buzzer alerts, and direct Supabase incident dispatching. |
+| **Arduino Uno R3** | Dedicated Display Controller | UART Serial (115200 Baud) | Drives two simultaneous 1602 LCD displays (SOS station screen + live hazard & telemetry screen). |
 
-**Rationale:** The push button and two sensors (MQ-2 analog + DHT11 digital) consume very few GPIO pins, so one ESP8266 handles all sensing. Driving two LCD displays requires more GPIO/I2C bandwidth than the ESP8266 can comfortably provide alongside its sensing and Wi-Fi duties, so an Arduino Uno R3 serves as a dedicated display controller. This eliminates one ESP8266 from the design while maintaining clear separation of concerns.
-
-**Prototyping:** Breadboards, resistors, LEDs, and basic discrete electronics. The design has been validated in the **Wokwi VS Code extension** simulator.
+### Architectural Rationale:
+* **Separation of Concerns:** The ESP8266 focuses on sensor data acquisition, Wi-Fi networking, SSL/TLS handshakes, and cloud communications. The Arduino Uno manages display rendering and local visual state.
+* **Pin & Bandwidth Optimization:** Driving two LCD displays (one parallel, one I2C) requires high GPIO availability and dedicated timing. Offloading this to an Arduino Uno keeps the ESP8266 responsive and prevents blocking during cloud HTTP requests.
+* **Safety Isolation:** Even if Wi-Fi or Internet connectivity drops, the local alarm subsystem (piezo buzzer and dual LCD screens) continues operating seamlessly.
 
 ---
 
-## 2. System Architecture
+## 2. System Architecture Diagram
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│              ESP8266 Amica v2 (Main Controller)             │
-│                                                             │
-│   [Push Button] ──→ Debounce ──→ SOS_TRIGGERED event        │
-│   [MQ-2 Gas]    ──→ Read     ──→ Threshold check            │
-│   [DHT11 Temp]  ──→ Read     ──→ Threshold check            │
-│   [Status LED]  ←── Visual Feedback                         │
-│   [Buzzer]      ←── Audio Feedback                          │
-│                                                             │
-│   ──→ Wi-Fi HTTPS POST → Supabase REST API                  │
-│   ──→ Serial TX → Arduino RX (display commands)             │
-└──────────────┬──────────────────────────┬───────────────────┘
-               │ Wi-Fi                    │ Serial (UART)
-               ▼                          ▼
-    ┌───────────────────┐      ┌────────────────────────────┐
-    │  SUPABASE BACKEND │      │    Arduino Uno R3          │
-    │  (REST API +      │      │    (Display Controller)    │
-    │   Realtime)       │      │                            │
-    └───────────────────┘      │  [LCD 1] ← SOS Status     │
-                               │  [LCD 2] ← Sensor Data    │
-                               │  [LEDs]  ← Status         │
-                               └────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│              ESP32-CAM (Independent Device — Future)        │
-│   [Camera] ──→ Capture ──→ Wi-Fi ──→ HTTPS ──→ Supabase    │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   ESP8266 NodeMCU (Master Controller)                   │
+│                                                                         │
+│   [Push Button]   ──→ Pin D3 (GPIO 0)  ──→ Debounce ──→ SOS Trigger     │
+│   [MQ-2 Gas]      ──→ Pin A0 (ADC 0)   ──→ Analog Voltage (0-1023)      │
+│   [DS18B20 Temp]  ──→ Pin D7 (GPIO 13) ──→ Dallas 1-Wire Bus (2.2kΩ PU) │
+│   [Piezo Buzzer]  ←── Pin D5 (GPIO 14) ←── High/Low Audio Alarm         │
+│   [Status LED]    ←── Built-in LED     ←── Heartbeat / Strobe Alarm     │
+│                                                                         │
+│   ──→ Wi-Fi HTTPS POST ──────────────────→ Supabase Cloud Incidents API│
+│   ──→ Serial TX (GPIO 1) 115200 Baud ─────→ Arduino Uno RX (Pin 0)      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                                       │
+                                                       │ UART Link (115200)
+                                                       ▼
+                             ┌────────────────────────────────────────────┐
+                             │       Arduino Uno R3 (Display Controller)   │
+                             │                                            │
+                             │   [LCD 1 - Parallel 1602] (Pins 7-12)      │
+                             │     Line 0: "SOS System Ready"             │
+                             │     Line 1: "Press button..."              │
+                             │                                            │
+                             │   [LCD 2 - I2C 1602 Backpack] (A4/A5)      │
+                             │     Line 0: Live Telemetry "T:25.0C G:650" │
+                             │     Line 1: Live Status    "Status: Normal"│
+                             └────────────────────────────────────────────┘
 ```
 
 ---
@@ -57,238 +56,137 @@ The IoT layer uses an **optimized two-board architecture**:
 ## 3. Directory Structure
 
 ```text
-iot/
-├── main-controller/           # ESP8266 Amica v2 firmware
-│   └── main-controller.ino
-├── display-controller/        # Arduino Uno R3 firmware
-│   └── display-controller.ino
-├── esp32-cam/                 # ESP32-CAM firmware (future)
-│   └── .gitkeep
-└── README.md                  # This file
+campussafe/iot/
+├── main-controller/
+│   └── main-controller.ino      # ESP8266 Master Firmware (Button, Sensors, Supabase, Buzzer, TX)
+├── display-controller/
+│   └── display-controller.ino   # Arduino Uno R3 Display Firmware (Parallel LCD 1 + I2C LCD 2)
+├── simulation/                  # Wokwi simulation workspace & test firmware
+│   ├── diagram.json             # Wokwi wiring & component layout
+│   ├── platformio.ini           # PlatformIO project configuration
+│   ├── libraries.txt            # Wokwi dependency list
+│   ├── wokwi.toml               # Wokwi simulator entry point
+│   └── src/                     # Source modules & diagnostic firmware
+│       ├── main_esp8266.cpp     # ESP8266 master source
+│       ├── main_uno.cpp         # Arduino Uno master source
+│       ├── diagnostics.cpp      # Live hardware pin diagnostics
+│       ├── i2c_scanner.cpp      # I2C bus scanner
+│       └── temp_debug.cpp       # Dallas 1-Wire scanner
+└── README.md                    # This hardware documentation
 ```
 
 ---
 
-## 4. ESP8266 Amica v2 — Pinout
+## 4. Hardware Pin Mapping & Wiring Specification
 
-| Function | NodeMCU Pin | ESP8266 GPIO | Notes |
+### 4.1. ESP8266 NodeMCU (Master Controller)
+
+| Component | Component Pin | ESP8266 Pin | Notes / Wiring |
 |---|---|---|---|
-| **SOS Push Button** | `D5` | `GPIO 14` | `INPUT_PULLUP`, safe boot pin |
-| **MQ-2 Gas Sensor** | `A0` | `ADC 0` | Analog 0–3.3V (NodeMCU internal divider) |
-| **DHT11 Temperature** | `D2` | `GPIO 4` | Digital, 1-Wire protocol |
-| **Status LED** | `D6` | `GPIO 12` | Output, 220Ω–330Ω resistor |
-| **Active Buzzer** | `D8` | `GPIO 15` | Must be LOW at boot; use NPN transistor if >12mA |
-| **Serial TX → Arduino** | `TX` | `GPIO 1` | 9600 baud, connect to Arduino RX |
+| **SOS Push Button** | Pin 1 (Diagonal)<br>Pin 2 (Diagonal) | **`D3`** (`GPIO 0`)<br>**`GND`** | Configured with `INPUT_PULLUP`. Pressing ties `D3` to GND. |
+| **MQ-2 Gas / Smoke Sensor** | `VCC`<br>`GND`<br>`AO` (Analog Out)<br>`DO` (Digital Out) | **`5V`** rail (from Arduino)<br>**`GND`** rail<br>**`A0`** (`ADC 0`)<br>*Unconnected* | Sensor heater requires 5V. Reads raw ADC (0–1023). Alarm threshold set to **`800`** to prevent warm-up false alarms. |
+| **DS18B20 Temp Probe** | Red Wire (`VCC`)<br>Black Wire (`GND`)<br>Yellow Wire (`DATA`) | **`3V`** (3.3V)<br>**`GND`** rail<br>**`D7`** (`GPIO 13`) | **Crucial:** Red wire connects to 3.3V (NOT 5V). Requires a **2.2kΩ pull-up resistor** bridging Red (`3V`) and Yellow (`D7`). Heat threshold set to **`40.0°C`**. |
+| **Piezo Buzzer** | Red Wire (`+`)<br>Black Wire (`-`) | **`D5`** (`GPIO 14`)<br>**`GND`** rail | 2000Hz chirp for SOS; 1000Hz continuous pulsing alarm for hazards. |
+| **Serial Link to Arduino** | `TX` (Transmitter)<br>`G` (Ground) | **`TX`** (`GPIO 1`)<br>**`GND`** | Connects to Arduino Uno Pin 0 (`RX`). Common ground with Arduino. |
 
 ---
 
-## 5. Arduino Uno R3 — Pinout
+### 4.2. Arduino Uno R3 (Display Controller)
 
-| Function | Arduino Pin | Notes |
-|---|---|---|
-| **Serial RX ← ESP8266** | `Pin 0 (RX)` | 9600 baud, connect to ESP8266 TX |
-| **I2C SDA** | `A4` | Shared I2C bus for both LCDs |
-| **I2C SCL** | `A5` | Shared I2C bus for both LCDs |
-| **LCD 1 (SOS Status)** | I2C `0x27` | 16×2 character LCD |
-| **LCD 2 (Sensor Data)** | I2C `0x26` | 16×2 character LCD (address adjusted) |
-| **SOS Status LED** | `Pin 8` | Red LED, 220Ω resistor |
-| **Sensor Alert LED** | `Pin 9` | Yellow LED, 220Ω resistor |
-| **Ready LED** | `Pin 10` | Green LED, 220Ω resistor |
+#### Screen 1: Parallel 1602 LCD (SOS Station Display)
+* **Pin 1 (`VSS`)**: Breadboard `GND`
+* **Pin 2 (`VDD`)**: Breadboard `5V`
+* **Pin 3 (`V0`)**: Contrast — connected to `GND` through two 2.2kΩ resistors in series (4.4kΩ)
+* **Pin 4 (`RS`)**: Arduino **Pin 7**
+* **Pin 5 (`RW`)**: Breadboard `GND` (write mode)
+* **Pin 6 (`E`)**: Arduino **Pin 8**
+* **Pins 7–10 (`D0–D3`)**: *Unconnected (4-bit mode)*
+* **Pin 11 (`D4`)**: Arduino **Pin 9**
+* **Pin 12 (`D5`)**: Arduino **Pin 10**
+* **Pin 13 (`D6`)**: Arduino **Pin 11**
+* **Pin 14 (`D7`)**: Arduino **Pin 12**
+* **Pin 15 (`A`)**: Breadboard `5V` (Backlight Anode)
+* **Pin 16 (`K`)**: Breadboard `GND` (Backlight Cathode)
 
-> **Note:** I2C addresses vary by LCD module. Use an I2C scanner sketch to determine your actual addresses and update the firmware constants accordingly.
-
----
-
-## 6. Serial Communication Protocol
-
-The ESP8266 sends structured text commands to the Arduino via Serial (UART) at **9600 baud**. Each command is a newline-terminated string.
-
-| Command | Format | Action |
-|---|---|---|
-| SOS Triggered | `SOS:TRIGGERED:<timestamp>\n` | Arduino updates LCD 1 with SOS alert |
-| Gas Reading | `SENSOR:GAS:<reading>:ppm\n` | Arduino updates LCD 2 gas value |
-| Temp Reading | `SENSOR:TEMP:<reading>:C\n` | Arduino updates LCD 2 temperature |
-| System Ready | `STATUS:READY\n` | Arduino resets LCD 1 to ready state |
-| System Booting | `STATUS:BOOTING\n` | Arduino shows booting message |
-| Gas Alert | `ALERT:GAS\n` | Arduino flashes LCD 2, shows gas alert |
-| Temp Alert | `ALERT:TEMP\n` | Arduino flashes LCD 2, shows heat alert |
-
-### Example Serial Stream
-
-```text
-STATUS:BOOTING
-STATUS:READY
-SENSOR:GAS:120:ppm
-SENSOR:TEMP:28:C
-SENSOR:GAS:135:ppm
-SENSOR:TEMP:29:C
-SOS:TRIGGERED:3600
-SENSOR:GAS:480:ppm
-ALERT:GAS
-SENSOR:TEMP:47:C
-ALERT:TEMP
-```
+#### Screen 2: 4-Pin I2C 1602 LCD (Hazard & Telemetry Display)
+* **`GND`**: Breadboard `GND`
+* **`VCC`**: Breadboard `5V`
+* **`SDA`**: Arduino **Pin `A4`** (Hardware I2C Data)
+* **`SCL`**: Arduino **Pin `A5`** (Hardware I2C Clock)
+* *(Contrast is adjusted using the blue potentiometer screw on the backpack)*
 
 ---
 
-## 7. Wiring Guide
+## 5. Serial Communication Protocol (UART)
 
-### ESP8266 ↔ Arduino Connection
+The ESP8266 transmits state changes and telemetry to the Arduino Uno at **115200 baud**.
 
-```text
-ESP8266 TX (GPIO 1) ──────→ Arduino RX (Pin 0)
-ESP8266 GND ───────────────→ Arduino GND
-```
+| Message Prefix | Payload / Format | Trigger Condition | Display Action on Arduino |
+|---|---|---|---|
+| **`SOS:1`** | None | Hardware push button pressed | **LCD 1:** Shows `"Sending SOS / signal..."` |
+| **`SOS:0`** | None | Button released / 2.5s timeout | **LCD 1:** Returns to `"SOS System Ready / Press button..."` |
+| **`HAZARD:GAS`** | None | Gas reading $\ge$ 800 | **LCD 2:** Line 1 shows `"Gas! Evacuate!"` |
+| **`HAZARD:HEAT`** | None | Temperature $\ge$ 40.0°C | **LCD 2:** Line 1 shows `"Heat! Evacuate!"` |
+| **`HAZARD:BOTH`** | None | Both Gas $\ge$ 800 & Temp $\ge$ 40°C | **LCD 2:** Line 1 shows `"Gas&Heat! Flee!"` |
+| **`HAZARD:NORMAL`**| None | Readings below thresholds | **LCD 2:** Line 1 shows `"Status: Normal"` |
+| **`DATA:`** | `<temp_c>,<gas_raw>` (e.g. `DATA:25.0,653`) | Sent every 1 second | **LCD 2:** Line 0 updates live: `"T:25.0C G:653"` |
 
-> **Important:** Connect GND between both boards. Do NOT connect VCC between boards — each should be powered independently via USB.
-
-### ESP8266 Components
-
-```text
-Push Button:  One leg → D5 (GPIO 14), other leg → GND
-              (using INPUT_PULLUP, no external resistor needed)
-
-MQ-2 Sensor:  VCC → 3.3V, GND → GND, AOUT → A0
-
-DHT11:        VCC → 3.3V, GND → GND, DATA → D2 (GPIO 4)
-              (10kΩ pull-up between VCC and DATA recommended)
-
-Status LED:   Anode → D6 (GPIO 12) via 220Ω resistor, Cathode → GND
-
-Buzzer:       Positive → D8 (GPIO 15) via NPN transistor, Negative → GND
-```
-
-### Arduino Components
-
-```text
-LCD 1 (I2C):  VCC → 5V, GND → GND, SDA → A4, SCL → A5
-LCD 2 (I2C):  VCC → 5V, GND → GND, SDA → A4, SCL → A5
-
-SOS LED:      Anode → Pin 8 via 220Ω resistor, Cathode → GND
-Sensor LED:   Anode → Pin 9 via 220Ω resistor, Cathode → GND
-Ready LED:    Anode → Pin 10 via 220Ω resistor, Cathode → GND
-```
+> **Important Programming Note:** Always unplug the wire from Arduino Pin 0 (`RX`) before uploading code to the Arduino Uno via USB, as the serial connection from the ESP8266 interferes with the bootloader.
 
 ---
 
-## 8. Supabase Backend Protocol
+## 6. Sensor Calibration & ADC Units
 
-### HTTP Endpoint
+### MQ-2 Gas / Smoke Sensor:
+* The gas reading is a **dimensionless 10-bit ADC count (0–1023)** corresponding to a 0–3.3V input range ($3.22\text{ mV per count}$).
+* **Normal Clean Air Baseline:** ~15–150 counts.
+* **Warm-up Phase:** When cold, the sensor heater draws current and creates an initial reading of 600–750 counts before settling down.
+* **Threshold (`800`):** Prevents false alarms during cold boots while reliably detecting direct smoke, lighter butane, alcohol, or combustible gas.
 
-All events are sent as HTTPS POST requests to Supabase:
+### DS18B20 Temperature Probe:
+* Digital temperature measured directly in **Degrees Celsius (°C)** over Dallas 1-Wire protocol.
+* **Threshold (`40.0°C`):** Distinguishes environmental ambient room heat from emergency heat/fire conditions.
 
-- **URL:** `https://<PROJECT_ID>.supabase.co/rest/v1/device_events`
-- **Method:** `POST`
-- **Headers:**
-  - `apikey: <SUPABASE_ANON_OR_DEVICE_KEY>`
-  - `Authorization: Bearer <SUPABASE_ANON_OR_DEVICE_KEY>`
-  - `Content-Type: application/json`
-  - `Prefer: return=representation`
+---
 
-### Payload: SOS Triggered
+## 7. Cloud Integration (Supabase REST API)
 
+When an emergency occurs, the ESP8266 connects via Wi-Fi and sends an **HTTPS POST** directly to the Supabase incidents table:
+
+* **Endpoint:** `https://<PROJECT_ID>.supabase.co/rest/v1/incidents`
+* **Headers:**
+  * `apikey: <SUPABASE_SERVICE_OR_ANON_KEY>`
+  * `Authorization: Bearer <SUPABASE_SERVICE_OR_ANON_KEY>`
+  * `Content-Type: application/json`
+
+### Payload Example: SOS Button Press
 ```json
 {
-  "device_id": "STATION-ENG-01",
-  "event_type": "SOS_TRIGGERED",
-  "location_id": "engineering-block",
-  "payload": {
-    "source": "physical_push_button",
-    "uptime_seconds": 3600
-  }
+  "type": "security",
+  "priority": 1,
+  "source": "iot",
+  "latitude": 8.5582,
+  "longitude": 39.2895,
+  "campus_block": "Engineering Block",
+  "location_description": "Hardware Station STATION-ENG-01",
+  "description": "EMERGENCY SOS triggered from Hardware Station STATION-ENG-01",
+  "status": "created"
 }
 ```
 
-### Payload: Sensor Alert
-
+### Payload Example: Hazardous Gas Detection
 ```json
 {
-  "device_id": "STATION-ENG-01",
-  "event_type": "SMOKE_DETECTED",
-  "location_id": "engineering-block",
-  "payload": {
-    "sensor": "MQ-2",
-    "reading": 620,
-    "threshold": 400,
-    "unit": "ppm"
-  }
+  "type": "environmental",
+  "priority": 1,
+  "source": "iot",
+  "latitude": 8.5582,
+  "longitude": 39.2895,
+  "campus_block": "Engineering Block",
+  "location_description": "Hardware Station STATION-ENG-01",
+  "description": "HAZARDOUS GAS LEAK detected by Station STATION-ENG-01",
+  "status": "created"
 }
 ```
 
-### Payload: Heartbeat
-
-```json
-{
-  "device_id": "STATION-ENG-01",
-  "event_type": "HEARTBEAT",
-  "payload": {
-    "rssi": -65,
-    "firmware": "1.0.0",
-    "uptime_seconds": 86400
-  }
-}
-```
-
----
-
-## 9. Setup Instructions
-
-### Prerequisites
-
-- [Arduino IDE](https://www.arduino.cc/en/software) 2.x or later
-- ESP8266 board package installed via Board Manager
-  - URL: `http://arduino.esp8266.com/stable/package_esp8266com_index.json`
-- Arduino Uno R3 board (built-in support)
-
-### Required Libraries
-
-| Library | Board | Install via |
-|---|---|---|
-| `ESP8266WiFi` | ESP8266 | Included with board package |
-| `ESP8266HTTPClient` | ESP8266 | Included with board package |
-| `ArduinoJson` | ESP8266 | Library Manager |
-| `DHT sensor library` | ESP8266 | Library Manager (Adafruit) |
-| `LiquidCrystal_I2C` | Arduino | Library Manager |
-| `Wire` | Arduino | Built-in |
-
-### Flashing
-
-1. **ESP8266 (Main Controller):**
-   - Board: `NodeMCU 1.0 (ESP-12E Module)`
-   - Upload Speed: `115200`
-   - Open `iot/main-controller/main-controller.ino`
-   - Update WiFi and Supabase credentials
-   - Upload
-
-2. **Arduino Uno R3 (Display Controller):**
-   - Board: `Arduino Uno`
-   - Open `iot/display-controller/display-controller.ino`
-   - Verify LCD I2C addresses match your hardware
-   - Upload
-
-> **Note:** Disconnect the Arduino RX wire from the ESP8266 TX pin before uploading to the Arduino, as the serial connection can interfere with USB programming.
-
----
-
-## 10. Wokwi Simulation
-
-The optimized two-board architecture has been validated using the **Wokwi VS Code extension**. The simulation verifies:
-
-- Push button debounce and SOS event generation
-- MQ-2 gas sensor analog reading and threshold detection
-- DHT11 temperature reading and threshold detection
-- Serial communication protocol between ESP8266 and Arduino
-- LCD display updates for both SOS status and sensor data
-- LED and buzzer feedback behavior
-
-To run the simulation, use the Wokwi extension in VS Code with the project's simulation configuration.
-
----
-
-## 11. Modularity & Scalability
-
-1. **Independent Stations:** Adding a new station requires assigning a unique `device_id` (e.g. `STATION-ADMIN-02`) and registering it in the `devices` table.
-2. **Decoupled Backend:** The backend treats all incoming events neutrally based on `device_type` and `event_type`.
-3. **No Mesh Overhead:** Direct Wi-Fi station mode simplifies firmware.
-4. **Independent Camera Nodes:** ESP32-CAM units can be deployed independently.
-5. **Display Controller is Local:** The Arduino display controller does not affect the backend contract — it is a local peripheral only.
+> **Single-Transmission Guarantee:** The firmware enforces a state transition lock (`NORMAL` $\rightarrow$ `HAZARD`). An incident is dispatched **exactly once** when a hazard begins, preventing notification spam.
