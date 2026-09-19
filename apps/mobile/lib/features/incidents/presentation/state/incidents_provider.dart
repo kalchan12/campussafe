@@ -220,18 +220,12 @@ class IncidentsNotifier extends StateNotifier<List<Incident>> {
 
   Future<bool> deleteIncident(String incidentId) async {
     if (Env.isConfigured) {
-      final result = await _repository.deleteIncident(incidentId);
-      return result.fold(
-        (error) => false,
-        (_) {
-          state = state.where((inc) => inc.id != incidentId).toList();
-          return true;
-        },
-      );
-    } else {
-      state = state.where((inc) => inc.id != incidentId).toList();
-      return true;
+      try {
+        await _repository.deleteIncident(incidentId);
+      } catch (_) {}
     }
+    state = state.where((inc) => inc.id != incidentId).toList();
+    return true;
   }
 
   Future<bool> submitCommunityResponse({

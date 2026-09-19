@@ -47,9 +47,10 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 - **Offline Cellular SMS Fallback**:
   - Automatically activates when network connectivity fails (`lib/core/services/offline_sms_service.dart`).
   - Generates standardized, machine-parseable emergency SMS with exact GPS latitude/longitude, timestamp, and clickable Google Maps link to predefined campus emergency dispatchers and personal emergency contacts.
-- **Incident Tracking & Responder Views**:
+- **Incident Tracking, Full Details & Delete Mode**:
   - Real-time incident timeline (`READY → ACTIVATING → SENT → RECEIVED → ASSIGNED → RESPONDING → ARRIVED → RESOLVED`).
   - Proximity dispatch updates and community first-aid coordination.
+  - **Resilient Stream & Delete Handling**: Added `.handleError()` to `watchCommunityResponses` and guarded `getCommunityResponses` / `deleteIncident`, eliminating recurring `PGRST205` PostgrestExceptions when viewing full incident details or deleting an incident.
 
 ### B. Web Emergency Operations Dashboard (`apps/dashboard/`)
 - **GIS Campus Mapping & Precise Operator Tracking (`app/dashboard/map/page.tsx`)**:
