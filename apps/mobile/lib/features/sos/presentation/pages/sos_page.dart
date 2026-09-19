@@ -547,14 +547,14 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Column(
                   children: [
                     Row(
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: (hasCoords ? AppColors.success : AppColors.warning)
                                 .withValues(alpha: 0.12),
@@ -562,11 +562,11 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                           ),
                           child: Icon(
                             hasCoords ? Icons.location_on_rounded : Icons.location_searching_rounded,
-                            size: 24,
+                            size: 22,
                             color: hasCoords ? AppColors.success : const Color(0xFFE65100),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,12 +582,16 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    hasCoords ? 'GPS Detected & Locked' : 'GPS Not Detected',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: hasCoords ? AppColors.success : const Color(0xFFE65100),
+                                  Expanded(
+                                    child: Text(
+                                      hasCoords ? 'GPS Detected & Locked' : 'GPS Not Detected',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: hasCoords ? AppColors.success : const Color(0xFFE65100),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -598,7 +602,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                                     ? (sosState.locationAddress ?? 'Lat: ${sosState.latitude!.toStringAsFixed(4)}, Lng: ${sosState.longitude!.toStringAsFixed(4)}')
                                     : 'Campus Center fallback active. Insert room below.',
                                 style: const TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11.5,
                                   color: AppColors.onSurfaceVariant,
                                 ),
                                 maxLines: 2,
@@ -607,9 +611,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 4),
                         IconButton(
-                          icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                          icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 22),
                           tooltip: 'Refetch GPS',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                           onPressed: () {
                             ref.read(sosNotifierProvider.notifier).fetchLocation();
                           },
@@ -617,7 +624,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                       ],
                     ),
                     if (sosState.isLocationLoading) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       const LinearProgressIndicator(minHeight: 3),
                     ],
                   ],
@@ -630,15 +637,20 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'BUILDING BLOCK & ROOM',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 0.6,
+                const Expanded(
+                  child: Text(
+                    'BUILDING BLOCK & ROOM',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurfaceVariant,
+                      letterSpacing: 0.6,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
