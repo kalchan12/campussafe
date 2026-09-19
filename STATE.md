@@ -36,10 +36,14 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 2. Completed Features & Verified Functionality
 
 ### A. Mobile Application (`apps/mobile/`)
-- **Emergency Taxonomy Streamlining**: Reduced SOS categories from overly granular options to 3 high-impact, critical emergencies:
-  - 🚑 **Medical**: Severe trauma, respiratory distress, acute illness.
-  - 🛡️ **Security**: Physical threats, assaults, trespassing, harassment.
-  - 🔥 **Fire**: Structural fires, gas leaks, hazardous chemical smoke.
+- **Emergency Taxonomy Streamlining & Sensor Distinction**:
+  - User-initiated mobile emergency categories are focused directly on:
+    - 🚑 **Medical**: Severe trauma, acute medical emergencies, ambulance & first aid.
+    - 🛡️ **Security**: Physical threats, assaults, harassment, theft, campus police & patrol.
+  - **Fire Hazard & Accident Hazard** are designated for proactive automatic triggers via campus IoT environmental and collision sensors.
+- **Direct Emergency Type Selection Flow (Zero-Friction SOS)**:
+  - Eliminated intermediate "Confirm SOS Alert" modal dialogs and confirmation screens (`_showSOSConfirmation` and `_buildConfirmView`).
+  - Pressing the SOS button on the home page or SOS page (or triggering via hands-free shake) directly navigates to the Emergency Type Selection screen for immediate classification without unnecessary cognitive friction in emergencies.
 - **Hands-Free Shake-to-SOS Detection**:
   - Implemented using `sensors_plus` in `lib/core/services/shake_detection_service.dart`.
   - Configurable sensitivity threshold (`22.0 m/s²`) and minimum consecutive shakes (3 within 800ms) with vibration haptics.

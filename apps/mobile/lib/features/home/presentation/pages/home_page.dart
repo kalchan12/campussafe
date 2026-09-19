@@ -146,7 +146,10 @@ class HomePage extends ConsumerWidget {
                 child: Column(
                   children: [
                     EmergencyButton(
-                      onTriggered: () => _showSOSConfirmation(context, ref),
+                      onTriggered: () {
+                        ref.read(sosNotifierProvider.notifier).startTypeSelection();
+                        context.push('/sos');
+                      },
                       size: 175,
                     ),
                     const SizedBox(height: 16),
@@ -232,16 +235,6 @@ class HomePage extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              _buildFullWidthEmergencyCard(
-                context,
-                ref,
-                label: 'Fire Hazard',
-                subtitle: 'Smoke, Fire Alarms & Evacuation',
-                icon: Icons.local_fire_department_rounded,
-                color: const Color(0xFFE65100),
-                containerColor: const Color(0xFFFFE0B2),
               ),
               const SizedBox(height: 20),
 
@@ -505,87 +498,6 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildFullWidthEmergencyCard(
-    BuildContext context,
-    WidgetRef ref, {
-    required String label,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required Color containerColor,
-  }) {
-    return InkWell(
-      onTap: () {
-        ref.read(sosNotifierProvider.notifier).selectType(label);
-        context.push('/sos');
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.5),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: containerColor,
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: color,
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildQuickActionCard(
     BuildContext context, {
@@ -650,102 +562,5 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
-
-  void _showSOSConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        icon: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: AppColors.critical.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.emergency_rounded,
-            color: AppColors.critical,
-            size: 28,
-          ),
-        ),
-        title: const Text(
-          'Confirm SOS Alert',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.onSurface,
-            letterSpacing: -0.3,
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to trigger an emergency alert? Campus police and central dispatch will be notified immediately.',
-          style: TextStyle(
-            fontSize: 13.5,
-            color: AppColors.onSurfaceVariant,
-            height: 1.4,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: BorderSide(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.8),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    ref.read(sosNotifierProvider.notifier).startConfirmation();
-                    context.push('/sos');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.critical,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Yes, Send SOS',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }
+

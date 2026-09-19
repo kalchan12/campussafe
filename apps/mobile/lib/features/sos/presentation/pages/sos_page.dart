@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
-import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../core/utils/phone_launcher.dart';
 import '../../../../shared/widgets/emergency_button.dart';
@@ -37,20 +36,6 @@ class _SOSPageState extends ConsumerState<SOSPage> {
       'subtitle': 'Campus Police & Patrol',
       'color': const Color(0xFF1565C0),
       'containerColor': const Color(0xFFE3F2FD),
-    },
-    {
-      'icon': Icons.local_fire_department_rounded,
-      'label': 'Fire',
-      'subtitle': 'Smoke & Fire Alarm',
-      'color': const Color(0xFFE65100),
-      'containerColor': const Color(0xFFFFE0B2),
-    },
-    {
-      'icon': Icons.car_crash_rounded,
-      'label': 'Accident',
-      'subtitle': 'Vehicle or Physical Collision',
-      'color': const Color(0xFFF57C00),
-      'containerColor': const Color(0xFFFFF3E0),
     },
   ];
 
@@ -99,7 +84,6 @@ class _SOSPageState extends ConsumerState<SOSPage> {
       case SosStatus.ready:
         return _buildReadyView();
       case SosStatus.confirming:
-        return _buildConfirmView();
       case SosStatus.selectingType:
         return _buildTypeSelectionView();
       case SosStatus.confirmingLocation:
@@ -169,7 +153,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             const SizedBox(height: 36),
             EmergencyButton(
               onPressed: () {
-                ref.read(sosNotifierProvider.notifier).startConfirmation();
+                ref.read(sosNotifierProvider.notifier).startTypeSelection();
               },
             ),
             const SizedBox(height: 24),
@@ -228,118 +212,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
     );
   }
 
-  // 2. Confirm View
-  Widget _buildConfirmView() {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.6),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.critical.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.emergency_rounded,
-                  size: 34,
-                  color: AppColors.critical,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Confirm Emergency Alert',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onSurface,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'This action will immediately notify ASTU campus police, clinic, and central dispatch with your live location.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedTypeIndex = -1;
-                    });
-                    ref.read(sosNotifierProvider.notifier).startTypeSelection();
-                  },
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
-                  label: const Text(
-                    'Yes, Select Emergency Type',
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.critical,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 1.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: OutlinedButton(
-                  onPressed: () {
-                    ref.read(sosNotifierProvider.notifier).reset();
-                    context.go('/home');
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.8)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Cancel Alert',
-                    style: TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 3. Type Selection View (Solid, High-Contrast White Cards on Surface)
+  // 2. Type Selection View (Solid, High-Contrast White Cards on Surface)
   Widget _buildTypeSelectionView() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),

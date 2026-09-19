@@ -29,7 +29,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
       ref.read(shakeDetectorServiceProvider).initialize(
         onShakeDetected: () {
           final router = ref.read(appRouterProvider);
-          ref.read(sosNotifierProvider.notifier).startConfirmation();
+          ref.read(sosNotifierProvider.notifier).startTypeSelection();
           router.push('/sos');
         },
       );

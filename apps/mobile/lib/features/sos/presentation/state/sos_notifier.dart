@@ -32,7 +32,7 @@ class SosNotifier extends StateNotifier<SosState> {
       : super(const SosState());
 
   void startConfirmation() {
-    state = state.copyWith(status: SosStatus.confirming, error: null);
+    state = state.copyWith(status: SosStatus.selectingType, error: null);
   }
 
   void startTypeSelection() {
