@@ -4,8 +4,10 @@ import '../../../../core/config/env.dart';
 import '../../../../core/local/incident_queue_db.dart';
 import '../../../../core/network/sync_service.dart';
 import '../../../../core/location/location_service.dart';
+import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../shared/models/incident.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
+import '../../../profile/presentation/state/profile_notifier.dart';
 import '../../../incidents/data/repositories/incident_repository.dart';
 import '../../../incidents/presentation/state/incidents_provider.dart';
 import 'sos_state.dart';
@@ -120,11 +122,24 @@ class SosNotifier extends StateNotifier<SosState> {
 
       result.fold(
         (error) async {
-          // If network failed, enqueue it!
+          // If network failed, enqueue it for reconnection sync!
           await _queueDb.enqueueIncident(payload);
+
+          // Automatically dispatch emergency SMS to Parent and University Admin (0920304050)
+          final smsService = _ref.read(emergencySmsServiceProvider);
+          final profileUser = _ref.read(profileNotifierProvider).user;
+          await smsService.dispatchAutomatedEmergencySms(
+            emergencyType: emergencyType.value,
+            locationDescription: effectiveLocationDesc,
+            latitude: hasExactGps ? effectiveLat : null,
+            longitude: hasExactGps ? effectiveLng : null,
+            senderName: profileUser?.fullName,
+            notes: effectiveDesc,
+          );
+
           state = state.copyWith(
-            status: SosStatus.sent, // Pretend success for the user so they don't panic
-            error: 'You are offline. SOS queued and will be sent when connection is restored.',
+            status: SosStatus.sent, // Alert user that dispatch was handled via SMS fallback
+            error: 'You are offline. Distress SMS automatically dispatched to Parent & University Admin (0920304050). Alert queued for server sync.',
           );
         },
         (incident) {

@@ -186,14 +186,14 @@ class _SOSPageState extends ConsumerState<SOSPage> {
               onPressed: () {
                 PhoneLauncherUtil.launchCall(
                   context: context,
-                  phoneNumber: '811',
-                  contactName: 'Campus Police (Emergency)',
+                  phoneNumber: '0920304050',
+                  contactName: 'ASTU Emergency Dispatch',
                   isEmergency: true,
                 );
               },
               icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: AppColors.critical),
               label: const Text(
-                'Direct Dial Campus Police (811)',
+                'Direct Dial Campus Dispatch (0920304050)',
                 style: TextStyle(color: AppColors.critical, fontWeight: FontWeight.bold, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
@@ -207,14 +207,14 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             const SizedBox(height: 10),
             TextButton.icon(
               onPressed: () {
-                ref.read(emergencySmsServiceProvider).launchEmergencySms(
+                ref.read(emergencySmsServiceProvider).dispatchAutomatedEmergencySms(
                   emergencyType: 'security',
                   locationDescription: 'ASTU Campus Grounds (Distress Alert)',
                 );
               },
               icon: const Icon(Icons.sms_outlined, size: 15, color: AppColors.onSurfaceVariant),
               label: const Text(
-                'Send Offline Emergency SMS via Carrier',
+                'Send Offline Emergency SMS (Parent & Admin)',
                 style: TextStyle(
                   color: AppColors.onSurfaceVariant,
                   fontSize: 12,
@@ -1012,7 +1012,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Offline Mode: Alert Queued Locally',
+                              'Offline Mode: Automated SMS Dispatched',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -1024,7 +1024,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '${sosState.error}\nYou can immediately dispatch an SMS via your mobile carrier to alert dispatchers without internet.',
+                        '${sosState.error}\nEmergency distress coordinates were automatically sent to your Parent contact and ASTU Emergency Dispatch (0920304050).',
                         style: const TextStyle(fontSize: 12, color: Color(0xFF795548), height: 1.35),
                       ),
                       const SizedBox(height: 12),
@@ -1042,7 +1042,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                           },
                           icon: const Icon(Icons.sms_rounded, size: 18, color: Colors.white),
                           label: const Text(
-                            'Send Emergency SMS via Carrier',
+                            'Open SMS Messenger / Re-send Alert',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
