@@ -33,6 +33,10 @@ ARCHITECTURE.md
     ↓
 How CampusSafe is technically structured
 
+STATE.md
+    ↓
+Current live engineering state, verified features, and session handoff
+
 AGENTS.md
     ↓
 How people and AI agents should work
