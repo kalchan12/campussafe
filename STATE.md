@@ -44,17 +44,22 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
   - Implemented using `sensors_plus` in `lib/core/services/shake_detection_service.dart`.
   - Configurable sensitivity threshold (`22.0 m/s²`) and minimum consecutive shakes (3 within 800ms) with vibration haptics.
   - Full user toggle in Settings screen (`shake_to_sos_enabled`).
-- **Offline Cellular SMS Fallback**:
-  - Automatically activates when network connectivity fails (`lib/core/services/offline_sms_service.dart`).
-  - Generates standardized, machine-parseable emergency SMS with exact GPS latitude/longitude, timestamp, and clickable Google Maps link to predefined campus emergency dispatchers and personal emergency contacts.
-- **Incident Tracking, Full Details & Delete Mode**:
-  - Real-time incident timeline (`READY → ACTIVATING → SENT → RECEIVED → ASSIGNED → RESPONDING → ARRIVED → RESOLVED`).
-  - Proximity dispatch updates and community first-aid coordination.
-  - **Resilient Stream & Delete Handling**: Added `.handleError()` to `watchCommunityResponses` and guarded `getCommunityResponses` / `deleteIncident`, eliminating recurring `PGRST205` PostgrestExceptions when viewing full incident details or deleting an incident.
-  - **Adaptive UI Layout & Overflow Elimination**:
-    - **SOS Page**: Fixed horizontal RenderFlex pixel overflow in the GPS status Card and Building Block label using constrained `Expanded` and `Flexible` wrappers.
-    - **Incident Detail Full Screen Page (`incident_detail_page.dart`)**: Converted rigid horizontal badge `Row`s into responsive `Wrap` layouts, added `Expanded` and `TextOverflow.ellipsis` to location card title and timeline titles, guarded button labels, and added ellipsis to `Dialog.fullscreen` AppBar title.
-    - **Map View Overlay Card (`incident_map_view.dart`)**: Wrapped incident badges in responsive `Wrap` and wrapped multi-modal travel estimate chips in horizontal scroll view (`SingleChildScrollView`) to prevent edge overflow on narrow mobile viewports.
+- **System Actors & Onboarding Streamlining**:
+  - Defined two primary campus user actors: **Student** (undergraduate, graduate, or resident student) and **Staff** (faculty professors, administrative staff, technicians, and campus personnel).
+  - Streamlined mobile registration affiliation step to directly offer **Student** and **Staff** options.
+- **Mandatory Dual Emergency Contacts Onboarding & Database Schema**:
+  - Integrated two critical life-safety contacts into registration and user profiles:
+    1. **Parent / Guardian**: Phone number filled in by the user with real-time validation.
+    2. **University Emergency Admin**: Pre-filled campus emergency operations center hotline (**`0920304050`**).
+  - Added database migration `supabase/migrations/20260920000001_emergency_contacts_and_actors.sql` adding `parent_phone`, `parent_name`, and `campus_admin_phone` (default `'0920304050'`) to `public.profiles` and updating the `handle_new_user` trigger.
+  - Mirrored fields across `User` models, `AuthRepository`, `ProfileRepository`, `ProfileNotifier`, and Web Dashboard types (`apps/dashboard/types/user.ts`).
+  - Added contact display and edit support in the mobile Safety Profile (`ProfilePage`).
+- **Automated Dual-Recipient Offline Cellular SMS Fallback**:
+  - Implemented automated dispatch in `EmergencySmsService` (`dispatchAutomatedEmergencySms`):
+    - Background sending via Android `MethodChannel` (`com.campussafe/sms` using native `SmsManager`) when `SEND_SMS` permission is granted.
+    - Seamless fallback to launching the native cellular SMS messenger pre-filled with both recipients (**Parent** and **University Admin `0920304050`**) and standardized distress GPS coordinates.
+  - Wired into `SosNotifier.sendSOS`: automatically triggers the dual-contact emergency SMS whenever network connectivity fails or is offline, without requiring manual intervention.
+  - Updated SOS sent view and ready view with one-tap hotline dialing for `0920304050` and manual SMS re-send controls.
 
 ### B. Web Emergency Operations Dashboard (`apps/dashboard/`)
 - **GIS Campus Mapping & Precise Operator Tracking (`app/dashboard/map/page.tsx`)**:

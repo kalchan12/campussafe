@@ -31,15 +31,22 @@ CampusSafe aims to improve:
 
 Built with Flutter/Dart.
 
-Normal users can:
-- Register and manage profiles.
-- Identify their campus role.
-- Provide relevant campus information.
-- Allow location access.
+**Primary System User Actors:**
+- **Students**: Undergraduate, graduate, and residential campus students requesting emergency assistance, monitoring safety broadcasts, and receiving incident status updates.
+- **Staff**: Faculty professors, university administrative staff, lab technicians, and campus personnel representing all non-student members of the university community.
+
+Normal users (Students & Staff) can:
+- Register and onboard by selecting their campus affiliation (**Student** or **Staff**).
+- Configure two primary life-safety emergency contacts during registration:
+  - **Parent / Guardian Phone**: Filled in by the user for immediate family notification.
+  - **University Emergency Admin Phone**: Pre-filled with the campus emergency dispatch hotline (`0920304050`).
+- Allow location access and capture high-accuracy GPS coordinates.
 - Send SOS alerts via 3-second hold or hands-free accelerometer shake detection (`sensors_plus`) for sudden incapacitating accidents.
 - Select streamlined emergency response disciplines (Medical, Security, Fire) optimized to eliminate decision paralysis under Hick's Law.
-- Rely on dual-channel offline resilience: local SQLite queue (`campussafe_queue.db`) for auto-retry upon reconnection plus instant cellular carrier SMS fallback (`EmergencySmsService`) with GPS coordinates and map links.
-- Configure emergency preferences (Shake-to-SOS on/off) and personal emergency contacts.
+- Rely on automated dual-channel offline resilience:
+  - Local SQLite queue (`campussafe_queue.db`) for automatic incident retry upon reconnection.
+  - Automated carrier SMS dispatch (`EmergencySmsService`): automatically transmits standardized distress messages containing exact GPS coordinates and clickable Google Maps links directly to both the **Parent** and **University Emergency Admin (`0920304050`)** in the background when mobile data/Wi-Fi is unavailable.
+- Configure emergency preferences (Shake-to-SOS on/off) and edit emergency contacts in Safety Profile.
 - Track active incidents in real time.
 - Receive safety notifications.
 - View incident history.

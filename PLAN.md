@@ -141,8 +141,8 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] Welcome/splash (Animated splash screen with router transition).
 - [x] Login (Supabase Auth connected — real signIn with dev bypass; loading state; error snackbar).
 - [x] Registration (Supabase Auth connected — real signUp with 4-step onboarding; dev bypass).
-- [x] Role selection.
-- [x] Profile (UI implemented; ProfileRepository ready for backend connection).
+- [x] Role selection (Streamlined to Student & Staff actors during registration; full affiliation options).
+- [x] Profile (UI implemented; ProfileRepository with emergency contacts synced to backend & local storage).
 - [ ] Permissions.
 - [x] Location permissions & GPS capture (Geolocator position stream and live permission checks).
 - [x] Notifications (FCM initialized in main.dart; NotificationService with foreground/background/tap handling; token stored in Supabase notification_tokens; flutter_local_notifications for foreground display).
@@ -154,7 +154,8 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] SOS activation (press-and-hold with progress ring).
 - [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation).
 - [x] Streamlined emergency category selection (Medical, Security, Fire; removed General option to eliminate decision paralysis under Hick's Law).
-- [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + direct cellular carrier SMS fallback (EmergencySmsService) with GPS link.
+- [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + automated background/carrier cellular SMS fallback (EmergencySmsService) with GPS link to Parent and University Admin (`0920304050`).
+- [x] Mandatory onboarding emergency contacts: Parent phone (user-filled) and University Admin phone (pre-filled with `0920304050`).
 - [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off) and SMS fallback indicators.
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).

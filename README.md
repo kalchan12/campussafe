@@ -51,7 +51,7 @@ CampusSafe is a campus-wide emergency communication, incident coordination, and 
 | Realtime | Supabase Realtime |
 | Push Notifications | Firebase Cloud Messaging (FCM) |
 | Inertial Sensing | Accelerometer (`sensors_plus`) for hands-free SOS |
-| Offline Fallback | SQLite queue (`sqflite`) + Cellular SMS (`url_launcher`) |
+| Offline Fallback | SQLite queue (`sqflite`) + Automated Dual-Contact Cellular SMS (Parent + `0920304050` Admin) |
 | IoT | ESP8266 Amica v2, Arduino Uno R3 / C++ (Arduino IDE) |
 | Location | Mobile GPS (geolocator) |
 

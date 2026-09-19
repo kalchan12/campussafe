@@ -577,18 +577,30 @@ SAFETY_REPORT
 
 ## Core Entities
 
-### User
-Stores account/profile information.
+### User & System Actors
+Stores account and profile information across mobile and dashboard.
 
-### Role
-Examples:
-- Student.
-- Doctor/medical responder.
-- Security responder.
-- Operator.
-- Administrator.
+**Primary Campus User Actors:**
+1. **Student (`student`)**: Undergraduate, graduate, or residential students who report emergencies, track active incident progress, and receive campus safety alerts.
+2. **Staff (`staff`)**: University professors, lecturers, administrative staff, laboratory technicians, and campus personnel representing all non-student members of the institution.
 
-Roles should not be treated as sufficient by themselves; permissions must also be enforced.
+**Operations & Response Roles:**
+3. **Medical Responder (`medical_responder`)**: Campus clinic doctors, nurses, and certified first-aiders.
+4. **Security Responder (`security_responder`)**: Campus police and physical security guards dispatched to security incidents.
+5. **Campus Operator (`operator`)**: Emergency Operations Center (EOC) personnel monitoring live map feeds and managing responder allocations.
+6. **Administrator (`administrator`)**: System managers handling user administration, role assignment, and system auditing.
+
+### Emergency Contacts (Offline Life-Safety Contract)
+Stored directly in `public.profiles` and synchronized locally in device `SharedPreferences`:
+- `parent_phone`: Contact number for the student/staff member's parent or guardian (entered during registration).
+- `parent_name`: Name/relation of the personal emergency contact.
+- `campus_admin_phone`: 24/7 University Emergency Operations Hotline (pre-filled with demo number `0920304050`).
+
+### Automated Offline Cellular SMS Fallback
+When data connectivity (Wi-Fi / 4G / 5G) fails during SOS activation:
+1. The incident is queued locally in SQLite (`campussafe_queue.db`).
+2. `EmergencySmsService` immediately initiates an automated background dispatch via native telephony/SmsManager or opens the cellular SMS messenger.
+3. Distress SMS containing standardized incident data (Distress Type, Building Block, GPS Latitude/Longitude, and clickable Google Maps URL) is automatically transmitted to both the **Parent** and **University Emergency Admin (`0920304050`)**.
 
 ### Incident
 Represents an emergency requiring response.
