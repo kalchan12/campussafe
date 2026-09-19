@@ -43,13 +43,15 @@ CampusSafe is a campus-wide emergency communication, incident coordination, and 
 
 | Layer | Technology |
 |---|---|
-| Mobile | Flutter / Dart |
+| Mobile | Flutter / Dart (Riverpod, GoRouter) |
 | Web Dashboard | Next.js / React / TypeScript |
 | Backend | Supabase |
 | Database | PostgreSQL (via Supabase) |
 | Authentication | Supabase Auth |
 | Realtime | Supabase Realtime |
 | Push Notifications | Firebase Cloud Messaging (FCM) |
+| Inertial Sensing | Accelerometer (`sensors_plus`) for hands-free SOS |
+| Offline Fallback | SQLite queue (`sqflite`) + Cellular SMS (`url_launcher`) |
 | IoT | ESP8266 Amica v2, Arduino Uno R3 / C++ (Arduino IDE) |
 | Location | Mobile GPS (geolocator) |
 

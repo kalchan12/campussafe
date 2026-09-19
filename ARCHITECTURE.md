@@ -234,12 +234,15 @@ The mobile app should not contain privileged backend credentials or rely on clie
 Only collect information justified by the project requirements.
 
 ### SOS
-- Emergency type.
-- Current location.
-- User identity where applicable.
-- Timestamp.
-- Optional context.
-- Submission status.
+- Activation modalities:
+  - **Manual**: 3-second press-and-hold button with progress animation to prevent accidental activation.
+  - **Hands-Free**: Inertial accelerometer spike detection (`ShakeDetectorService`, `sensors_plus`) triggering on multi-spike acceleration ($>24\ \text{m/s}^2$) for sudden incapacitation, vehicle crash, or assault where the screen cannot be accessed.
+- Emergency categories:
+  - Streamlined operational disciplines: **Medical** (clinic/ambulance), **Security** (police/patrol), and **Fire Hazard** (smoke/alarms). Vague "General" categories are omitted to prevent decision paralysis under Hick's Law. Unspecified SOS triggers default immediately to high-priority security dispatch.
+- Current location (GPS coordinates + campus block).
+- User identity where applicable (or guest report identifier).
+- Timestamp and optional incident description.
+- Submission status and offline queue state.
 
 ### Responder
 - Availability.
@@ -883,36 +886,38 @@ Only expose information to users who have a legitimate permission to access it.
 The system must expect failure.
 
 ```text
-                 EVENT
-                   │
-                   ▼
-              Network?
-             /        \
-           YES         NO
-            │           │
-            ▼           ▼
-        Send event   Local handling
-            │           │
-            ▼           ▼
-         Backend     Retry/Queue
-            │           │
-            └─────┬─────┘
-                  ▼
-             Final status
+                 EVENT / SOS
+                    │
+                    ▼
+               Network Available?
+              /                  \
+            YES                   NO
+             │                     │
+             ▼                     ▼
+        Send event via      Dual-Channel Offline Handling:
+        Supabase REST API   1. Buffer in SQLite (campussafe_queue.db)
+             │                 → Auto-retries upon reconnection
+             │              2. Direct Cellular Carrier SMS Fallback
+             │                 → Pre-formatted text with GPS & Maps link
+             │                 → Sent via SIM to Campus Dispatch / Contacts
+             ▼                     │
+          Backend                  ▼
+             │                Delivered over
+             └──────────┬───── GSM / Carrier
+                        ▼
+                   Final status
 ```
 
-Important failure cases:
+Important failure cases and mitigations:
 
-- GPS unavailable.
-- Wi-Fi unavailable.
-- Mobile offline.
-- Backend unavailable.
-- Notification unavailable.
-- Responder unavailable.
-- IoT device offline.
-- Duplicate event.
-- Invalid event.
-- Unauthorized request.
+- **Mobile offline / Network outage**: Dual-channel resilience (SQLite local queue buffering + cellular carrier SMS fallback via `EmergencySmsService`).
+- **User incapacitated / Sudden accident**: Hands-free accelerometer shake detection (`ShakeDetectorService`) triggering SOS without screen engagement.
+- **GPS unavailable**: Graceful degradation to campus center fallback coordinates with manual building/block selection prompt.
+- **Wi-Fi unavailable for IoT**: Exponential backoff reconnect loop while preserving local sensor state.
+- **Notification unavailable / Permission denied**: In-app live sync via Supabase Realtime as primary visual fallback.
+- **Responder unavailable**: Proximity dispatch escalation pathway.
+- **IoT device offline**: Heartbeat failure detection (>120s without ping marks device offline on Dashboard).
+- **Duplicate event**: Idempotency and client-side debouncing.
 
 The system should never falsely report an action as completed when it has not been confirmed.
 

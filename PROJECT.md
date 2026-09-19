@@ -36,15 +36,18 @@ Normal users can:
 - Identify their campus role.
 - Provide relevant campus information.
 - Allow location access.
-- Send SOS alerts.
-- Track active incidents.
+- Send SOS alerts via 3-second hold or hands-free accelerometer shake detection (`sensors_plus`) for sudden incapacitating accidents.
+- Select streamlined emergency response disciplines (Medical, Security, Fire) optimized to eliminate decision paralysis under Hick's Law.
+- Rely on dual-channel offline resilience: local SQLite queue (`campussafe_queue.db`) for auto-retry upon reconnection plus instant cellular carrier SMS fallback (`EmergencySmsService`) with GPS coordinates and map links.
+- Configure emergency preferences (Shake-to-SOS on/off) and personal emergency contacts.
+- Track active incidents in real time.
 - Receive safety notifications.
 - View incident history.
 - Submit anonymous safety reports where appropriate.
 
 Responders can:
 - Set availability.
-- Receive relevant incidents.
+- Receive relevant incidents via automated proximity dispatch (Haversine formula).
 - Accept/decline incidents.
 - View location and emergency information.
 - Update response status.
@@ -89,6 +92,14 @@ Prototype devices use an ESP8266 NodeMCU Amica v2 as the main controller (sensin
 The Arduino Uno R3 is used as a dedicated display controller because driving two LCDs requires more GPIO pins than the ESP8266 can provide. Breadboards, resistors, and basic electronics are used for prototyping.
 
 Hardware is prototype/educational equipment and is not certified life-safety equipment.
+
+### Complementary Spatial Sensing Architecture
+
+The mobile application and IoT layer fulfill two distinct, synergistic roles within the unified safety mesh:
+- **Personal & Mobile Sentinels (Smartphones)**: Roam dynamically across campus with students and staff. They capture human-centric distress, high-accuracy GPS coordinates, and sudden inertial impacts (violent grabs, falls, or sudden accidents).
+- **Stationary & Environmental Sentinels (IoT Stations)**: Fixed permanently at high-hazard campus infrastructure (chemical laboratories, dorm kitchens, mechanical rooms). They autonomously monitor atmospheric hazards (toxic gas leaks, smoke, extreme temperature spikes) 24 hours a day without requiring human presence or manual intervention.
+
+Unifying both sensor streams through a single Supabase backend and Web Operations Center gives operators comprehensive situational awareness spanning both human distress and environmental building threats.
 
 ## High-Level Architecture
 
