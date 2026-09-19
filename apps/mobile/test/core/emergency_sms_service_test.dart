@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:campussafe_mobile/core/services/emergency_sms_service.dart';
 
 void main() {
@@ -6,6 +7,7 @@ void main() {
     late EmergencySmsService smsService;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       smsService = EmergencySmsService();
     });
 
@@ -39,6 +41,32 @@ void main() {
       expect(msg, contains('Location: ASTU Library Walkway'));
       expect(msg, isNot(contains('GPS:')));
       expect(msg, isNot(contains('Notes:')));
+    });
+
+    test('getAllEmergencyRecipients returns Parent and Campus Admin 0920304050', () async {
+      // Mock initial SharedPreferences
+      TestWidgetsFlutterBinding.ensureInitialized();
+      
+      await smsService.saveEmergencyContacts(
+        parentPhone: '0911223344',
+        parentName: 'Mom',
+        campusAdminPhone: '0920304050',
+      );
+
+      final recipients = await smsService.getAllEmergencyRecipients();
+      expect(recipients, contains('0911223344'));
+      expect(recipients, contains('0920304050'));
+      expect(recipients.length, 2);
+
+      final parentPhone = await smsService.getParentPhone();
+      expect(parentPhone, '0911223344');
+
+      final campusPhone = await smsService.getCampusAdminPhone();
+      expect(campusPhone, '0920304050');
+    });
+
+    test('defaultCampusDispatchNumber defaults to 0920304050', () {
+      expect(EmergencySmsService.defaultCampusDispatchNumber, '0920304050');
     });
   });
 }
