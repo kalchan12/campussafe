@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../core/utils/phone_launcher.dart';
 import '../../../../shared/widgets/emergency_button.dart';
 import '../state/sos_notifier.dart';
@@ -200,6 +201,24 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                 side: BorderSide(color: AppColors.critical.withValues(alpha: 0.4)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton.icon(
+              onPressed: () {
+                ref.read(emergencySmsServiceProvider).launchEmergencySms(
+                  emergencyType: 'security',
+                  locationDescription: 'ASTU Campus Grounds (Distress Alert)',
+                );
+              },
+              icon: const Icon(Icons.sms_outlined, size: 15, color: AppColors.onSurfaceVariant),
+              label: const Text(
+                'Send Offline Emergency SMS via Carrier',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -961,7 +980,72 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+
+              // Offline Notification & Cellular SMS Fallback Button
+              if (sosState.error != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFB74D)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.wifi_off_rounded, color: Color(0xFFE65100), size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Offline Mode: Alert Queued Locally',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFE65100),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${sosState.error}\nYou can immediately dispatch an SMS via your mobile carrier to alert dispatchers without internet.',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF795548), height: 1.35),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ref.read(emergencySmsServiceProvider).launchEmergencySms(
+                              emergencyType: sosState.emergencyType ?? 'security',
+                              locationDescription: sosState.locationAddress ?? 'ASTU Campus Grounds',
+                              latitude: sosState.latitude,
+                              longitude: sosState.longitude,
+                            );
+                          },
+                          icon: const Icon(Icons.sms_rounded, size: 18, color: Colors.white),
+                          label: const Text(
+                            'Send Emergency SMS via Carrier',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE65100),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
 
               // Action 1: Track Active Emergency (Sends directly to Real-time Map)
               SizedBox(
