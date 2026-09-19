@@ -186,7 +186,10 @@ class IncidentDetailPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -210,7 +213,6 @@ class IncidentDetailPage extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.xs),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
@@ -226,7 +228,6 @@ class IncidentDetailPage extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -296,15 +297,19 @@ class IncidentDetailPage extends ConsumerWidget {
                           children: [
                             const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
                             const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              'Location & GPS Map',
-                              style: AppTypography.labelMd.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                            Expanded(
+                              child: Text(
+                                'Location & GPS Map',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.labelMd.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                             ),
-                            const Spacer(),
-                            if (distanceText != null)
+                            if (distanceText != null) ...[
+                              const SizedBox(width: AppSpacing.xs),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
@@ -312,6 +317,7 @@ class IncidentDetailPage extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(AppRadius.full),
                                 ),
                                 child: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(Icons.near_me_rounded, size: 12, color: AppColors.primary),
                                     const SizedBox(width: 4),
@@ -326,6 +332,7 @@ class IncidentDetailPage extends ConsumerWidget {
                                   ],
                                 ),
                               ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -365,7 +372,11 @@ class IncidentDetailPage extends ConsumerWidget {
                                   builder: (ctx) => Dialog.fullscreen(
                                     child: Scaffold(
                                       appBar: AppBar(
-                                        title: Text('${incident.type.displayName} - ${incident.campusBlock}'),
+                                        title: Text(
+                                          '${incident.type.displayName} - ${incident.campusBlock ?? "Campus"}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                         leading: IconButton(
                                           icon: const Icon(Icons.close),
                                           onPressed: () => Navigator.of(ctx).pop(),
@@ -424,7 +435,7 @@ class IncidentDetailPage extends ConsumerWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                               ),
@@ -441,6 +452,8 @@ class IncidentDetailPage extends ConsumerWidget {
                             icon: const Icon(Icons.map_rounded, size: 18),
                             label: const Text(
                               'Open in Maps',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -451,7 +464,7 @@ class IncidentDetailPage extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                               ),
@@ -467,6 +480,8 @@ class IncidentDetailPage extends ConsumerWidget {
                             icon: const Icon(Icons.directions_rounded, size: 18),
                             label: const Text(
                               'Start Navigation',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -1092,29 +1107,35 @@ class IncidentDetailPage extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(iconData, size: 12, color: badgeColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      resp.responseType.displayName,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: badgeColor,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(iconData, size: 12, color: badgeColor),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          resp.responseType.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: badgeColor,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 DateFormat('h:mm a').format(resp.createdAt),
                 style: const TextStyle(
@@ -1441,13 +1462,18 @@ class _TimelineItem extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      title,
-                      style: AppTypography.labelMd.copyWith(
-                        fontWeight: isCompleted ? FontWeight.bold : FontWeight.w500,
-                        color: isCompleted ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.labelMd.copyWith(
+                          fontWeight: isCompleted ? FontWeight.bold : FontWeight.w500,
+                          color: isCompleted ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       timeFormat.format(time),
                       style: AppTypography.technicalSm.copyWith(

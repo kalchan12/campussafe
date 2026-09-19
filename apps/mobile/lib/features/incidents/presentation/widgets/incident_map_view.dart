@@ -859,46 +859,54 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             // Top Badges & Close Button
             Row(
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: incColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Row(
+                Expanded(
+                  child: Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(incIcon, size: 14, color: incColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        incident.type.displayName.toUpperCase(),
-                        style: AppTypography.labelMd.copyWith(
-                          color: incColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: incColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(incIcon, size: 14, color: incColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              incident.type.displayName.toUpperCase(),
+                              style: AppTypography.labelMd.copyWith(
+                                color: incColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: Text(
+                          incident.status.displayName,
+                          style: AppTypography.labelMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.xs),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Text(
-                    incident.status.displayName,
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close, size: 18),
                   padding: EdgeInsets.zero,
@@ -926,38 +934,41 @@ class _IncidentMapViewState extends ConsumerState<IncidentMapView>
             // Multi-Modal Travel Time Selector & Route Stats
             if (routeResult != null) ...[
               const SizedBox(height: 6),
-              Row(
-                children: [
-                  _buildTravelModeChip(
-                    mode: TravelMode.walking,
-                    icon: Icons.directions_walk,
-                    label: routeResult.estimates.walkingText,
-                    current: currentTravelMode,
-                  ),
-                  const SizedBox(width: 6),
-                  _buildTravelModeChip(
-                    mode: TravelMode.bicycling,
-                    icon: Icons.directions_bike,
-                    label: routeResult.estimates.bicyclingText,
-                    current: currentTravelMode,
-                  ),
-                  const SizedBox(width: 6),
-                  _buildTravelModeChip(
-                    mode: TravelMode.driving,
-                    icon: Icons.directions_car,
-                    label: routeResult.estimates.drivingText,
-                    current: currentTravelMode,
-                  ),
-                  const Spacer(),
-                  Text(
-                    routeResult.estimates.formattedDistance,
-                    style: AppTypography.technicalSm.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildTravelModeChip(
+                      mode: TravelMode.walking,
+                      icon: Icons.directions_walk,
+                      label: routeResult.estimates.walkingText,
+                      current: currentTravelMode,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    _buildTravelModeChip(
+                      mode: TravelMode.bicycling,
+                      icon: Icons.directions_bike,
+                      label: routeResult.estimates.bicyclingText,
+                      current: currentTravelMode,
+                    ),
+                    const SizedBox(width: 6),
+                    _buildTravelModeChip(
+                      mode: TravelMode.driving,
+                      icon: Icons.directions_car,
+                      label: routeResult.estimates.drivingText,
+                      current: currentTravelMode,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      routeResult.estimates.formattedDistance,
+                      style: AppTypography.technicalSm.copyWith(
+                        color: AppColors.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ] else if (userLocation != null &&
                 incident.latitude != null &&
