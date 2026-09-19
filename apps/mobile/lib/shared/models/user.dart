@@ -8,6 +8,9 @@ class User extends Equatable {
   final UserRole role;
   final String? campusBlock;
   final String? emergencyInfo;
+  final String? parentPhone;
+  final String? parentName;
+  final String? campusAdminPhone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +22,9 @@ class User extends Equatable {
     required this.role,
     this.campusBlock,
     this.emergencyInfo,
+    this.parentPhone,
+    this.parentName,
+    this.campusAdminPhone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,6 +38,9 @@ class User extends Equatable {
       role: UserRole.fromString(json['role'] as String),
       campusBlock: json['campus_block'] as String?,
       emergencyInfo: json['emergency_info'] as String?,
+      parentPhone: json['parent_phone'] as String?,
+      parentName: json['parent_name'] as String?,
+      campusAdminPhone: json['campus_admin_phone'] as String? ?? '0920304050',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
@@ -46,6 +55,9 @@ class User extends Equatable {
       'role': role.value,
       'campus_block': campusBlock,
       'emergency_info': emergencyInfo,
+      'parent_phone': parentPhone,
+      'parent_name': parentName,
+      'campus_admin_phone': campusAdminPhone ?? '0920304050',
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -59,6 +71,9 @@ class User extends Equatable {
     UserRole? role,
     String? campusBlock,
     String? emergencyInfo,
+    String? parentPhone,
+    String? parentName,
+    String? campusAdminPhone,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -70,6 +85,9 @@ class User extends Equatable {
       role: role ?? this.role,
       campusBlock: campusBlock ?? this.campusBlock,
       emergencyInfo: emergencyInfo ?? this.emergencyInfo,
+      parentPhone: parentPhone ?? this.parentPhone,
+      parentName: parentName ?? this.parentName,
+      campusAdminPhone: campusAdminPhone ?? this.campusAdminPhone,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -84,6 +102,9 @@ class User extends Equatable {
         role,
         campusBlock,
         emergencyInfo,
+        parentPhone,
+        parentName,
+        campusAdminPhone,
         createdAt,
         updatedAt,
       ];
