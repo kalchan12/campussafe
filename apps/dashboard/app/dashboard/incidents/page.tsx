@@ -12,6 +12,7 @@ import {
   deleteIncident,
   fetchCommunityResponses,
   submitCommunityResponse,
+  createSimulatedIncident,
 } from '@/lib/data-service';
 import { realtimeService } from '@/lib/realtime';
 import { EMERGENCY_TYPE_LABELS, COMMUNITY_RESPONSE_LABELS } from '@/types/incident';
@@ -147,6 +148,85 @@ export default function IncidentsPage() {
     setActionLoading(false);
   };
 
+  const handleInlineUpdateStatus = async (incidentId: string, status: Incident['status']) => {
+    setActionLoading(true);
+    try {
+      await updateIncidentStatus(incidentId, status);
+      setIncidents((prev) =>
+        prev.map((i) => (i.id === incidentId ? { ...i, status } : i))
+      );
+      if (selectedIncident && selectedIncident.id === incidentId) {
+        setSelectedIncident((prev) => (prev ? { ...prev, status } : null));
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleInlineAssignResponder = async (
+    incidentId: string,
+    responderId: string,
+    responderName?: string
+  ) => {
+    if (!responderId) return;
+    const name =
+      responderName ||
+      responders.find((r) => r.id === responderId)?.name ||
+      'Assigned Responder';
+    setActionLoading(true);
+    try {
+      await assignResponderToIncident(incidentId, responderId, name);
+      setIncidents((prev) =>
+        prev.map((i) =>
+          i.id === incidentId
+            ? {
+                ...i,
+                status: 'assigned',
+                assigned_responder_id: responderId,
+                assigned_responder_name: name,
+              }
+            : i
+        )
+      );
+      if (selectedIncident && selectedIncident.id === incidentId) {
+        setSelectedIncident((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: 'assigned',
+                assigned_responder_id: responderId,
+                assigned_responder_name: name,
+              }
+            : null
+        );
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleQuickDispatch = async (incident: Incident) => {
+    const matchingRole = incident.type === 'medical' ? 'medical' : 'security';
+    const candidate =
+      responders.find((r) => r.role === matchingRole && r.status === 'available') ||
+      responders.find((r) => r.status === 'available') ||
+      responders[0];
+
+    if (candidate) {
+      await handleInlineAssignResponder(incident.id, candidate.id, candidate.name);
+    } else {
+      setSelectedIncident(incident);
+      setSelectedResponderId(incident.assigned_responder_id || '');
+    }
+  };
+
+  const handleSimulateIncident = () => {
+    const types = ['medical', 'security', 'fire', 'accident'] as const;
+    const chosenType = types[Math.floor(Math.random() * types.length)];
+    const sim = createSimulatedIncident(chosenType);
+    setIncidents((prev) => [sim, ...prev]);
+  };
+
   const handleDeleteIncident = async () => {
     if (!selectedIncident) return;
     setActionLoading(true);
@@ -199,7 +279,15 @@ export default function IncidentsPage() {
                   Real-time operational overview of campus events. Click an incident to manage dispatch.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleSimulateIncident}
+                  className="bg-primary text-on-primary hover:bg-primary/90 text-xs px-3 py-1.5 flex items-center gap-1.5 shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-sm">add_alert</span>
+                  <span>+ Simulate Incident</span>
+                </Button>
                 <Button variant="secondary" onClick={() => window.print()}>
                   <span className="material-symbols-outlined text-sm mr-1.5">download</span>
                   Export
@@ -257,7 +345,7 @@ export default function IncidentsPage() {
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Reported</th>
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Responder</th>
                       <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant">Status</th>
-                      <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant text-right">Action</th>
+                      <th className="py-3 px-4 font-label-md text-label-md text-on-surface-variant text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -273,7 +361,7 @@ export default function IncidentsPage() {
                           }}
                           className="border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer"
                         >
-                          <td className="py-4 px-4">
+                          <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
                               {incident.priority === 1 && (
                                 <span className="w-2 h-2 rounded-full bg-error animate-subtle-pulse" />
@@ -286,41 +374,112 @@ export default function IncidentsPage() {
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-4 font-technical-sm text-technical-sm text-on-surface font-bold">
-                            {incident.id.toUpperCase()}
+                          <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface font-bold">
+                            {incident.id.toUpperCase().slice(0, 12)}
                           </td>
-                          <td className="py-4 px-4 font-body-md text-body-md text-on-surface">
+                          <td className="py-3 px-4 font-body-md text-body-md text-on-surface">
                             {EMERGENCY_TYPE_LABELS[incident.type]}
                           </td>
-                          <td className="py-4 px-4 font-body-md text-body-md text-on-surface max-w-[220px] truncate">
+                          <td className="py-3 px-4 font-body-md text-body-md text-on-surface max-w-[220px] truncate">
                             {incident.location_description || incident.campus_block || '-'}
                           </td>
-                          <td className="py-4 px-4 font-technical-sm text-technical-sm text-on-surface-variant">
+                          <td className="py-3 px-4 font-technical-sm text-technical-sm text-on-surface-variant">
                             {formatTime(incident.created_at)}
                           </td>
-                          <td className="py-4 px-4 font-body-md text-body-md text-on-surface">
-                            {incident.assigned_responder_name || (
-                              <span className="text-amber-600 font-medium">Unassigned</span>
+                          <td className="py-3 px-4 font-body-md text-body-md text-on-surface" onClick={(e) => e.stopPropagation()}>
+                            {incident.assigned_responder_name ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-sm text-emerald-600">verified_user</span>
+                                <span className="font-semibold text-xs text-on-surface truncate max-w-[140px]" title={incident.assigned_responder_name}>
+                                  {incident.assigned_responder_name}
+                                </span>
+                              </div>
+                            ) : (
+                              <select
+                                value=""
+                                onChange={(e) => handleInlineAssignResponder(incident.id, e.target.value)}
+                                className="text-xs px-2 py-1 border border-outline-variant rounded bg-surface text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer hover:border-primary/50"
+                              >
+                                <option value="">Assign Responder...</option>
+                                {responders.map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.name} ({r.role})
+                                  </option>
+                                ))}
+                              </select>
                             )}
                           </td>
-                          <td className="py-4 px-4">
+                          <td className="py-3 px-4">
                             <Badge variant={incident.priority === 1 ? 'error' : incident.priority === 2 ? 'info' : 'default'}>
                               {incident.status.charAt(0).toUpperCase() + incident.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="py-4 px-4 text-right">
-                            <Button
-                              variant="secondary"
-                              className="text-xs px-2.5 py-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedIncident(incident);
-                                setSelectedResponderId(incident.assigned_responder_id || '');
-                                setShowDeleteConfirm(false);
-                              }}
-                            >
-                              Dispatch
-                            </Button>
+                          <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Direct action button before opening full modal */}
+                              {incident.status === 'created' || incident.status === 'received' ? (
+                                <button
+                                  type="button"
+                                  className="text-xs px-2.5 py-1 bg-primary text-on-primary hover:bg-primary/90 rounded font-bold transition-colors shadow-sm flex items-center gap-1"
+                                  onClick={() => handleQuickDispatch(incident)}
+                                  disabled={actionLoading}
+                                  title="Assign closest available responder immediately"
+                                >
+                                  <span className="material-symbols-outlined text-xs">bolt</span>
+                                  <span>Dispatch</span>
+                                </button>
+                              ) : incident.status === 'assigned' ? (
+                                <button
+                                  type="button"
+                                  className="text-xs px-2.5 py-1 bg-amber-500 text-white rounded font-bold hover:bg-amber-600 transition-colors shadow-sm flex items-center gap-1"
+                                  onClick={() => handleInlineUpdateStatus(incident.id, 'responding')}
+                                  disabled={actionLoading}
+                                  title="Mark responder as en route"
+                                >
+                                  <span className="material-symbols-outlined text-xs">near_me</span>
+                                  <span>En Route</span>
+                                </button>
+                              ) : incident.status === 'responding' ? (
+                                <button
+                                  type="button"
+                                  className="text-xs px-2.5 py-1 bg-teal-600 text-white rounded font-bold hover:bg-teal-700 transition-colors shadow-sm flex items-center gap-1"
+                                  onClick={() => handleInlineUpdateStatus(incident.id, 'arrived')}
+                                  disabled={actionLoading}
+                                  title="Mark responder as arrived at scene"
+                                >
+                                  <span className="material-symbols-outlined text-xs">location_on</span>
+                                  <span>Arrived</span>
+                                </button>
+                              ) : incident.status === 'arrived' ? (
+                                <button
+                                  type="button"
+                                  className="text-xs px-2.5 py-1 bg-emerald-600 text-white rounded font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1"
+                                  onClick={() => handleInlineUpdateStatus(incident.id, 'resolved')}
+                                  disabled={actionLoading}
+                                  title="Mark incident resolved"
+                                >
+                                  <span className="material-symbols-outlined text-xs">check_circle</span>
+                                  <span>Resolve</span>
+                                </button>
+                              ) : (
+                                <span className="text-xs font-semibold text-outline px-1">Completed</span>
+                              )}
+
+                              {/* View Full Incident Console */}
+                              <Button
+                                variant="secondary"
+                                className="text-xs px-2 py-1 hover:bg-surface-variant flex items-center gap-1"
+                                title="View Full Incident Details & Console"
+                                onClick={() => {
+                                  setSelectedIncident(incident);
+                                  setSelectedResponderId(incident.assigned_responder_id || '');
+                                  setShowDeleteConfirm(false);
+                                }}
+                              >
+                                <span>Details</span>
+                                <span className="material-symbols-outlined text-xs">open_in_new</span>
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
