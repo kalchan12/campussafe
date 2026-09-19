@@ -8,6 +8,9 @@ export interface User {
   role: UserRole;
   campus_block?: string;
   emergency_info?: string;
+  parent_phone?: string;
+  parent_name?: string;
+  campus_admin_phone?: string;
   is_active?: boolean;
   created_at: string;
   updated_at: string;
