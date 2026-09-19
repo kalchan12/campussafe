@@ -106,13 +106,18 @@ export async function updateIncidentStatus(
 
 export async function assignResponderToIncident(
   incidentId: string,
-  responderId: string
+  responderId: string,
+  responderName?: string
 ): Promise<Incident | null> {
-  return await backendIncidents.assignResponder(incidentId, responderId);
+  return await backendIncidents.assignResponder(incidentId, responderId, responderName);
 }
 
 export async function deleteIncident(id: string): Promise<void> {
   return await backendIncidents.deleteIncident(id);
+}
+
+export function createSimulatedIncident(type?: import('@/types/incident').EmergencyType): Incident {
+  return backendIncidents.createSimulatedIncident(type);
 }
 
 export async function fetchCommunityResponses(incidentId: string): Promise<IncidentCommunityResponse[]> {
