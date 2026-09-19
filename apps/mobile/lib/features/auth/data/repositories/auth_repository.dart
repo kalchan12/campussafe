@@ -58,6 +58,9 @@ class AuthRepository {
     String? phone,
     String? role,
     String? campusBlock,
+    String? parentPhone,
+    String? parentName,
+    String? campusAdminPhone,
   }) async {
     if (!_isAvailable) return Left(NetworkError.noConnection());
     try {
@@ -67,13 +70,17 @@ class AuthRepository {
         data: {
           'full_name': fullName,
           if (phone != null) 'phone': phone,
+          'role': role ?? 'student',
+          if (parentPhone != null) 'parent_phone': parentPhone,
+          if (parentName != null) 'parent_name': parentName,
+          'campus_admin_phone': campusAdminPhone ?? '0920304050',
         },
       );
       if (response.user == null) {
         return const Left(AuthError(message: 'Registration failed'));
       }
       // Upsert the profile row (also handled by the DB trigger, but
-      // explicit upsert ensures campus_block and role are captured)
+      // explicit upsert ensures campus_block, role, and emergency contacts are captured)
       try {
         await _client!.from('profiles').upsert({
           'id': response.user!.id,
@@ -82,6 +89,9 @@ class AuthRepository {
           'phone': phone,
           'role': role ?? 'student',
           'campus_block': campusBlock,
+          'parent_phone': parentPhone,
+          'parent_name': parentName,
+          'campus_admin_phone': campusAdminPhone ?? '0920304050',
           'created_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
         });
@@ -97,6 +107,9 @@ class AuthRepository {
           phone: phone,
           role: app.UserRole.fromString(role ?? 'student'),
           campusBlock: campusBlock,
+          parentPhone: parentPhone,
+          parentName: parentName,
+          campusAdminPhone: campusAdminPhone ?? '0920304050',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         )),

@@ -206,7 +206,10 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildEmergencyInfoSection(BuildContext context, WidgetRef ref, User user) {
-    final infoText = user.emergencyInfo ?? 'No emergency medical notes recorded. Tap Edit to add blood group, allergies, or emergency contact.';
+    final infoText = user.emergencyInfo ?? 'No additional medical notes recorded. Tap Edit to add blood group or allergies.';
+    final parentPhone = user.parentPhone ?? 'Not configured';
+    final parentName = user.parentName ?? 'Parent / Guardian';
+    final campusAdminPhone = user.campusAdminPhone ?? '0920304050';
 
     return Container(
       width: double.infinity,
@@ -238,12 +241,12 @@ class ProfilePage extends ConsumerWidget {
                   color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.medical_services_rounded, size: 16, color: AppColors.error),
+                child: const Icon(Icons.contact_emergency_rounded, size: 16, color: AppColors.error),
               ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'Emergency & Medical ID',
+                  'Emergency Contacts & Safety ID',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -280,6 +283,95 @@ class ProfilePage extends ConsumerWidget {
             ],
           ),
 
+          const SizedBox(height: 14),
+
+          // 1. Parent Contact Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.outlineVariant),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.family_restroom_rounded, color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        parentName,
+                        style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        parentPhone,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.onSurface),
+                      ),
+                    ],
+                  ),
+                ),
+                if (user.parentPhone != null && user.parentPhone!.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary, size: 18),
+                    onPressed: () async {
+                      final uri = Uri.parse('tel:${user.parentPhone}');
+                      if (await canLaunchUrl(uri)) await launchUrl(uri);
+                    },
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // 2. University Emergency Admin Contact Card (0920304050)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.emergency_rounded, color: AppColors.critical, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'University Emergency Admin / Dispatch',
+                        style: TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        campusAdminPhone,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.onSurface),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    '24/7 DEMO',
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.success),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 12),
 
           // Info Text Box
@@ -287,27 +379,37 @@ class ProfilePage extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.04),
+              color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.error.withValues(alpha: 0.12)),
+              border: Border.all(color: AppColors.outlineVariant),
             ),
-            child: Text(
-              infoText,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-                color: AppColors.onSurface,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Medical & Allergy Notes:',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  infoText,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
 
           const SizedBox(height: 12),
 
-          // 1-Tap Emergency Hotline
+          // 1-Tap Emergency Hotline (0920304050)
           InkWell(
             onTap: () async {
-              final uri = Uri.parse('tel:911');
+              final uri = Uri.parse('tel:$campusAdminPhone');
               if (await canLaunchUrl(uri)) {
                 await launchUrl(uri);
               }
@@ -316,30 +418,30 @@ class ProfilePage extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.outlineVariant),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.phone_in_talk_rounded, size: 18, color: AppColors.error),
-                  SizedBox(width: 10),
+                  const Icon(Icons.phone_in_talk_rounded, size: 18, color: AppColors.error),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Campus Emergency Dispatch',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 1),
+                        const SizedBox(height: 1),
                         Text(
-                          'Dial 911 / Campus Police Hotline',
-                          style: TextStyle(
+                          'Dial $campusAdminPhone (ASTU EOC)',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppColors.onSurface,
@@ -348,7 +450,7 @@ class ProfilePage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.call, size: 18, color: AppColors.primary),
+                  const Icon(Icons.call, size: 18, color: AppColors.error),
                 ],
               ),
             ),
@@ -574,6 +676,9 @@ class ProfilePage extends ConsumerWidget {
     final nameController = TextEditingController(text: user.fullName);
     final phoneController = TextEditingController(text: user.phone ?? '');
     final campusBlockController = TextEditingController(text: user.campusBlock ?? '');
+    final parentPhoneController = TextEditingController(text: user.parentPhone ?? '');
+    final parentNameController = TextEditingController(text: user.parentName ?? 'Parent / Guardian');
+    final campusAdminPhoneController = TextEditingController(text: user.campusAdminPhone ?? '0920304050');
     final emergencyInfoController = TextEditingController(text: user.emergencyInfo ?? '');
 
     showModalBottomSheet(
@@ -622,9 +727,39 @@ class ProfilePage extends ConsumerWidget {
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Phone Number',
+                    labelText: 'Your Phone Number',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: parentPhoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Parent Phone Number (Offline SOS Alert)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.family_restroom_rounded, color: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: parentNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Parent / Contact Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: campusAdminPhoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'University Emergency Admin Phone',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.emergency_rounded, color: AppColors.critical),
+                    helperText: 'Default 24/7 ASTU Emergency Dispatch: 0920304050',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -642,10 +777,10 @@ class ProfilePage extends ConsumerWidget {
                   controller: emergencyInfoController,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'Medical & Emergency Info (Allergies, Blood, ICE)',
+                    labelText: 'Medical & Emergency Info (Allergies, Blood Group)',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.medical_information_outlined),
-                    hintText: 'Blood: O+ | Allergies: Penicillin | Asthmatic | ICE: Mom (+1 555-1234)',
+                    hintText: 'Blood: O+ | Allergies: Penicillin | Asthmatic',
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -657,6 +792,9 @@ class ProfilePage extends ConsumerWidget {
                             fullName: nameController.text.trim(),
                             phone: phoneController.text.trim(),
                             campusBlock: campusBlockController.text.trim(),
+                            parentPhone: parentPhoneController.text.trim(),
+                            parentName: parentNameController.text.trim(),
+                            campusAdminPhone: campusAdminPhoneController.text.trim(),
                             emergencyInfo: emergencyInfoController.text.trim(),
                           );
                       if (modalContext.mounted) {

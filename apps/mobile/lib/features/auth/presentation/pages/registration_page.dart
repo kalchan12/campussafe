@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/buttons.dart';
 import '../../../../shared/widgets/input_fields.dart';
@@ -27,6 +28,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   final _buildingController = TextEditingController();
   final _roomController = TextEditingController();
 
+  // Two critical emergency contacts
+  final _parentPhoneController = TextEditingController();
+  final _parentNameController = TextEditingController(text: 'Parent / Guardian');
+  final _campusAdminPhoneController = TextEditingController(text: '0920304050');
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   int _currentStep = 0;
@@ -34,7 +40,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   String _selectedCampus = 'main_campus';
 
   static const _totalSteps = 4;
-  static const _stepLabels = ['Account', 'Campus', 'Role', 'Prefs'];
+  static const _stepLabels = ['Account', 'Role', 'Contacts', 'Campus'];
 
   @override
   void dispose() {
@@ -45,6 +51,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     _confirmPasswordController.dispose();
     _buildingController.dispose();
     _roomController.dispose();
+    _parentPhoneController.dispose();
+    _parentNameController.dispose();
+    _campusAdminPhoneController.dispose();
     super.dispose();
   }
 
@@ -57,6 +66,20 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       }
     } else {
       if (!_formKey.currentState!.validate()) return;
+
+      final parentPhone = _parentPhoneController.text.trim();
+      final parentName = _parentNameController.text.trim();
+      final campusAdminPhone = _campusAdminPhoneController.text.trim().isNotEmpty
+          ? _campusAdminPhoneController.text.trim()
+          : '0920304050';
+
+      // Always persist emergency contacts locally for instant offline SMS fallback
+      final smsService = ref.read(emergencySmsServiceProvider);
+      await smsService.saveEmergencyContacts(
+        parentPhone: parentPhone,
+        parentName: parentName.isNotEmpty ? parentName : 'Parent / Guardian',
+        campusAdminPhone: campusAdminPhone,
+      );
 
       // Dev bypass: if Supabase is not configured skip auth
       if (!Env.isConfigured) {
@@ -76,6 +99,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         campusBlock: _buildingController.text.trim().isEmpty
             ? null
             : _buildingController.text.trim(),
+        parentPhone: parentPhone.isNotEmpty ? parentPhone : null,
+        parentName: parentName.isNotEmpty ? parentName : null,
+        campusAdminPhone: campusAdminPhone,
       );
 
       if (!mounted) return;
@@ -95,7 +121,24 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
   bool _validateCurrentStep() {
     if (_currentStep == 0) {
+      // Validate Account step
       return _formKey.currentState?.validate() ?? true;
+    } else if (_currentStep == 1) {
+      // Role step is always selected (defaults to student)
+      return _selectedRole != null;
+    } else if (_currentStep == 2) {
+      // Emergency Contacts step: Parent phone is required
+      final parentPhone = _parentPhoneController.text.trim();
+      if (parentPhone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your parent/guardian emergency contact number.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return false;
+      }
+      return true;
     }
     return true;
   }
@@ -353,11 +396,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       case 0:
         return _buildAccountStep();
       case 1:
-        return _buildCampusStep();
-      case 2:
         return _buildRoleStep();
+      case 2:
+        return _buildContactsStep();
       case 3:
-        return _buildPrefsStep();
+        return _buildCampusStep();
       default:
         return const SizedBox();
     }
@@ -385,8 +428,8 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
-          label: 'Phone Number',
-          hint: '(555) 123-4567',
+          label: 'Your Personal Phone Number',
+          hint: '0912345678',
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           validator: Validators.phone,
@@ -423,6 +466,263 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     );
   }
 
+  /// Step 1: System Actors / Role Selection (Student vs Staff)
+  Widget _buildRoleStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Choose your campus role:',
+          style: AppTypography.headlineMd.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'CampusSafe primarily serves students and university staff. Select your primary affiliation below.',
+          style: AppTypography.bodyMd.copyWith(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ..._buildRoleOptions(),
+      ],
+    );
+  }
+
+  List<Widget> _buildRoleOptions() {
+    final roles = [
+      {
+        'value': 'student',
+        'label': 'Student',
+        'description': 'Undergraduate, graduate, or resident student on campus',
+        'icon': Icons.school_rounded,
+        'color': AppColors.primary,
+      },
+      {
+        'value': 'staff',
+        'label': 'Staff / Faculty',
+        'description': 'University professor, administrative staff, or campus personnel',
+        'icon': Icons.badge_rounded,
+        'color': AppColors.secondary,
+      },
+    ];
+
+    return roles.map((role) {
+      final isSelected = _selectedRole == role['value'];
+      final roleColor = role['color'] as Color;
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedRole = role['value'] as String;
+            });
+          },
+          borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? roleColor.withValues(alpha: 0.08)
+                  : AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              border: Border.all(
+                color: isSelected ? roleColor : AppColors.outlineVariant,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? roleColor.withValues(alpha: 0.15)
+                        : AppColors.surfaceContainerHigh,
+                    border: Border.all(
+                      color: isSelected ? roleColor : AppColors.outlineVariant,
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      role['icon'] as IconData,
+                      color: isSelected ? roleColor : AppColors.onSurfaceVariant,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        role['label'] as String,
+                        style: AppTypography.labelMd.copyWith(
+                          color: isSelected ? roleColor : AppColors.onSurface,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        role['description'] as String,
+                        style: AppTypography.bodyMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Radio<String>(
+                  value: role['value'] as String,
+                  groupValue: _selectedRole,
+                  activeColor: roleColor,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedRole = val;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  /// Step 2: Critical Emergency Contacts (Parent + Pre-filled Campus Admin 0920304050)
+  Widget _buildContactsStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFFB74D)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.contact_emergency_rounded, color: Color(0xFFE65100), size: 22),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Emergency Contacts (Offline & SOS Fallback)',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFE65100),
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'In critical accidents or when mobile data is unavailable, emergency SMS alerts with your exact GPS coordinates are automatically dispatched to these two trusted contacts.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF5D4037), height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // 1. Parent / Guardian Emergency Contact (Filled by User)
+        Text(
+          '1. PARENT / GUARDIAN CONTACT',
+          style: AppTypography.labelMd.copyWith(
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+            color: AppColors.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        AppTextField(
+          label: 'Parent Phone Number (Required)',
+          hint: '0911223344',
+          controller: _parentPhoneController,
+          keyboardType: TextInputType.phone,
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) {
+              return 'Parent phone number is required for emergency safety';
+            }
+            return Validators.phone(val);
+          },
+          prefixIcon: const Icon(Icons.family_restroom_rounded, size: 20, color: AppColors.primary),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppTextField(
+          label: 'Parent / Guardian Name',
+          hint: 'e.g. Mom / Dad / Guardian',
+          controller: _parentNameController,
+          prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // 2. University Admin / Campus Emergency Dispatch (Pre-filled demo: 0920304050)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '2. UNIVERSITY EMERGENCY ADMIN',
+              style: AppTypography.labelMd.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+                color: AppColors.onSurfaceVariant,
+                letterSpacing: 0.5,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'PRE-FILLED 24/7',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.success,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        AppTextField(
+          label: 'University Admin Phone (Pre-filled)',
+          hint: '0920304050',
+          controller: _campusAdminPhoneController,
+          keyboardType: TextInputType.phone,
+          prefixIcon: const Icon(Icons.emergency_rounded, size: 20, color: AppColors.critical),
+          helperText: 'Pre-configured for ASTU Campus Emergency Operations Center (0920304050)',
+        ),
+      ],
+    );
+  }
+
+  /// Step 3: Campus Location & Preferences
   Widget _buildCampusStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -452,9 +752,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
             ),
           ),
           items: const [
-            DropdownMenuItem(value: 'main_campus', child: Text('Main Campus')),
-            DropdownMenuItem(value: 'north_campus', child: Text('North Campus')),
-            DropdownMenuItem(value: 'south_campus', child: Text('South Campus')),
+            DropdownMenuItem(value: 'main_campus', child: Text('ASTU Main Campus')),
+            DropdownMenuItem(value: 'north_campus', child: Text('North Residential Complex')),
+            DropdownMenuItem(value: 'south_campus', child: Text('South Engineering Zone')),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -467,7 +767,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         const SizedBox(height: AppSpacing.md),
         AppTextField(
           label: 'Campus Block / Building (Optional)',
-          hint: 'e.g. Engineering Block B',
+          hint: 'e.g. Engineering Block B or Dorm Block 4',
           controller: _buildingController,
           prefixIcon: const Icon(Icons.business_outlined, size: 20),
         ),
@@ -478,120 +778,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
           controller: _roomController,
           prefixIcon: const Icon(Icons.meeting_room_outlined, size: 20),
         ),
-      ],
-    );
-  }
-
-  Widget _buildRoleStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Select your primary affiliation:',
-          style: AppTypography.bodyMd.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontSize: 13,
-          ),
-        ),
         const SizedBox(height: AppSpacing.md),
-        ..._buildRoleOptions(),
-      ],
-    );
-  }
-
-  List<Widget> _buildRoleOptions() {
-    final roles = [
-      {'value': 'student', 'label': 'Student', 'icon': Icons.school_outlined, 'color': AppColors.primary},
-      {'value': 'medical_responder', 'label': 'Medical Responder', 'icon': Icons.medical_services_outlined, 'color': AppColors.error},
-      {'value': 'security_responder', 'label': 'Security Responder', 'icon': Icons.local_police_outlined, 'color': AppColors.secondary},
-      {'value': 'staff', 'label': 'Staff / Faculty', 'icon': Icons.badge_outlined, 'color': AppColors.success},
-    ];
-
-    return roles.map((role) {
-      final isSelected = _selectedRole == role['value'];
-      final roleColor = role['color'] as Color;
-
-      return Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _selectedRole = role['value'] as String;
-            });
-          },
-          borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? roleColor.withValues(alpha: 0.08)
-                  : AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-              border: Border.all(
-                color: isSelected
-                    ? roleColor
-                    : AppColors.outlineVariant,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? roleColor.withValues(alpha: 0.15)
-                        : AppColors.surfaceContainerHigh,
-                    border: Border.all(
-                      color: isSelected
-                          ? roleColor
-                          : AppColors.outlineVariant,
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      role['icon'] as IconData,
-                      color: isSelected
-                          ? roleColor
-                          : AppColors.onSurfaceVariant,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    role['label'] as String,
-                    style: AppTypography.labelMd.copyWith(
-                      color: isSelected
-                          ? roleColor
-                          : AppColors.onSurface,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                ),
-                if (isSelected)
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: roleColor,
-                    size: 22,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildPrefsStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
         Text(
-          'Notification Settings',
+          'Safety & Privacy Preferences',
           style: AppTypography.labelMd.copyWith(
             fontWeight: FontWeight.bold,
             color: AppColors.onSurface,
@@ -600,34 +789,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         const SizedBox(height: AppSpacing.sm),
         _buildPreferenceTile(
           title: 'Push Notifications',
-          subtitle: 'Receive real-time alerts for emergencies',
+          subtitle: 'Receive real-time alerts for critical campus emergencies',
           value: true,
           onChanged: (value) {},
         ),
         _buildPreferenceTile(
-          title: 'SMS Alerts',
-          subtitle: 'Receive SMS for high-priority campus incidents',
-          value: false,
-          onChanged: (value) {},
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          'Location Services',
-          style: AppTypography.labelMd.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.onSurface,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _buildPreferenceTile(
-          title: 'Share Location during SOS',
-          subtitle: 'Allow responders to track your GPS during active alerts',
-          value: true,
-          onChanged: (value) {},
-        ),
-        _buildPreferenceTile(
-          title: 'Nearby Incidents Alert',
-          subtitle: 'Get notified of safety incidents near your current area',
+          title: 'Share Live Location during SOS',
+          subtitle: 'Allow campus responders to locate you during active distress',
           value: true,
           onChanged: (value) {},
         ),

@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/env.dart';
+import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../shared/models/user.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../auth/presentation/state/auth_state.dart';
@@ -119,11 +120,24 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     String? phone,
     String? campusBlock,
     String? emergencyInfo,
+    String? parentPhone,
+    String? parentName,
+    String? campusAdminPhone,
   }) async {
     final currentUser = state.user;
     if (currentUser == null) return false;
 
     state = state.copyWith(isSaving: true, error: null, successMessage: null);
+
+    // Sync to local emergency SMS storage for instant offline fallback
+    if (parentPhone != null && parentPhone.trim().isNotEmpty) {
+      final smsService = _ref.read(emergencySmsServiceProvider);
+      await smsService.saveEmergencyContacts(
+        parentPhone: parentPhone.trim(),
+        parentName: parentName?.trim(),
+        campusAdminPhone: campusAdminPhone?.trim() ?? EmergencySmsService.defaultCampusDispatchNumber,
+      );
+    }
 
     if (Env.isConfigured) {
       final result = await _repository.updateProfile(
@@ -132,6 +146,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         phone: phone,
         campusBlock: campusBlock,
         emergencyInfo: emergencyInfo,
+        parentPhone: parentPhone,
+        parentName: parentName,
+        campusAdminPhone: campusAdminPhone,
       );
 
       return result.fold(
@@ -159,6 +176,9 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         phone: phone,
         campusBlock: campusBlock,
         emergencyInfo: emergencyInfo,
+        parentPhone: parentPhone,
+        parentName: parentName,
+        campusAdminPhone: campusAdminPhone,
         updatedAt: DateTime.now(),
       );
       state = state.copyWith(

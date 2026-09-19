@@ -82,6 +82,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? phone,
     String? role,
     String? campusBlock,
+    String? parentPhone,
+    String? parentName,
+    String? campusAdminPhone,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     final result = await _repo.signUp(
@@ -91,6 +94,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       phone: phone,
       role: role,
       campusBlock: campusBlock,
+      parentPhone: parentPhone,
+      parentName: parentName,
+      campusAdminPhone: campusAdminPhone,
     );
     result.fold(
       (err) => state = state.copyWith(isLoading: false, error: err.message),

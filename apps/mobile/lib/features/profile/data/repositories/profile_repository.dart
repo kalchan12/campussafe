@@ -53,6 +53,9 @@ class ProfileRepository {
     String? phone,
     String? campusBlock,
     String? emergencyInfo,
+    String? parentPhone,
+    String? parentName,
+    String? campusAdminPhone,
   }) async {
     if (!_isAvailable) return Left(NetworkError.noConnection());
     try {
@@ -62,6 +65,9 @@ class ProfileRepository {
         if (phone != null) 'phone': phone,
         if (campusBlock != null) 'campus_block': campusBlock,
         if (emergencyInfo != null) 'emergency_info': emergencyInfo,
+        if (parentPhone != null) 'parent_phone': parentPhone,
+        if (parentName != null) 'parent_name': parentName,
+        if (campusAdminPhone != null) 'campus_admin_phone': campusAdminPhone,
       };
       final data = await _client!
           .from('profiles')
