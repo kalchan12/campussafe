@@ -51,7 +51,10 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
   - Real-time incident timeline (`READY → ACTIVATING → SENT → RECEIVED → ASSIGNED → RESPONDING → ARRIVED → RESOLVED`).
   - Proximity dispatch updates and community first-aid coordination.
   - **Resilient Stream & Delete Handling**: Added `.handleError()` to `watchCommunityResponses` and guarded `getCommunityResponses` / `deleteIncident`, eliminating recurring `PGRST205` PostgrestExceptions when viewing full incident details or deleting an incident.
-  - **Adaptive UI Layout**: Fixed horizontal RenderFlex pixel overflow in the GPS status Card and Building Block label on the SOS screen using constrained `Expanded` wrappers.
+  - **Adaptive UI Layout & Overflow Elimination**:
+    - **SOS Page**: Fixed horizontal RenderFlex pixel overflow in the GPS status Card and Building Block label using constrained `Expanded` and `Flexible` wrappers.
+    - **Incident Detail Full Screen Page (`incident_detail_page.dart`)**: Converted rigid horizontal badge `Row`s into responsive `Wrap` layouts, added `Expanded` and `TextOverflow.ellipsis` to location card title and timeline titles, guarded button labels, and added ellipsis to `Dialog.fullscreen` AppBar title.
+    - **Map View Overlay Card (`incident_map_view.dart`)**: Wrapped incident badges in responsive `Wrap` and wrapped multi-modal travel estimate chips in horizontal scroll view (`SingleChildScrollView`) to prevent edge overflow on narrow mobile viewports.
 
 ### B. Web Emergency Operations Dashboard (`apps/dashboard/`)
 - **GIS Campus Mapping & Precise Operator Tracking (`app/dashboard/map/page.tsx`)**:
@@ -76,6 +79,10 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+74cf0fa5 fix(mobile): resolve pixel overflow in full screen incident detail and map views
+cb4993f9 fix(mobile): resolve horizontal overflow in building block chip on SOS screen
+ba6ba8c1 fix(mobile): resolve horizontal pixel overflow in SOS screen GPS status card
+20c3d4dc fix(mobile): prevent schema cache errors when viewing and deleting incidents
 91d08d72 feat(dashboard): show direct action buttons on incident table rows before opening full details
 0a017379 fix(backend): prevent postgres schema errors with resilient incident fallback and in-memory cache
 a9679f93 feat(dashboard): enhance terminal responder dispatch and patrol simulation script
