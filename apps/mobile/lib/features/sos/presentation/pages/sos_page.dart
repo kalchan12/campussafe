@@ -51,13 +51,6 @@ class _SOSPageState extends ConsumerState<SOSPage> {
       'color': const Color(0xFFF57C00),
       'containerColor': const Color(0xFFFFF3E0),
     },
-    {
-      'icon': Icons.support_agent_rounded,
-      'label': 'Other',
-      'subtitle': 'General Campus Hazard',
-      'color': const Color(0xFF00695C),
-      'containerColor': const Color(0xFFE0F2F1),
-    },
   ];
 
   @override

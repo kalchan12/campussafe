@@ -205,50 +205,43 @@ class HomePage extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Quick Emergency Types Bento Grid
-              BentoGrid(
-                crossAxisCount: 2,
-                spacing: 10,
-                runSpacing: 10,
-                childAspectRatio: 1.25,
+              // Quick Emergency Types (Streamlined for Immediate Decision-making)
+              Row(
                 children: [
-                  _buildEmergencyTypeCard(
-                    context,
-                    ref,
-                    label: 'Medical',
-                    subtitle: 'Ambulance / First Aid',
-                    icon: Icons.medical_services_rounded,
-                    color: AppColors.error,
-                    containerColor: AppColors.errorContainer,
+                  Expanded(
+                    child: _buildEmergencyTypeCard(
+                      context,
+                      ref,
+                      label: 'Medical',
+                      subtitle: 'Ambulance / First Aid',
+                      icon: Icons.medical_services_rounded,
+                      color: AppColors.error,
+                      containerColor: AppColors.errorContainer,
+                    ),
                   ),
-                  _buildEmergencyTypeCard(
-                    context,
-                    ref,
-                    label: 'Security',
-                    subtitle: 'Campus Police',
-                    icon: Icons.security_rounded,
-                    color: const Color(0xFF1565C0),
-                    containerColor: const Color(0xFFE3F2FD),
-                  ),
-                  _buildEmergencyTypeCard(
-                    context,
-                    ref,
-                    label: 'Fire Hazard',
-                    subtitle: 'Smoke & Alarms',
-                    icon: Icons.local_fire_department_rounded,
-                    color: const Color(0xFFE65100),
-                    containerColor: const Color(0xFFFFE0B2),
-                  ),
-                  _buildEmergencyTypeCard(
-                    context,
-                    ref,
-                    label: 'General Help',
-                    subtitle: 'Crisis & Support',
-                    icon: Icons.support_agent_rounded,
-                    color: const Color(0xFF00695C),
-                    containerColor: const Color(0xFFE0F2F1),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildEmergencyTypeCard(
+                      context,
+                      ref,
+                      label: 'Security',
+                      subtitle: 'Campus Police & Patrol',
+                      icon: Icons.security_rounded,
+                      color: const Color(0xFF1565C0),
+                      containerColor: const Color(0xFFE3F2FD),
+                    ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              _buildFullWidthEmergencyCard(
+                context,
+                ref,
+                label: 'Fire Hazard',
+                subtitle: 'Smoke, Fire Alarms & Evacuation',
+                icon: Icons.local_fire_department_rounded,
+                color: const Color(0xFFE65100),
+                containerColor: const Color(0xFFFFE0B2),
               ),
               const SizedBox(height: 20),
 
@@ -505,6 +498,88 @@ class HomePage extends ConsumerWidget {
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullWidthEmergencyCard(
+    BuildContext context,
+    WidgetRef ref, {
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required Color containerColor,
+  }) {
+    return InkWell(
+      onTap: () {
+        ref.read(sosNotifierProvider.notifier).selectType(label);
+        context.push('/sos');
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: containerColor,
+              ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
             ),
           ],
         ),

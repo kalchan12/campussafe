@@ -73,16 +73,14 @@ class SosNotifier extends StateNotifier<SosState> {
   Future<void> sendSOS({String? campusBlock, String? description}) async {
     state = state.copyWith(status: SosStatus.sending, error: null);
 
-    final emergencyType = EmergencyType.fromString(state.emergencyType ?? 'other');
+    // Default to security response if not explicitly chosen
+    final emergencyType = EmergencyType.fromString(state.emergencyType ?? 'security');
     final authState = _ref.read(authNotifierProvider);
     final userId = authState.userId;
     final isGuest = authState.isGuest || !authState.isAuthenticated;
 
-    // Determine priority based on type
-    int priority = 1; // High priority for SOS
-    if (emergencyType == EmergencyType.other) {
-      priority = 2;
-    }
+    // Highest priority for urgent SOS alerts
+    const int priority = 1;
 
     final hasExactGps = state.latitude != null && state.longitude != null;
     final effectiveLat = state.latitude ?? 8.5582;
