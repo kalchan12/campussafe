@@ -152,7 +152,10 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 ## User Features
 - [x] Home (per Stitch design with SOS, emergency types, safety network).
 - [x] SOS activation (press-and-hold with progress ring).
-- [x] Emergency type selection (bento grid).
+- [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation).
+- [x] Streamlined emergency category selection (Medical, Security, Fire; removed General option to eliminate decision paralysis under Hick's Law).
+- [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + direct cellular carrier SMS fallback (EmergencySmsService) with GPS link.
+- [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off) and SMS fallback indicators.
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
 - [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
