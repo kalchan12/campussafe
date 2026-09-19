@@ -57,6 +57,20 @@ class RealtimeService {
             this.emit('DEVICE_EVENT_RECEIVED', payload.new as Record<string, unknown>);
           }
         )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'responders' },
+          (payload) => {
+            this.emit('RESPONDER_STATUS_CHANGED', payload.new as Record<string, unknown>);
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'responders' },
+          (payload) => {
+            this.emit('RESPONDER_STATUS_CHANGED', payload.new as Record<string, unknown>);
+          }
+        )
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             this.isConnected = true;
