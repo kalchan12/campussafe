@@ -10,7 +10,9 @@ import {
   fetchResponders,
   fetchDevices,
   assignResponderToIncident,
+  updateResponderLocation,
 } from '@/lib/data-service';
+import { DEFAULT_CAMPUS_RESPONDERS } from '@/lib/backend/responders';
 import { realtimeService } from '@/lib/realtime';
 import {
   getIncidentMarkers,
@@ -38,6 +40,7 @@ export default function MapPage() {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
   const [dispatchSuccess, setDispatchSuccess] = useState<string | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   // Real Operator GPS state
   const [operatorLocation, setOperatorLocation] = useState<OperatorLocation | null>(null);
@@ -145,15 +148,159 @@ export default function MapPage() {
       setSelectedIncident((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
     });
 
+    const unsubResponder = realtimeService.subscribe('RESPONDER_STATUS_CHANGED', (payload) => {
+      const updatedResp = payload.data as any;
+      setResponders((prev) => {
+        const found = prev.some((r) => r.id === updatedResp.id || r.user_id === updatedResp.user_id);
+        if (found) {
+          return prev.map((r) =>
+            r.id === updatedResp.id || r.user_id === updatedResp.user_id
+              ? {
+                  ...r,
+                  status: updatedResp.availability || updatedResp.status || r.status,
+                  latitude: updatedResp.latitude ?? r.latitude,
+                  longitude: updatedResp.longitude ?? r.longitude,
+                  current_incident_id:
+                    updatedResp.current_incident_id !== undefined
+                      ? updatedResp.current_incident_id
+                      : r.current_incident_id,
+                  last_location_update: updatedResp.last_location_update || new Date().toISOString(),
+                }
+              : r
+          );
+        }
+        return [...prev, updatedResp as Responder];
+      });
+    });
+
     return () => {
       unsubCreated();
       unsubStatus();
+      unsubResponder();
     };
   }, []);
 
-  const activeIncidents = incidents.filter(
-    (i) => !['resolved', 'cancelled'].includes(i.status)
+  const activeIncidents = useMemo(
+    () => incidents.filter((i) => !['resolved', 'cancelled'].includes(i.status)),
+    [incidents]
   );
+
+  // 3. Live Responder Movement Simulation Loop
+  useEffect(() => {
+    if (!isSimulating) return;
+
+    const intervalId = setInterval(() => {
+      setResponders((prevResponders) => {
+        if (prevResponders.length === 0) return prevResponders;
+
+        const patrolPoints = [
+          { lat: 8.5565, lng: 39.2910 }, // Admin / EOC
+          { lat: 8.5582, lng: 39.2895 }, // Engineering
+          { lat: 8.5620, lng: 39.2925 }, // North Dorms
+          { lat: 8.5595, lng: 39.2940 }, // Health Center
+          { lat: 8.5540, lng: 39.2935 }, // Student Center
+          { lat: 8.5515, lng: 39.2950 }, // Main Gate
+        ];
+
+        return prevResponders.map((resp, idx) => {
+          if (!resp.latitude || !resp.longitude) return resp;
+
+          let targetLat: number | null = null;
+          let targetLng: number | null = null;
+          let newStatus = resp.status;
+
+          // Priority A: Is this responder assigned to the currently selected or any active incident?
+          const assignedInc = incidents.find(
+            (i) =>
+              (i.id === resp.current_incident_id ||
+                selectedIncident?.assigned_responder_id === resp.id) &&
+              !['resolved', 'cancelled'].includes(i.status)
+          );
+
+          if (assignedInc && assignedInc.latitude && assignedInc.longitude) {
+            targetLat = assignedInc.latitude;
+            targetLng = assignedInc.longitude;
+            newStatus = 'responding';
+          } else if (activeIncidents.length > 0 && idx === 0) {
+            // First responder heads towards the primary active emergency
+            const inc = activeIncidents[0];
+            if (inc.latitude && inc.longitude) {
+              targetLat = inc.latitude;
+              targetLng = inc.longitude;
+              newStatus = 'responding';
+            }
+          }
+
+          // Priority B: Patrol campus landmarks if no incident to respond to
+          if (!targetLat || !targetLng) {
+            const timeSlot = Math.floor(Date.now() / 6000);
+            const pointIdx = (timeSlot + idx) % patrolPoints.length;
+            targetLat = patrolPoints[pointIdx].lat;
+            targetLng = patrolPoints[pointIdx].lng;
+            newStatus = 'available';
+          }
+
+          const latDiff = targetLat - resp.latitude;
+          const lngDiff = targetLng - resp.longitude;
+          const dist = Math.hypot(latDiff, lngDiff);
+
+          // If within ~18 meters of target
+          if (dist < 0.00018) {
+            if (assignedInc) {
+              newStatus = 'arrived';
+            }
+            return {
+              ...resp,
+              latitude: targetLat,
+              longitude: targetLng,
+              status: newStatus,
+              last_location_update: new Date().toISOString(),
+            };
+          }
+
+          // Step ~25 meters per tick along vector
+          const stepSize = 0.00022;
+          const ratio = Math.min(stepSize / dist, 1);
+          const nextLat = Number((resp.latitude + latDiff * ratio).toFixed(6));
+          const nextLng = Number((resp.longitude + lngDiff * ratio).toFixed(6));
+
+          // Broadcast/sync to Supabase in background
+          updateResponderLocation(resp.id, nextLat, nextLng, newStatus, resp.current_incident_id);
+
+          return {
+            ...resp,
+            latitude: nextLat,
+            longitude: nextLng,
+            status: newStatus,
+            last_location_update: new Date().toISOString(),
+          };
+        });
+      });
+    }, 1500);
+
+    return () => clearInterval(intervalId);
+  }, [isSimulating, incidents, activeIncidents, selectedIncident]);
+
+  // Reset responder positions to baseline campus posts
+  const handleResetResponders = () => {
+    setIsSimulating(false);
+    setResponders((prev) =>
+      prev.map((r, i) => {
+        const seed = DEFAULT_CAMPUS_RESPONDERS[i % DEFAULT_CAMPUS_RESPONDERS.length];
+        const resetLat = seed.latitude || 8.5565;
+        const resetLng = seed.longitude || 39.2910;
+        updateResponderLocation(r.id, resetLat, resetLng, 'available', undefined);
+        return {
+          ...r,
+          latitude: resetLat,
+          longitude: resetLng,
+          status: 'available',
+          current_incident_id: undefined,
+          last_location_update: new Date().toISOString(),
+        };
+      })
+    );
+  };
 
   const incidentMarkers = getIncidentMarkers(activeIncidents);
   const responderMarkers = getResponderMarkers(responders);
@@ -347,6 +494,39 @@ export default function MapPage() {
                 <span className="material-symbols-outlined text-sm">my_location</span>
                 <span>Get Exact GPS</span>
               </button>
+            </div>
+
+            {/* Responder Movement Simulation Controls */}
+            <div className="bg-surface-container-lowest/95 backdrop-blur-md rounded-xl p-1 border border-outline-variant shadow-lg flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsSimulating(!isSimulating)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-md text-xs font-bold transition-all ${
+                  isSimulating
+                    ? 'bg-amber-600 text-white shadow-md'
+                    : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container shadow-sm'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {isSimulating ? 'pause_circle' : 'play_circle'}
+                </span>
+                <span>{isSimulating ? 'Pause Simulation' : 'Simulate Responders'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleResetResponders}
+                title="Reset responder positions to campus baseline stations"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-label-md text-xs text-on-surface-variant hover:bg-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">restart_alt</span>
+                <span>Reset</span>
+              </button>
+              {isSimulating && (
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 rounded-lg text-[11px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Moving Live</span>
+                </div>
+              )}
             </div>
           </div>
 
