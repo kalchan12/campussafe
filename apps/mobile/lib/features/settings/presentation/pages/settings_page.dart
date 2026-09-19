@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/sensors/shake_detector_service.dart';
 import '../../../../shared/models/user.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../profile/presentation/state/profile_notifier.dart';
 
 final pushNotificationsSettingProvider = StateProvider<bool>((ref) => true);
 final locationServiceSettingProvider = StateProvider<bool>((ref) => true);
+final shakeToSosSettingProvider = StateProvider<bool>((ref) => true);
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -19,6 +21,7 @@ class SettingsPage extends ConsumerWidget {
     final profileState = ref.watch(profileNotifierProvider);
     final pushEnabled = ref.watch(pushNotificationsSettingProvider);
     final locationEnabled = ref.watch(locationServiceSettingProvider);
+    final shakeEnabled = ref.watch(shakeToSosSettingProvider);
 
     final user = profileState.user ??
         User(
@@ -49,6 +52,37 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
+          // Emergency Triggers & Hardware Sensing Section
+          _SettingsSection(
+            title: 'EMERGENCY TRIGGERS & HARDWARE SENSING',
+            children: [
+              _SettingsTile(
+                icon: Icons.vibration_rounded,
+                iconColor: const Color(0xFFD32F2F),
+                title: 'Hands-Free Shake-to-SOS',
+                subtitle: shakeEnabled
+                    ? 'Active: Shake phone 3 times to trigger immediate SOS'
+                    : 'Disabled (3-second button press required)',
+                trailing: Switch.adaptive(
+                  value: shakeEnabled,
+                  activeTrackColor: AppColors.critical,
+                  onChanged: (val) {
+                    ref.read(shakeToSosSettingProvider.notifier).state = val;
+                    ref.read(shakeDetectorServiceProvider).setEnabled(val);
+                  },
+                ),
+              ),
+              const _SettingsTile(
+                icon: Icons.sms_outlined,
+                iconColor: Color(0xFFE65100),
+                title: 'Offline Cellular SMS Fallback',
+                subtitle: 'Send rescue coordinates via SIM when offline',
+                trailing: Icon(Icons.check_circle_rounded, size: 20, color: AppColors.primary),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
           // 1. Account & Security Section
           _SettingsSection(
             title: 'ACCOUNT & IDENTITY',

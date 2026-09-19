@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
-import '../core/network/sync_service.dart';
 import '../core/location/responder_location_tracker.dart';
-import '../features/incidents/presentation/state/incidents_provider.dart';
+import '../core/network/sync_service.dart';
+import '../core/sensors/shake_detector_service.dart';
 import '../features/auth/presentation/state/auth_notifier.dart';
+import '../features/incidents/presentation/state/incidents_provider.dart';
+import '../features/sos/presentation/state/sos_notifier.dart';
 
 class CampusSafeApp extends ConsumerStatefulWidget {
   const CampusSafeApp({super.key});
@@ -21,6 +23,17 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize hands-free accelerometer emergency trigger
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shakeDetectorServiceProvider).initialize(
+        onShakeDetected: () {
+          final router = ref.read(appRouterProvider);
+          ref.read(sosNotifierProvider.notifier).startConfirmation();
+          router.push('/sos');
+        },
+      );
+    });
   }
 
   @override
@@ -38,10 +51,11 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
         _onAppResumed();
         break;
       case AppLifecycleState.paused:
+        ref.read(shakeDetectorServiceProvider).stopListening();
+        break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
-        // No action needed for now — hooks are ready for future use
         break;
     }
   }
@@ -49,9 +63,11 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
   /// Called when the app returns to the foreground.
   ///
   /// Reconnects Supabase Realtime streams (which die when the OS drops
-  /// websockets in background), syncs any queued incidents, and refreshes
-  /// the active incidents list to restore stale in-memory state.
+  /// websockets in background), syncs any queued incidents, refreshes
+  /// the active incidents list, and reactivates shake detection.
   void _onAppResumed() {
+    ref.read(shakeDetectorServiceProvider).startListening();
+
     final authState = ref.read(authNotifierProvider);
     if (!authState.isAuthenticated) return;
 
