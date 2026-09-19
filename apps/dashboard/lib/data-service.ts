@@ -53,6 +53,22 @@ export async function fetchResponders(filter?: ResponderFilter): Promise<Respond
   return await backendResponders.getResponders(filter);
 }
 
+export async function updateResponderLocation(
+  id: string,
+  latitude: number,
+  longitude: number,
+  status?: Responder['status'],
+  currentIncidentId?: string
+): Promise<void> {
+  return await backendResponders.updateResponderLocation(
+    id,
+    latitude,
+    longitude,
+    status,
+    currentIncidentId
+  );
+}
+
 export async function fetchDevices(filter?: DeviceFilter): Promise<Device[]> {
   return await backendDevices.getDevices(filter);
 }
