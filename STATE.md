@@ -51,6 +51,7 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
   - Real-time incident timeline (`READY → ACTIVATING → SENT → RECEIVED → ASSIGNED → RESPONDING → ARRIVED → RESOLVED`).
   - Proximity dispatch updates and community first-aid coordination.
   - **Resilient Stream & Delete Handling**: Added `.handleError()` to `watchCommunityResponses` and guarded `getCommunityResponses` / `deleteIncident`, eliminating recurring `PGRST205` PostgrestExceptions when viewing full incident details or deleting an incident.
+  - **Adaptive UI Layout**: Fixed horizontal RenderFlex pixel overflow in the GPS status Card and Building Block label on the SOS screen using constrained `Expanded` wrappers.
 
 ### B. Web Emergency Operations Dashboard (`apps/dashboard/`)
 - **GIS Campus Mapping & Precise Operator Tracking (`app/dashboard/map/page.tsx`)**:
