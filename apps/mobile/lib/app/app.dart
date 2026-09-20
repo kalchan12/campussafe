@@ -5,6 +5,7 @@ import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import '../core/location/responder_location_tracker.dart';
 import '../core/network/sync_service.dart';
+import '../core/notifications/notification_service.dart';
 import '../core/sensors/shake_detector_service.dart';
 import '../features/auth/presentation/state/auth_notifier.dart';
 import '../features/incidents/presentation/state/incidents_provider.dart';
@@ -24,7 +25,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize hands-free accelerometer emergency trigger
+    // Initialize hands-free accelerometer emergency trigger & push notifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(shakeDetectorServiceProvider).initialize(
         onShakeDetected: () {
@@ -33,6 +34,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
           router.push('/sos');
         },
       );
+      ref.read(notificationServiceProvider).initialize();
     });
   }
 

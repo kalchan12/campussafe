@@ -88,21 +88,18 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+9b0b7067 feat(mobile): direct emergency type selection and sensor-only fire/accident alerts
+d2ec20b2 docs: document system actors, registration emergency contacts, and automated offline sms
+c9bcb8ef test(mobile): add unit tests for emergency contacts storage and user model
+ad02e8fa feat(mobile): implement automated offline emergency sms dispatch to parent and campus admin
+b18d0605 feat(mobile): streamline student and staff registration and dual emergency contacts
+ace98f95 feat(mobile): add user emergency contact fields and android native sms channel
+7e1ce2bd feat(backend): add emergency contacts and system actors migration and types
+80ac31c3 docs: update STATE.md with mobile full screen incident overflow resolution
 74cf0fa5 fix(mobile): resolve pixel overflow in full screen incident detail and map views
 cb4993f9 fix(mobile): resolve horizontal overflow in building block chip on SOS screen
 ba6ba8c1 fix(mobile): resolve horizontal pixel overflow in SOS screen GPS status card
 20c3d4dc fix(mobile): prevent schema cache errors when viewing and deleting incidents
-91d08d72 feat(dashboard): show direct action buttons on incident table rows before opening full details
-0a017379 fix(backend): prevent postgres schema errors with resilient incident fallback and in-memory cache
-a9679f93 feat(dashboard): enhance terminal responder dispatch and patrol simulation script
-8ef72d5c feat(dashboard): add interactive responder movement simulation and live tracking on map
-f22d04a9 feat(dashboard): subscribe to postgres changes on responders table
-c17c1edd feat(dashboard): add campus responder seed fallbacks and location update handler
-06627399 docs: update PROJECT, ARCHITECTURE, and README with hands-free trigger, offline SMS, and spatial sensing
-015bb355 docs: update capstone report with hands-free SOS, offline SMS fallback, and streamlined emergencies
-05595cf2 feat(mobile): implement hands-free shake-to-SOS detection with sensors_plus and settings toggle
-1dec3e77 feat(mobile): implement offline SMS emergency fallback with GPS coordinates and maps link
-f3f7a60b feat(mobile): streamline emergency categories to medical, security, and fire
 ```
 
 ---

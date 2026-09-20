@@ -42,7 +42,7 @@ Normal users (Students & Staff) can:
   - **University Emergency Admin Phone**: Pre-filled with the campus emergency dispatch hotline (`0920304050`).
 - Allow location access and capture high-accuracy GPS coordinates.
 - Send SOS alerts via 3-second hold or hands-free accelerometer shake detection (`sensors_plus`) for sudden incapacitating accidents.
-- Select streamlined emergency response disciplines (Medical, Security, Fire) optimized to eliminate decision paralysis under Hick's Law.
+- Direct emergency type selection without intermediate confirmation dialogs, focusing user-initiated emergencies on **Medical** and **Security**, while **Fire Hazard** and **Accident Hazard** are designated for proactive automated campus IoT sensor triggers.
 - Rely on automated dual-channel offline resilience:
   - Local SQLite queue (`campussafe_queue.db`) for automatic incident retry upon reconnection.
   - Automated carrier SMS dispatch (`EmergencySmsService`): automatically transmits standardized distress messages containing exact GPS coordinates and clickable Google Maps links directly to both the **Parent** and **University Emergency Admin (`0920304050`)** in the background when mobile data/Wi-Fi is unavailable.

@@ -153,7 +153,7 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] Home (per Stitch design with SOS, emergency types, safety network).
 - [x] SOS activation (press-and-hold with progress ring).
 - [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation).
-- [x] Streamlined emergency category selection (Medical, Security, Fire; removed General option to eliminate decision paralysis under Hick's Law).
+- [x] Direct emergency category selection flow without intermediate confirmation dialogs; user-facing emergency categories streamlined to Medical & Security, with Fire & Accident designated for proactive campus IoT sensors.
 - [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + automated background/carrier cellular SMS fallback (EmergencySmsService) with GPS link to Parent and University Admin (`0920304050`).
 - [x] Mandatory onboarding emergency contacts: Parent phone (user-filled) and University Admin phone (pre-filled with `0920304050`).
 - [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off) and SMS fallback indicators.
