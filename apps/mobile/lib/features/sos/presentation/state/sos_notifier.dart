@@ -6,6 +6,7 @@ import '../../../../core/network/sync_service.dart';
 import '../../../../core/location/location_service.dart';
 import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../shared/models/incident.dart';
+import '../../../../shared/models/smartwatch_vitals.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../profile/presentation/state/profile_notifier.dart';
 import '../../../incidents/data/repositories/incident_repository.dart';
@@ -174,6 +175,28 @@ class SosNotifier extends StateNotifier<SosState> {
         createdIncident: fakeIncident,
       );
     }
+  }
+
+  /// Automatically initiates an emergency Medical SOS from smartwatch vital anomalies.
+  Future<void> triggerAutomatedVitalSos(SmartwatchVitals vitals, String reason) async {
+    state = state.copyWith(
+      status: SosStatus.confirmingLocation,
+      emergencyType: 'medical',
+      error: null,
+    );
+
+    // Ensure GPS coordinates are fetched
+    if (state.latitude == null || state.longitude == null) {
+      await fetchLocation();
+    }
+
+    final vitalDiagnostic = vitals.toClinicalSummary();
+    final description =
+        'AUTOMATED WEARABLE VITAL EMERGENCY: $reason. Clinical Telemetry: [$vitalDiagnostic]';
+
+    await sendSOS(
+      description: description,
+    );
   }
 
   void reset() {

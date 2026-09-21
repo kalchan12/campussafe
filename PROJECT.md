@@ -102,11 +102,18 @@ Hardware is prototype/educational equipment and is not certified life-safety equ
 
 ### Complementary Spatial Sensing Architecture
 
-The mobile application and IoT layer fulfill two distinct, synergistic roles within the unified safety mesh:
+The platform integrates three synergistic, complementary sentinel tiers within the unified safety mesh:
+- **Wearable Health Sentinels (Smartwatches & Fitness Bands)**: Continuously monitor vital organs and biological distress on individuals:
+  - **Photoplethysmography (PPG)**: Optical heart rate & pulse oximetry monitoring. Detects critical resting tachycardia (> 150 BPM), severe bradycardia (< 40 BPM), and acute respiratory hypoxia (SpO2 < 88%).
+  - **Electrocardiogram (ECG / EKG)**: Detects cardiac arrhythmias, Atrial Fibrillation (AFib), and sudden cardiac arrest / loss of pulse.
+  - **Inertial Measurement Unit (IMU - Accelerometer & Gyroscope)**: Detects high-G hard fall impacts coupled with subsequent immobility (unconscious or incapacitated user).
+  - **Skin Temperature Sensors**: Detects thermal emergencies including hypothermia (< 35.0°C) and heatstroke / severe hyperthermia (> 39.5°C).
+  - **Electrodermal Activity (EDA / GSR)**: Measures sympathetic nervous system arousal and acute physiological trauma.
+  - **Pre-Alert Grace Period (15s)**: A 15-second audible and haptic countdown allows conscious users to dismiss benign false triggers ("I'm OK") before triggering automated Medical SOS dispatch with vital telemetry notes.
 - **Personal & Mobile Sentinels (Smartphones)**: Roam dynamically across campus with students and staff. They capture human-centric distress, high-accuracy GPS coordinates, and sudden inertial impacts (violent grabs, falls, or sudden accidents).
 - **Stationary & Environmental Sentinels (IoT Stations)**: Fixed permanently at high-hazard campus infrastructure (chemical laboratories, dorm kitchens, mechanical rooms). They autonomously monitor atmospheric hazards (toxic gas leaks, smoke, extreme temperature spikes) 24 hours a day without requiring human presence or manual intervention.
 
-Unifying both sensor streams through a single Supabase backend and Web Operations Center gives operators comprehensive situational awareness spanning both human distress and environmental building threats.
+Unifying wearable vitals, smartphone telemetry, and stationary IoT streams through a single Supabase backend and Web Operations Center gives operators comprehensive situational awareness spanning human biological distress, active individual emergencies, and environmental building threats.
 
 ## High-Level Architecture
 

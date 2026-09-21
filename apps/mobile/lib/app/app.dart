@@ -7,6 +7,7 @@ import '../core/location/responder_location_tracker.dart';
 import '../core/network/sync_service.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/sensors/shake_detector_service.dart';
+import '../core/sensors/smartwatch_vital_service.dart';
 import '../features/auth/presentation/state/auth_notifier.dart';
 import '../features/incidents/presentation/state/incidents_provider.dart';
 import '../features/sos/presentation/state/sos_notifier.dart';
@@ -40,6 +41,20 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
           router.push('/incident/$incidentId');
         },
       );
+      // Wire automated smartwatch emergency callback
+      ref.read(smartwatchVitalServiceProvider).onEmergencyTriggered =
+          (vitals, reason) async {
+        final router = ref.read(appRouterProvider);
+        await ref
+            .read(sosNotifierProvider.notifier)
+            .triggerAutomatedVitalSos(vitals, reason);
+        final createdIncident = ref.read(sosNotifierProvider).createdIncident;
+        if (createdIncident != null) {
+          router.push('/sos/active/${createdIncident.id}');
+        } else {
+          router.push('/sos');
+        }
+      };
     });
   }
 
@@ -59,6 +74,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
         break;
       case AppLifecycleState.paused:
         ref.read(shakeDetectorServiceProvider).stopListening();
+        ref.read(smartwatchVitalServiceProvider).stopLiveTelemetry();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
@@ -74,6 +90,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
   /// the active incidents list, and reactivates shake detection.
   void _onAppResumed() {
     ref.read(shakeDetectorServiceProvider).startListening();
+    ref.read(smartwatchVitalServiceProvider).startLiveTelemetry();
 
     // Check for any pending notification navigation
     final pendingIncidentId =

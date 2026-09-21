@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/sensors/shake_detector_service.dart';
+import '../../../../core/sensors/smartwatch_vital_service.dart';
 import '../../../../shared/models/user.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../profile/presentation/state/profile_notifier.dart';
@@ -22,6 +23,7 @@ class SettingsPage extends ConsumerWidget {
     final pushEnabled = ref.watch(pushNotificationsSettingProvider);
     final locationEnabled = ref.watch(locationServiceSettingProvider);
     final shakeEnabled = ref.watch(shakeToSosSettingProvider);
+    final smartwatchState = ref.watch(smartwatchVitalsNotifierProvider);
 
     final user = profileState.user ??
         User(
@@ -56,6 +58,64 @@ class SettingsPage extends ConsumerWidget {
           _SettingsSection(
             title: 'EMERGENCY TRIGGERS & HARDWARE SENSING',
             children: [
+              _SettingsTile(
+                icon: Icons.watch_rounded,
+                iconColor: const Color(0xFFDC2626),
+                title: 'Smartwatch Vital Sentinel',
+                subtitle: smartwatchState.isMonitoringEnabled
+                    ? 'Active: Real-time PPG, ECG, SpO2 & Fall monitoring'
+                    : 'Disabled (No health sensor telemetry)',
+                trailing: Switch.adaptive(
+                  value: smartwatchState.isMonitoringEnabled,
+                  activeTrackColor: const Color(0xFFDC2626),
+                  onChanged: (val) {
+                    ref
+                        .read(smartwatchVitalsNotifierProvider.notifier)
+                        .setMonitoringEnabled(val);
+                  },
+                ),
+              ),
+              if (smartwatchState.isMonitoringEnabled) ...[
+                _SettingsTile(
+                  icon: Icons.emergency_rounded,
+                  iconColor: AppColors.critical,
+                  title: 'Auto-SOS on Critical Vitals',
+                  subtitle: smartwatchState.isAutoSosEnabled
+                      ? 'Enabled: 15s countdown before automated medical dispatch'
+                      : 'Manual confirmation only',
+                  trailing: Switch.adaptive(
+                    value: smartwatchState.isAutoSosEnabled,
+                    activeTrackColor: AppColors.critical,
+                    onChanged: (val) {
+                      ref
+                          .read(smartwatchVitalsNotifierProvider.notifier)
+                          .setAutoSosEnabled(val);
+                    },
+                  ),
+                ),
+                _SettingsTile(
+                  icon: Icons.bluetooth_connected_rounded,
+                  iconColor: AppColors.primary,
+                  title: 'Paired Health Wearable',
+                  subtitle:
+                      '${smartwatchState.vitals.deviceModel} (Battery: ${smartwatchState.vitals.batteryLevel}%)',
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'CONNECTED',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               _SettingsTile(
                 icon: Icons.vibration_rounded,
                 iconColor: const Color(0xFFD32F2F),

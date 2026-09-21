@@ -11,6 +11,7 @@ import '../../../../shared/widgets/cards.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/presentation/state/auth_notifier.dart';
 import '../../../sos/presentation/state/sos_notifier.dart';
+import '../widgets/smartwatch_vital_card.dart';
 
 class HomePage extends ConsumerWidget {
   final bool isGuest;
@@ -123,7 +124,11 @@ class HomePage extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
+
+              // Smartwatch Vital Organs & Health Monitoring Sentinel
+              const SmartwatchVitalCard(),
+              const SizedBox(height: 18),
 
               // EMERGENCY SOS ACTION (Dominant Lifesaver Element)
               Container(

@@ -48,6 +48,19 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
   - Implemented using `sensors_plus` in `lib/core/services/shake_detection_service.dart`.
   - Configurable sensitivity threshold (`22.0 m/s²`) and minimum consecutive shakes (3 within 800ms) with vibration haptics.
   - Full user toggle in Settings screen (`shake_to_sos_enabled`).
+- **Wearable & Smartwatch Vital Organ Monitoring Sentinel**:
+  - Implemented `SmartwatchVitals` model (`apps/mobile/lib/shared/models/smartwatch_vitals.dart`) capturing telemetry from typical smartwatch sensors:
+    - **Photoplethysmography (PPG)**: Real-time heart rate (BPM), pulse oximetry (SpO2), heart rate variability (HRV).
+    - **Electrocardiogram (ECG / EKG)**: Sinus rhythm analysis, Atrial Fibrillation (AFib), and sudden cardiac arrest / loss of pulse.
+    - **Inertial Measurement Unit (IMU - High-G Accelerometer + Gyroscope)**: Hard fall impact detection coupled with post-impact immobility (unresponsive user / physical collapse).
+    - **Skin Temperature Sensor**: Core thermal monitoring detecting hypothermia ($<35.0^\circ\text{C}$) and heatstroke / hyperthermia ($>39.5^\circ\text{C}$).
+    - **Electrodermal Activity (EDA / GSR)**: Sympathetic nervous system arousal & acute trauma shock.
+  - Implemented `SmartwatchVitalService` (`apps/mobile/lib/core/sensors/smartwatch_vital_service.dart`) evaluating clinical emergency thresholds, streaming telemetry, and orchestrating a 15-second pre-alert grace period countdown with an "I'm OK" dismissal button to prevent accidental false alarms.
+  - Automated Medical SOS escalation via `SosNotifier.triggerAutomatedVitalSos()`, attaching clinical telemetry diagnostics to the incident description, notifying responders, and alerting Parent & Campus Admin (`0920304050`) via online API or background SMS fallback.
+  - Created `SmartwatchVitalCard` on `HomePage` featuring live pulsing heart rate, SpO2 badge, temperature indicator, fall sentinel arming, and an interactive sensor simulation test suite.
+  - Configured settings in `SettingsPage` under "EMERGENCY TRIGGERS & HARDWARE SENSING" with persistence in `SharedPreferences`.
+  - Displayed live patient vital telemetry on `ActiveEmergencyPage`.
+  - Full test coverage with 15 dedicated unit tests (`smartwatch_vitals_test.dart` and `smartwatch_vital_service_test.dart`) - total 72/72 tests passing.
 - **System Actors & Onboarding Streamlining**:
   - Defined two primary campus user actors: **Student** (undergraduate, graduate, or resident student) and **Staff** (faculty professors, administrative staff, technicians, and campus personnel).
   - Streamlined mobile registration affiliation step to directly offer **Student** and **Staff** options.

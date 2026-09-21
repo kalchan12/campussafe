@@ -140,6 +140,55 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
                       onContact: () {},
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    if (incident.description != null &&
+                        (incident.description!.contains('WEARABLE') ||
+                            incident.description!.contains('VITAL') ||
+                            incident.description!.contains('Telemetry')))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.defaultRadius),
+                            border: Border.all(
+                              color:
+                                  const Color(0xFFE11D48).withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.monitor_heart_rounded,
+                                      color: Color(0xFFE11D48), size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Smartwatch Patient Telemetry Dispatched',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: AppColors.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                incident.description!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.onSurfaceVariant,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     // Timeline Status
                     AppCard(
                       padding: const EdgeInsets.all(AppSpacing.lg),

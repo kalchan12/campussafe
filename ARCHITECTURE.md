@@ -237,6 +237,12 @@ Only collect information justified by the project requirements.
 - Activation modalities:
   - **Manual**: 3-second press-and-hold button with progress animation to prevent accidental activation.
   - **Hands-Free**: Inertial accelerometer spike detection (`ShakeDetectorService`, `sensors_plus`) triggering on multi-spike acceleration ($>24\ \text{m/s}^2$) for sudden incapacitation, vehicle crash, or assault where the screen cannot be accessed.
+  - **Wearable Vital Sentinel (Smartwatch Automated Trigger)**: Real-time biometric anomaly detection (`SmartwatchVitalService`) monitoring:
+    - **Photoplethysmography (PPG)**: Detects resting tachycardia ($>150$ BPM), severe bradycardia ($<40$ BPM), and respiratory hypoxia (SpO2 $<88\%$).
+    - **Electrocardiogram (ECG / EKG)**: Detects cardiac arrhythmia, Atrial Fibrillation (AFib), and sudden cardiac arrest / loss of pulse.
+    - **IMU (High-G 3-axis Accelerometer + Gyroscope)**: Detects hard fall impacts coupled with subsequent immobility (unresponsive user / physical collapse).
+    - **Skin Temperature Sensor**: Detects severe hypothermia ($<35.0^\circ\text{C}$) and heatstroke / hyperthermia ($>39.5^\circ\text{C}$).
+    - **Pre-Alert Grace Period (15s)**: A 15-second audible and visual countdown allows conscious users to cancel false alarms ("I'm OK") before escalating to automated Medical SOS dispatch with vital telemetry attached.
 - Emergency categories:
   - Streamlined operational disciplines: **Medical** (clinic/ambulance), **Security** (police/patrol), and **Fire Hazard** (smoke/alarms). Vague "General" categories are omitted to prevent decision paralysis under Hick's Law. Unspecified SOS triggers default immediately to high-priority security dispatch.
 - Current location (GPS coordinates + campus block).
