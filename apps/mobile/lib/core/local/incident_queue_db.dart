@@ -3,8 +3,6 @@ import 'package:path/path.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../shared/models/incident.dart';
-
 final incidentQueueDbProvider = Provider<IncidentQueueDb>((ref) {
   return IncidentQueueDb();
 });

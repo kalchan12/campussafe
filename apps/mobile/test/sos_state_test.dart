@@ -26,7 +26,7 @@ void main() {
     });
 
     test('should copy state and clear error', () {
-      final state = SosState(error: 'Test error');
+      const state = SosState(error: 'Test error');
       final newState = state.copyWith(status: SosStatus.ready);
 
       expect(newState.error, isNull);

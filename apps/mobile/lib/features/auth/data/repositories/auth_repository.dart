@@ -33,8 +33,8 @@ class AuthRepository {
         return const Left(AuthError(message: 'Sign-in failed'));
       }
       final profileResult = await _fetchProfile(response.user!.id);
-      return profileResult.fold(
-        (_) => Right(app.User(
+      final Result<app.User> userResult = profileResult.fold(
+        (_) => Right<AppError, app.User>(app.User(
           id: response.user!.id,
           email: response.user!.email ?? email,
           fullName: response.user!.userMetadata?['full_name'] as String? ?? email.split('@').first,
@@ -42,8 +42,9 @@ class AuthRepository {
           createdAt: DateTime.tryParse(response.user!.createdAt) ?? DateTime.now(),
           updatedAt: DateTime.now(),
         )),
-        (user) => Right(user),
+        (user) => Right<AppError, app.User>(user),
       );
+      return userResult;
     } on supa.AuthException catch (e) {
       return Left(AuthError(message: e.message));
     } catch (e) {
@@ -82,7 +83,7 @@ class AuthRepository {
       // Upsert the profile row (also handled by the DB trigger, but
       // explicit upsert ensures campus_block, role, and emergency contacts are captured)
       try {
-        await _client!.from('profiles').upsert({
+        await _client.from('profiles').upsert({
           'id': response.user!.id,
           'email': email,
           'full_name': fullName,
@@ -99,8 +100,8 @@ class AuthRepository {
         // DB trigger fallback
       }
       final profileResult = await _fetchProfile(response.user!.id);
-      return profileResult.fold(
-        (_) => Right(app.User(
+      final Result<app.User> userResult = profileResult.fold(
+        (_) => Right<AppError, app.User>(app.User(
           id: response.user!.id,
           email: email,
           fullName: fullName,
@@ -113,8 +114,9 @@ class AuthRepository {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         )),
-        (user) => Right(user),
+        (user) => Right<AppError, app.User>(user),
       );
+      return userResult;
     } on supa.AuthException catch (e) {
       return Left(AuthError(message: e.message));
     } catch (e) {

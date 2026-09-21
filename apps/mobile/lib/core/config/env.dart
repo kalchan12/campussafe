@@ -17,6 +17,7 @@ class Env {
     if (supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty) {
       await Supabase.initialize(
         url: supabaseUrl,
+        // ignore: deprecated_member_use
         anonKey: supabaseAnonKey,
         realtimeClientOptions: const RealtimeClientOptions(
           logLevel: RealtimeLogLevel.info,

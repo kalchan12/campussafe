@@ -93,10 +93,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) {
           int currentIndex = 0;
           final location = state.uri.toString();
-          if (location.startsWith('/home')) currentIndex = 0;
-          else if (location.startsWith('/incidents')) currentIndex = 1;
-          else if (location.startsWith('/reports')) currentIndex = 2;
-          else if (location.startsWith('/profile')) currentIndex = 3;
+          if (location.startsWith('/home')) {
+            currentIndex = 0;
+          } else if (location.startsWith('/incidents')) {
+            currentIndex = 1;
+          } else if (location.startsWith('/reports')) {
+            currentIndex = 2;
+          } else if (location.startsWith('/profile')) {
+            currentIndex = 3;
+          }
 
           return ScaffoldWithNav(
             currentIndex: currentIndex,

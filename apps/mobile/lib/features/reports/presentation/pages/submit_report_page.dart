@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
-import '../../../../core/constants/design_tokens.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/models/safety_report.dart';
 import '../state/alerts_provider.dart';
@@ -222,7 +221,7 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
                     ),
                   ),
                   value: _isAnonymous,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   activeTrackColor: AppColors.primary.withValues(alpha: 0.3),
                   onChanged: (value) {
                     setState(() {

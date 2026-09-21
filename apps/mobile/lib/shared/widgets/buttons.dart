@@ -360,9 +360,6 @@ class _EmergencyButtonState extends State<EmergencyButton>
 
   @override
   Widget build(BuildContext context) {
-    const circumference = 289.0; // 2 * pi * 46
-    final strokeOffset = circumference * (1 - _progress);
-
     return GestureDetector(
       onPanDown: _onPanDown,
       onPanEnd: _onPanEnd,

@@ -7,7 +7,6 @@ import 'location_service.dart';
 import '../../features/auth/presentation/state/auth_notifier.dart';
 import '../../features/profile/presentation/state/profile_notifier.dart';
 import '../../features/profile/data/repositories/responder_repository.dart';
-import '../../shared/models/user.dart';
 
 final responderLocationTrackerProvider = Provider<ResponderLocationTracker>((ref) {
   final locationService = ref.watch(locationServiceProvider);

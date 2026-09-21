@@ -117,7 +117,7 @@ const List<CampusBlockInfo> kAdamaCampusBlocks = [
 /// Checks if given lat/lng point falls inside the University Campus polygon
 /// using the Ray-Casting algorithm.
 bool isInsideCampusZone(double lat, double lng) {
-  final polygon = kAdamaCampusPolygon;
+  const polygon = kAdamaCampusPolygon;
   bool inside = false;
   for (int i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     final xi = polygon[i].latitude;

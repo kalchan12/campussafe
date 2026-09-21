@@ -7,7 +7,7 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get light {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: AppColors.onPrimary,
@@ -218,7 +218,7 @@ class AppTheme {
         ),
         brightness: Brightness.light,
       ),
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: AppColors.outlineVariant,
         thickness: 1,
         space: AppSpacing.md,
@@ -247,7 +247,7 @@ class AppTheme {
           color: AppColors.onSurfaceVariant,
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -262,7 +262,7 @@ class AppTheme {
   }
 
   static ThemeData get dark {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.primary,
       onPrimary: AppColors.onPrimary,

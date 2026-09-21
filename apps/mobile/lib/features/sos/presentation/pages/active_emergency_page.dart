@@ -57,7 +57,7 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
             // Main Content
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   AppSpacing.containerMargin,
                   AppSpacing.md,
                   AppSpacing.containerMargin,
@@ -259,7 +259,7 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Cancel Emergency', style: AppTypography.headlineMd),
+        title: const Text('Cancel Emergency', style: AppTypography.headlineMd),
         content: Text(
           'Are you sure you want to cancel this emergency? This will notify responders that help is no longer needed.',
           style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
@@ -267,7 +267,7 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('No, Keep Active', style: TextStyle(color: AppColors.primary)),
+            child: const Text('No, Keep Active', style: TextStyle(color: AppColors.primary)),
           ),
           PrimaryButton(
             label: 'Yes, Cancel',
@@ -287,7 +287,7 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Mark as False Alarm', style: AppTypography.headlineMd),
+        title: const Text('Mark as False Alarm', style: AppTypography.headlineMd),
         content: Text(
           'This will mark the emergency as a false alarm and notify responders. Only use this if you accidentally triggered the SOS.',
           style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
@@ -295,7 +295,7 @@ class _ActiveEmergencyPageState extends ConsumerState<ActiveEmergencyPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurfaceVariant)),
           ),
           PrimaryButton(
             label: 'Mark False Alarm',
@@ -339,7 +339,7 @@ class _TimelineStep extends StatelessWidget {
   Widget build(BuildContext context) {
     Color dotColor;
     Color lineColor;
-    double dotSize = 20;
+    const double dotSize = 20;
 
     switch (status) {
       case TimelineStatus.completed:
@@ -377,7 +377,7 @@ class _TimelineStep extends StatelessWidget {
                           : null,
                 ),
                 child: status == TimelineStatus.completed
-                    ? Icon(Icons.check, size: 12, color: AppColors.onPrimary)
+                    ? const Icon(Icons.check, size: 12, color: AppColors.onPrimary)
                     : status == TimelineStatus.active
                         ? Container(
                             width: 8,

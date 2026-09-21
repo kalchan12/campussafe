@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../constants/constants.dart';
 import '../errors/app_error.dart';
 
 final locationServiceProvider = Provider<LocationService>((ref) {

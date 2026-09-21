@@ -81,6 +81,8 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         campusAdminPhone: campusAdminPhone,
       );
 
+      if (!mounted) return;
+
       // Dev bypass: if Supabase is not configured skip auth
       if (!Env.isConfigured) {
         context.go('/home');
@@ -584,10 +586,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // ignore: deprecated_member_use
                 Radio<String>(
                   value: role['value'] as String,
+                  // ignore: deprecated_member_use
                   groupValue: _selectedRole,
                   activeColor: roleColor,
+                  // ignore: deprecated_member_use
                   onChanged: (val) {
                     if (val != null) {
                       setState(() {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,7 +63,7 @@ class SyncService {
         result.fold(
           (error) {
             // Keep in queue if network error, maybe delete if it's a 400 Bad Request
-            print('Failed to sync queued incident: ${error.message}');
+            debugPrint('Failed to sync queued incident: ${error.message}');
           },
           (incident) {
             // Successfully synced, remove from queue
@@ -72,7 +73,7 @@ class SyncService {
         );
       }
     } catch (e) {
-      print('Error during sync: $e');
+      debugPrint('Error during sync: $e');
     } finally {
       _isSyncing = false;
     }

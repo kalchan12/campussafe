@@ -30,7 +30,7 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget cardContent = Container(
+    final cardContent = Container(
       padding: padding ?? const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color ?? AppColors.surfaceContainerLowest,
@@ -366,7 +366,7 @@ class ReportCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.access_time,
                 size: 12,
                 color: AppColors.onSurfaceVariant,
@@ -479,13 +479,13 @@ class ResponderCard extends StatelessWidget {
           if (onContact != null)
             OutlinedButton.icon(
               onPressed: onContact,
-              icon: Icon(Icons.call, size: 18, color: AppColors.primary),
+              icon: const Icon(Icons.call, size: 18, color: AppColors.primary),
               label: Text(
                 'Contact',
                 style: AppTypography.labelMd.copyWith(color: AppColors.primary),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.primary),
+                side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
