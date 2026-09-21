@@ -88,6 +88,9 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+8cf3ccd4 fix(mobile): resolve all static analyzer issues, unawaited futures, unused imports, and deprecation warnings
+11255c39 fix(mobile): resolve FCM token registration race condition, notification channel meta-data, and deep-link tap routing
+732e1c49 feat(mobile): configure Firebase Cloud Messaging and update 11-member team matrix
 9b0b7067 feat(mobile): direct emergency type selection and sensor-only fire/accident alerts
 d2ec20b2 docs: document system actors, registration emergency contacts, and automated offline sms
 c9bcb8ef test(mobile): add unit tests for emergency contacts storage and user model
