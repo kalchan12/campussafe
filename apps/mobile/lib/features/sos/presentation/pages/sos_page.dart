@@ -176,9 +176,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                 );
               },
               icon: const Icon(Icons.phone_in_talk_rounded, size: 16, color: AppColors.critical),
-              label: const Text(
-                'Direct Dial Campus Dispatch (0920304050)',
-                style: TextStyle(color: AppColors.critical, fontWeight: FontWeight.bold, fontSize: 13),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Direct Dial Campus Dispatch (0920304050)',
+                  style: TextStyle(color: AppColors.critical, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -197,12 +200,15 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                 );
               },
               icon: const Icon(Icons.sms_outlined, size: 15, color: AppColors.onSurfaceVariant),
-              label: const Text(
-                'Send Offline Emergency SMS (Parent & Admin)',
-                style: TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Send Offline Emergency SMS (Parent & Admin)',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -362,9 +368,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                 ),
                 elevation: 1.5,
               ),
-              child: const Text(
-                'Continue to Location Confirmation',
-                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Continue to Location Confirmation',
+                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
               ),
             ),
           ),
@@ -584,15 +593,20 @@ class _SOSPageState extends ConsumerState<SOSPage> {
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'SITUATION DETAILS (OPTIONAL)',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 0.6,
+                Expanded(
+                  child: Text(
+                    'SITUATION DETAILS (OPTIONAL)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurfaceVariant,
+                      letterSpacing: 0.6,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                SizedBox(width: 8),
                 Text(
                   'OPTIONAL',
                   style: TextStyle(
@@ -647,9 +661,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                   }
                 },
                 icon: const Icon(Icons.emergency_rounded, size: 20, color: Colors.white),
-                label: const Text(
-                  'Send SOS Alert Now',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Send SOS Alert Now',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.critical,
@@ -689,7 +706,7 @@ class _SOSPageState extends ConsumerState<SOSPage> {
   // 5. Sending View / Loading Screen
   Widget _buildSendingView() {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -914,9 +931,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                             );
                           },
                           icon: const Icon(Icons.sms_rounded, size: 18, color: Colors.white),
-                          label: const Text(
-                            'Open SMS Messenger / Re-send Alert',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Open SMS Messenger / Re-send Alert',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFE65100),
@@ -943,12 +963,15 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                     context.go('/incident/$incidentId');
                   },
                   icon: const Icon(Icons.map_rounded, size: 18, color: Colors.white),
-                  label: const Text(
-                    'Track Active Emergency on Map',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Track Active Emergency on Map',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -978,11 +1001,14 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Return to Home',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurfaceVariant,
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Return to Home',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
@@ -997,19 +1023,22 @@ class _SOSPageState extends ConsumerState<SOSPage> {
   // 7. Received View
   Widget _buildReceivedView() {
     return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 24),
-          Text(
-            'Responder Dispatched',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 24),
+            Text(
+              'Responder Dispatched',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1084,9 +1113,12 @@ class _SOSPageState extends ConsumerState<SOSPage> {
                     ),
                   ),
                   icon: const Icon(Icons.phone_in_talk_rounded, size: 18, color: Colors.white),
-                  label: const Text(
-                    'Call Campus Police (811)',
-                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Call Campus Police (811)',
+                      style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
