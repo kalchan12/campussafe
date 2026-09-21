@@ -34,7 +34,12 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
           router.push('/sos');
         },
       );
-      ref.read(notificationServiceProvider).initialize();
+      ref.read(notificationServiceProvider).initialize(
+        onNotificationTap: (incidentId) {
+          final router = ref.read(appRouterProvider);
+          router.push('/incident/$incidentId');
+        },
+      );
     });
   }
 
@@ -69,6 +74,13 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
   /// the active incidents list, and reactivates shake detection.
   void _onAppResumed() {
     ref.read(shakeDetectorServiceProvider).startListening();
+
+    // Check for any pending notification navigation
+    final pendingIncidentId =
+        ref.read(notificationServiceProvider).consumePendingNavigation();
+    if (pendingIncidentId != null && pendingIncidentId.isNotEmpty) {
+      ref.read(appRouterProvider).push('/incident/$pendingIncidentId');
+    }
 
     final authState = ref.read(authNotifierProvider);
     if (!authState.isAuthenticated) return;

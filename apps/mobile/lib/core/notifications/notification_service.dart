@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/env.dart';
 import '../errors/app_error.dart';
 import '../services/notification_token_service.dart';
 
@@ -39,11 +40,17 @@ class NotificationService {
   /// Holds the current FCM token so we can deactivate it on sign-out.
   String? _currentToken;
 
+  void Function(String incidentId)? _onNotificationTapCallback;
+
   NotificationService(this._tokenService);
 
   // ---------- Initialization ----------
 
-  Future<Result<void>> initialize({String? userId}) async {
+  Future<Result<void>> initialize({
+    String? userId,
+    void Function(String incidentId)? onNotificationTap,
+  }) async {
+    _onNotificationTapCallback = onNotificationTap;
     try {
       // Request permissions
       final settings = await _messaging?.requestPermission(
@@ -63,11 +70,15 @@ class NotificationService {
       // Configure local notifications (for foreground display)
       await _initLocalNotifications();
 
+      // Resolve current user ID if not explicitly provided
+      final effectiveUserId = userId ??
+          (Env.isConfigured ? Env.supabase.auth.currentUser?.id : null);
+
       // Register FCM token
-      await _refreshToken(userId);
+      await _refreshToken(effectiveUserId);
 
       // Listen for token refresh
-      _messaging?.onTokenRefresh.listen((token) => _refreshToken(userId, token: token));
+      _messaging?.onTokenRefresh.listen((token) => _refreshToken(effectiveUserId, token: token));
 
       // Handle foreground messages
       try {
@@ -111,21 +122,28 @@ class NotificationService {
 
   /// Call this when a user signs in to associate the token with their account.
   Future<void> associateTokenWithUser(String userId) async {
-    if (_currentToken == null) return;
-    final platform = Platform.isIOS ? 'ios' : 'android';
-    await _tokenService.registerToken(
-      userId: userId,
-      token: _currentToken!,
-      platform: platform,
-    );
+    try {
+      final token = _currentToken ?? await _messaging?.getToken();
+      if (token == null) return;
+      _currentToken = token;
+      final platform = Platform.isIOS ? 'ios' : 'android';
+      await _tokenService.registerToken(
+        userId: userId,
+        token: token,
+        platform: platform,
+      );
+    } catch (_) {
+      // Non-fatal
+    }
   }
 
   /// Call this on sign-out so the user no longer receives notifications.
   Future<void> disassociateToken(String userId) async {
-    if (_currentToken == null) return;
+    final token = _currentToken ?? await _messaging?.getToken();
+    if (token == null) return;
     await _tokenService.deactivateTokens(
       userId: userId,
-      token: _currentToken!,
+      token: token,
     );
     _currentToken = null;
   }
@@ -191,11 +209,8 @@ class NotificationService {
 
   void _navigateToIncident(String? incidentId) {
     if (incidentId == null || incidentId.isEmpty) return;
-    // Navigate to the incident detail page.
-    // The router context is not directly available here — use a global
-    // navigator key or a Riverpod state to trigger navigation.
-    // For now we capture the intent and defer to the router.
     _pendingNavigationIncidentId = incidentId;
+    _onNotificationTapCallback?.call(incidentId);
   }
 
   /// Consumed by the app router on startup/resume to deep-link into an incident.
