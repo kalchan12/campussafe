@@ -120,6 +120,14 @@ class SmartwatchVitalsNotifier extends StateNotifier<SmartwatchVitalsState> {
     _service.triggerImmediateEmergencyDispatch();
   }
 
+  Future<void> connectSmartwatch([String? model]) async {
+    await _service.connectSmartwatch(model: model);
+  }
+
+  Future<void> disconnectSmartwatch() async {
+    await _service.disconnectSmartwatch();
+  }
+
   // Simulation helpers for manual testing and demos
   void simulateNormal() => _service.simulateNormal();
   void simulateTachycardia() => _service.simulateTachycardia();
@@ -155,6 +163,7 @@ class SmartwatchAlertEvent {
 class SmartwatchVitalService {
   static const String prefKeyMonitoringEnabled = 'pref_smartwatch_monitoring_enabled';
   static const String prefKeyAutoSosEnabled = 'pref_smartwatch_auto_sos_enabled';
+  static const String prefKeyIsConnected = 'pref_smartwatch_is_connected';
   static const int countdownDurationSeconds = 15;
 
   final StreamController<SmartwatchVitals> _vitalsController =
@@ -165,7 +174,7 @@ class SmartwatchVitalService {
   Stream<SmartwatchVitals> get vitalsStream => _vitalsController.stream;
   Stream<SmartwatchAlertEvent> get alertStream => _alertController.stream;
 
-  SmartwatchVitals _currentVitals = SmartwatchVitals.healthy();
+  SmartwatchVitals _currentVitals = SmartwatchVitals.disconnected();
   SmartwatchVitals get currentVitals => _currentVitals;
 
   bool _isMonitoringEnabled = true;
@@ -181,6 +190,8 @@ class SmartwatchVitalService {
 
   void Function(SmartwatchVitals vitals, String reason)? onEmergencyTriggered;
 
+  bool _preferencesLoaded = false;
+
   SmartwatchVitalService() {
     _loadPreferences();
   }
@@ -190,14 +201,64 @@ class SmartwatchVitalService {
       final prefs = await SharedPreferences.getInstance();
       _isMonitoringEnabled = prefs.getBool(prefKeyMonitoringEnabled) ?? true;
       _isAutoSosEnabled = prefs.getBool(prefKeyAutoSosEnabled) ?? true;
+      final isConnected = prefs.getBool(prefKeyIsConnected) ?? false;
+
+      if (!_preferencesLoaded) {
+        if (isConnected) {
+          _currentVitals = SmartwatchVitals.healthy();
+        } else {
+          _currentVitals = SmartwatchVitals.disconnected();
+        }
+        _preferencesLoaded = true;
+      }
     } catch (_) {
       _isMonitoringEnabled = true;
       _isAutoSosEnabled = true;
+      if (!_preferencesLoaded) {
+        _currentVitals = SmartwatchVitals.disconnected();
+        _preferencesLoaded = true;
+      }
     }
+
+    if (_currentVitals.isConnected && _isMonitoringEnabled) {
+      startLiveTelemetry();
+    }
+  }
+
+  /// Connects to a smartwatch or wearable sensor and starts live vital tracking.
+  Future<void> connectSmartwatch({String? model}) async {
+    _preferencesLoaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(prefKeyIsConnected, true);
+    } catch (_) {}
+
+    _currentVitals = SmartwatchVitals.healthy().copyWith(
+      deviceModel: model ?? 'CampusSafe Wear Sentinel (BLE)',
+      isConnected: true,
+    );
+    _vitalsController.add(_currentVitals);
 
     if (_isMonitoringEnabled) {
       startLiveTelemetry();
     }
+    debugPrint('⌚ [SmartwatchVitalService] Connected to smartwatch: ${_currentVitals.deviceModel}');
+  }
+
+  /// Disconnects from the smartwatch, stopping live telemetry and zeroing organ readings.
+  Future<void> disconnectSmartwatch() async {
+    _preferencesLoaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(prefKeyIsConnected, false);
+    } catch (_) {}
+
+    stopLiveTelemetry();
+    dismissEmergencyAlert();
+
+    _currentVitals = SmartwatchVitals.disconnected();
+    _vitalsController.add(_currentVitals);
+    debugPrint('⌚ [SmartwatchVitalService] Disconnected from smartwatch. Organ values zeroed.');
   }
 
   Future<void> setMonitoringEnabled(bool enabled) async {
@@ -208,7 +269,9 @@ class SmartwatchVitalService {
     } catch (_) {}
 
     if (enabled) {
-      startLiveTelemetry();
+      if (_currentVitals.isConnected) {
+        startLiveTelemetry();
+      }
     } else {
       stopLiveTelemetry();
       dismissEmergencyAlert();
@@ -227,7 +290,7 @@ class SmartwatchVitalService {
   void startLiveTelemetry() {
     _telemetryTimer?.cancel();
     _telemetryTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!_isMonitoringEnabled || _isCountdownActive) return;
+      if (!_isMonitoringEnabled || _isCountdownActive || !_currentVitals.isConnected) return;
 
       // Realistic resting sinus rhythm variation (± 2 BPM) and SpO2
       final random = Random();
@@ -254,6 +317,7 @@ class SmartwatchVitalService {
 
   /// Ingests a new vitals reading from the smartwatch sensor feed.
   void processVitalsReading(SmartwatchVitals vitals) {
+    _preferencesLoaded = true;
     if (!_isMonitoringEnabled) return;
 
     _currentVitals = vitals;
@@ -304,8 +368,10 @@ class SmartwatchVitalService {
     _isCountdownActive = false;
     _countdownSecondsRemaining = countdownDurationSeconds;
 
-    // Reset vitals to healthy
-    _currentVitals = SmartwatchVitals.healthy();
+    // Reset vitals to healthy if connected, or zeroed disconnected state if not
+    _currentVitals = _currentVitals.isConnected
+        ? SmartwatchVitals.healthy()
+        : SmartwatchVitals.disconnected();
     _vitalsController.add(_currentVitals);
 
     _alertController.add(const SmartwatchAlertEvent(

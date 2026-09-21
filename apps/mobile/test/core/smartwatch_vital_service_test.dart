@@ -15,9 +15,30 @@ void main() {
       service.dispose();
     });
 
-    test('initializes with monitoring enabled and healthy vitals', () {
+    test('initializes with monitoring enabled and disconnected vitals', () {
       expect(service.isMonitoringEnabled, isTrue);
       expect(service.isAutoSosEnabled, isTrue);
+      expect(service.currentVitals.isConnected, isFalse);
+      expect(service.currentVitals.heartRateBpm, 0);
+      expect(service.currentVitals.isCriticalEmergency, isFalse);
+    });
+
+    test('connectSmartwatch transitions to connected state with healthy vitals', () async {
+      await service.connectSmartwatch(model: 'Apple Watch Series 9');
+      expect(service.currentVitals.isConnected, isTrue);
+      expect(service.currentVitals.deviceModel, 'Apple Watch Series 9');
+      expect(service.currentVitals.heartRateBpm, 74);
+    });
+
+    test('disconnectSmartwatch zeros organ readings and stops active telemetry', () async {
+      await service.connectSmartwatch();
+      expect(service.currentVitals.isConnected, isTrue);
+
+      await service.disconnectSmartwatch();
+      expect(service.currentVitals.isConnected, isFalse);
+      expect(service.currentVitals.heartRateBpm, 0);
+      expect(service.currentVitals.bloodOxygenSpO2, 0.0);
+      expect(service.currentVitals.bodyTemperature, 0.0);
       expect(service.currentVitals.isCriticalEmergency, isFalse);
     });
 

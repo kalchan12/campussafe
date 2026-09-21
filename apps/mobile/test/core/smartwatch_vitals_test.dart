@@ -12,8 +12,27 @@ void main() {
       expect(vitals.isImmobile, isFalse);
       expect(vitals.cardiacStatus, CardiacStatus.normal);
       expect(vitals.respiratoryStatus, RespiratoryStatus.normal);
+      expect(vitals.isConnected, isTrue);
       expect(vitals.isCriticalEmergency, isFalse);
       expect(vitals.criticalReasons, isEmpty);
+    });
+
+    test('disconnected smartwatch zeros organ readings and suppresses alarms', () {
+      final vitals = SmartwatchVitals.disconnected();
+      expect(vitals.heartRateBpm, 0);
+      expect(vitals.bloodOxygenSpO2, 0.0);
+      expect(vitals.bodyTemperature, 0.0);
+      expect(vitals.hrvMs, 0.0);
+      expect(vitals.skinConductanceUs, 0.0);
+      expect(vitals.fallDetected, isFalse);
+      expect(vitals.isImmobile, isFalse);
+      expect(vitals.isConnected, isFalse);
+      expect(vitals.isCriticalEmergency, isFalse);
+      expect(vitals.criticalReasons, isEmpty);
+      expect(
+        vitals.toClinicalSummary(),
+        contains('No Smartwatch Connected (Vitals Unavailable - Sensor Offline)'),
+      );
     });
 
     test('detects critical tachycardia when heart rate exceeds 150 BPM', () {

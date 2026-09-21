@@ -121,21 +121,32 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: vitals.isConnected
+                        ? AppColors.success.withValues(alpha: 0.1)
+                        : AppColors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.bluetooth_connected_rounded,
-                          size: 12, color: AppColors.success),
-                      SizedBox(width: 4),
+                      Icon(
+                        vitals.isConnected
+                            ? Icons.bluetooth_connected_rounded
+                            : Icons.bluetooth_disabled_rounded,
+                        size: 12,
+                        color: vitals.isConnected
+                            ? AppColors.success
+                            : AppColors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        'Live',
+                        vitals.isConnected ? 'Live' : 'Disconnected',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.success,
+                          color: vitals.isConnected
+                              ? AppColors.success
+                              : AppColors.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -147,7 +158,7 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
 
           const Divider(height: 1, color: AppColors.outlineVariant),
 
-          // Vital Telemetry Metrics Grid
+          // Vital Telemetry Metrics Grid (Zeroed if disconnected)
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -156,15 +167,20 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 Expanded(
                   child: _buildMetricTile(
                     label: 'Heart Rate',
-                    value: '${vitals.heartRateBpm}',
+                    value: vitals.isConnected ? '${vitals.heartRateBpm}' : '0',
                     unit: 'BPM',
                     icon: Icons.favorite_rounded,
-                    iconColor: const Color(0xFFE11D48),
-                    statusText: vitals.cardiacStatus.displayName,
-                    isPulsing: true,
-                    isCritical: vitals.cardiacStatus.isCritical ||
-                        vitals.heartRateBpm > 140 ||
-                        vitals.heartRateBpm < 45,
+                    iconColor: vitals.isConnected
+                        ? const Color(0xFFE11D48)
+                        : AppColors.onSurfaceVariant,
+                    statusText: vitals.isConnected
+                        ? vitals.cardiacStatus.displayName
+                        : 'Disconnected',
+                    isPulsing: vitals.isConnected,
+                    isCritical: vitals.isConnected &&
+                        (vitals.cardiacStatus.isCritical ||
+                            vitals.heartRateBpm > 140 ||
+                            vitals.heartRateBpm < 45),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -172,12 +188,19 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 Expanded(
                   child: _buildMetricTile(
                     label: 'Blood Oxygen',
-                    value: vitals.bloodOxygenSpO2.toStringAsFixed(1),
+                    value: vitals.isConnected
+                        ? vitals.bloodOxygenSpO2.toStringAsFixed(1)
+                        : '0.0',
                     unit: '%',
                     icon: Icons.air_rounded,
-                    iconColor: const Color(0xFF0284C7),
-                    statusText: vitals.bloodOxygenSpO2 < 90 ? 'Hypoxia' : 'Optimal',
-                    isCritical: vitals.bloodOxygenSpO2 < 88,
+                    iconColor: vitals.isConnected
+                        ? const Color(0xFF0284C7)
+                        : AppColors.onSurfaceVariant,
+                    statusText: vitals.isConnected
+                        ? (vitals.bloodOxygenSpO2 < 90 ? 'Hypoxia' : 'Optimal')
+                        : 'No Signal',
+                    isCritical:
+                        vitals.isConnected && vitals.bloodOxygenSpO2 < 88,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -185,20 +208,80 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 Expanded(
                   child: _buildMetricTile(
                     label: 'Temperature',
-                    value: vitals.bodyTemperature.toStringAsFixed(1),
+                    value: vitals.isConnected
+                        ? vitals.bodyTemperature.toStringAsFixed(1)
+                        : '0.0',
                     unit: '°C',
                     icon: Icons.thermostat_rounded,
-                    iconColor: const Color(0xFFD97706),
-                    statusText: vitals.bodyTemperature > 38.5
-                        ? 'Fever'
-                        : (vitals.bodyTemperature < 35.0 ? 'Cold' : 'Normal'),
-                    isCritical: vitals.bodyTemperature > 39.5 ||
-                        vitals.bodyTemperature < 35.0,
+                    iconColor: vitals.isConnected
+                        ? const Color(0xFFD97706)
+                        : AppColors.onSurfaceVariant,
+                    statusText: vitals.isConnected
+                        ? (vitals.bodyTemperature > 38.5
+                            ? 'Fever'
+                            : (vitals.bodyTemperature < 35.0 ? 'Cold' : 'Normal'))
+                        : 'Offline',
+                    isCritical: vitals.isConnected &&
+                        (vitals.bodyTemperature > 39.5 ||
+                            vitals.bodyTemperature < 35.0),
                   ),
                 ),
               ],
             ),
           ),
+
+          // Disconnected Guidance Banner
+          if (!vitals.isConnected)
+            Container(
+              margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 18, color: Color(0xFF1D4ED8)),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Connect your smartwatch to see live vital data',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref
+                          .read(smartwatchVitalsNotifierProvider.notifier)
+                          .connectSmartwatch();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: const Text(
+                      'Connect Watch',
+                      style:
+                          TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Fall & Anomaly Status Footer
           Padding(
@@ -215,13 +298,17 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                       size: 15,
                       color: vitals.fallDetected
                           ? AppColors.critical
-                          : AppColors.primary,
+                          : (vitals.isConnected
+                              ? AppColors.primary
+                              : AppColors.onSurfaceVariant),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       vitals.fallDetected
                           ? 'FALL DETECTED'
-                          : 'Hard Fall & Collapse Sentinel: Armed',
+                          : (vitals.isConnected
+                              ? 'Hard Fall & Collapse Sentinel: Armed'
+                              : 'Hard Fall Sentinel: Standby (Watch Disconnected)'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -451,6 +538,7 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
   }
 
   void _showVitalSimulationSheet(BuildContext context, WidgetRef ref) {
+    final currentVitals = ref.read(smartwatchVitalsNotifierProvider).vitals;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -489,6 +577,32 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 ),
               ),
               const SizedBox(height: 16),
+              if (!currentVitals.isConnected)
+                _buildSimOption(
+                  title: 'Connect Smartwatch Sensor',
+                  subtitle: 'Establish BLE telemetry feed and activate live organ tracking',
+                  icon: Icons.bluetooth_connected_rounded,
+                  iconColor: AppColors.primary,
+                  onTap: () {
+                    ref
+                        .read(smartwatchVitalsNotifierProvider.notifier)
+                        .connectSmartwatch();
+                    Navigator.pop(ctx);
+                  },
+                )
+              else
+                _buildSimOption(
+                  title: 'Disconnect Smartwatch',
+                  subtitle: 'Simulate unpairing or removing watch (zeros organ readings)',
+                  icon: Icons.bluetooth_disabled_rounded,
+                  iconColor: AppColors.onSurfaceVariant,
+                  onTap: () {
+                    ref
+                        .read(smartwatchVitalsNotifierProvider.notifier)
+                        .disconnectSmartwatch();
+                    Navigator.pop(ctx);
+                  },
+                ),
               _buildSimOption(
                 title: 'Normal Sinus Rhythm',
                 subtitle: '72 BPM • 98.5% SpO2 • 36.6°C (Healthy resting baseline)',

@@ -147,8 +147,31 @@ class SmartwatchVitals extends Equatable {
     );
   }
 
+  /// Factory constructor for a disconnected / no smartwatch state where organ values are zero
+  factory SmartwatchVitals.disconnected() {
+    return SmartwatchVitals(
+      heartRateBpm: 0,
+      bloodOxygenSpO2: 0.0,
+      bodyTemperature: 0.0,
+      hrvMs: 0.0,
+      skinConductanceUs: 0.0,
+      fallDetected: false,
+      isImmobile: false,
+      cardiacStatus: CardiacStatus.normal,
+      respiratoryStatus: RespiratoryStatus.normal,
+      temperatureStatus: TemperatureStatus.normal,
+      deviceModel: 'No Smartwatch Connected',
+      batteryLevel: 0,
+      isConnected: false,
+      timestamp: DateTime.now(),
+    );
+  }
+
   /// Evaluates whether the current vitals breach emergency life-safety thresholds.
   bool get isCriticalEmergency {
+    // If not connected to a smartwatch, values are 0 and do not trigger medical alerts
+    if (!isConnected) return false;
+
     // 1. Critical cardiac distress
     if (heartRateBpm > 150 || heartRateBpm < 40) return true;
     if (cardiacStatus.isCritical) return true;
@@ -168,6 +191,8 @@ class SmartwatchVitals extends Equatable {
 
   /// List of specific clinical anomaly reasons detected in this vitals sample
   List<String> get criticalReasons {
+    if (!isConnected) return const [];
+
     final reasons = <String>[];
 
     if (cardiacStatus == CardiacStatus.cardiacArrest) {
@@ -203,6 +228,9 @@ class SmartwatchVitals extends Equatable {
 
   /// Compact clinical diagnostic string suitable for incident dispatch notes
   String toClinicalSummary() {
+    if (!isConnected) {
+      return 'No Smartwatch Connected (Vitals Unavailable - Sensor Offline)';
+    }
     final anomalies = criticalReasons;
     final statusNote = anomalies.isEmpty ? 'Vitals Stable' : anomalies.join('; ');
     return 'HR: $heartRateBpm BPM | SpO2: ${bloodOxygenSpO2.toStringAsFixed(1)}% | Temp: ${bodyTemperature.toStringAsFixed(1)}°C | Fall: ${fallDetected ? "YES" : "NO"} | Status: $statusNote';
