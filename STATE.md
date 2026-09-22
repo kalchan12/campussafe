@@ -2,7 +2,7 @@
 
 > **Purpose:** This file records the exact, verified engineering state of the CampusSafe system. Any AI agent or developer starting a new conversation or session must read this document first to resume work seamlessly without redundant exploration or regressions.
 >
-> **Last Updated:** September 19, 2026  
+> **Last Updated:** September 22, 2026  
 > **Active Git Branch:** `main` (Synchronized with `origin/main`)  
 > **Target Deployment/Institution:** Adama Science and Technology University (ASTU), Adama, Ethiopia
 
@@ -130,6 +130,12 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+17c24044 fix(dashboard): fix 5 critical bugs and 5 warnings across dashboard and DB
+1e934771 fix(mobile): fix critical SOS route crash, null safety, and offline report handling
+d6b0e659 fix(mobile): constrain ElevatedButton width in SmartwatchVitalCard to prevent layout crash
+f7bcc1bb fix(mobile): resolve RenderFlex overflow and RenderBox layout crash on compact device screens
+99770ebe fix(mobile): resolve HomePage blank white screen caused by premature uninitialized Supabase client assertion
+b42b0349 docs: document privacy-first sensor consent, opt-in architecture, and zero passive tracking guarantee
 a8c2d651 feat(privacy): enforce opt-in default for phone and wear sensors with zero passive tracking guarantee
 23e49ca3 feat(auth): add 5-step registration onboarding with opt-in health sensors and informed consent
 81b90392 feat(mobile): zero organ readings when smartwatch is disconnected with pairing banner
