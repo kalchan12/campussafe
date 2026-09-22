@@ -29,7 +29,11 @@ void main() async {
   }
 
   // Initialize Supabase (no-op when SUPABASE_URL/ANON_KEY are not set)
-  await Env.init();
+  try {
+    await Env.init();
+  } catch (e) {
+    debugPrint('Supabase init error: $e');
+  }
 
   runApp(
     const ProviderScope(

@@ -35,7 +35,12 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 
 ## 2. Completed Features & Verified Functionality
 
-### A. Mobile Application (`apps/mobile/`)
+- **HomePage White Screen & Resilient Supabase Initialization Resolution**:
+  - Resolved blank white screen on `HomePage` caused by an unhandled assertion failure (`You must initialize the supabase instance before calling Supabase.instance`) when `ProfileNotifier` and repository providers accessed `Env.supabase` before Supabase was initialized or when offline.
+  - Hardened `Env.isConfigured` in `apps/mobile/lib/core/config/env.dart` to check that `Supabase.instance` is safely initialized, preventing premature client access and enabling graceful offline/mock fallback.
+  - Wrapped `Env.init()` in `main.dart` with `try-catch` to eliminate startup exceptions.
+  - Added widget test suite in `apps/mobile/test/features/home/home_page_test.dart` verifying `HomePage` rendering, greetings, SOS triggers, vital sentinel cards, emergency type tiles, and guest mode banners.
+  - Full test coverage across entire mobile app suite (78/78 unit and widget tests passing with 0 analyzer issues).
 - **Privacy-First Informed Consent & Sensor Opt-In Architecture**:
   - Re-architected mobile registration onboarding into a **5-step flow** (`Account` → `Role` → `Contacts` → `Consent` → `Campus`).
   - Strict **opt-in by default** for phone motion sensors (Shake-to-SOS) and wear biometric telemetry (Smartwatch Vital Sentinel). Both default to `false` for healthy students/staff who do not require health sensor monitoring.
