@@ -20,6 +20,12 @@ export interface OperatorLocation {
   isLive?: boolean;
 }
 
+export interface RouteOrigin {
+  latitude: number;
+  longitude: number;
+  label?: string;
+}
+
 interface CampusMapProps {
   markers?: MapMarker[];
   className?: string;
@@ -27,6 +33,7 @@ interface CampusMapProps {
   showViewSelector?: boolean;
   operatorLocation?: OperatorLocation | null;
   selectedMarkerId?: string | null;
+  routeOrigin?: RouteOrigin | null;
   onMarkerClick?: (marker: MapMarker) => void;
   onRecenterOperator?: () => void;
   onRouteCalculated?: (route: RouteGeoJson | null) => void;
@@ -87,6 +94,7 @@ export function CampusMap({
   showViewSelector = true,
   operatorLocation = null,
   selectedMarkerId = null,
+  routeOrigin = null,
   onMarkerClick,
   onRecenterOperator,
   onRouteCalculated,
@@ -94,12 +102,14 @@ export function CampusMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersLayerGroupRef = useRef<any>(null);
+  const blocksLayerGroupRef = useRef<any>(null);
   const operatorLayerGroupRef = useRef<any>(null);
   const routeLineRef = useRef<any>(null);
+  const lastRouteKeyRef = useRef<string | null>(null);
   const tileLayerRef = useRef<any>(null);
   const [currentView, setCurrentView] = useState<MapViewType>(defaultView);
 
-  // Initialize Map
+  // Initialize Map & Static Features (only once on container mount)
   useEffect(() => {
     let isMounted = true;
 
@@ -134,12 +144,6 @@ export function CampusMap({
 
         tileLayerRef.current = tileLayer;
 
-        const markersLayer = L.layerGroup().addTo(map);
-        markersLayerGroupRef.current = markersLayer;
-
-        const operatorLayer = L.layerGroup().addTo(map);
-        operatorLayerGroupRef.current = operatorLayer;
-
         const campusBoundaryLayer = L.layerGroup().addTo(map);
 
         // Highlight University Campus Perimeter Polygon
@@ -153,84 +157,13 @@ export function CampusMap({
           .bindPopup('<b>Adama University Campus Zone</b><br/>Monitored Safety Area')
           .addTo(campusBoundaryLayer);
 
-        mapInstanceRef.current = map;
-      }
+        // Static Campus Blocks Layer (added once so they don't recreate on dynamic updates)
+        const blocksLayer = L.layerGroup().addTo(map);
+        blocksLayerGroupRef.current = blocksLayer;
 
-      // Update Operator Location Beacon
-      if (mapInstanceRef.current && operatorLayerGroupRef.current) {
-        operatorLayerGroupRef.current.clearLayers();
-
-        if (operatorLocation) {
-          // Google Maps Blue Dot Marker with Accuracy Circle
-          if (operatorLocation.accuracy && operatorLocation.accuracy > 0) {
-            L.circle([operatorLocation.latitude, operatorLocation.longitude], {
-              radius: Math.min(operatorLocation.accuracy, 100),
-              color: '#4285F4',
-              weight: 1,
-              opacity: 0.4,
-              fillColor: '#4285F4',
-              fillOpacity: 0.12,
-            }).addTo(operatorLayerGroupRef.current);
-          }
-
-          const operatorIcon = L.divIcon({
-            className: 'operator-gps-dot',
-            html: `
-              <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-                <div style="
-                  position: absolute;
-                  width: 34px;
-                  height: 34px;
-                  border-radius: 50%;
-                  background: rgba(66, 133, 244, 0.4);
-                  animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-                "></div>
-                <div style="
-                  width: 18px;
-                  height: 18px;
-                  border-radius: 50%;
-                  background: #1a73e8;
-                  border: 3px solid #ffffff;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-                  position: relative;
-                  z-index: 2;
-                "></div>
-              </div>
-            `,
-            iconSize: [36, 36],
-            iconAnchor: [18, 18],
-          });
-
-          L.marker([operatorLocation.latitude, operatorLocation.longitude], {
-            icon: operatorIcon,
-            zIndexOffset: 1000,
-          })
-            .bindPopup(`
-              <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
-                <strong style="color: #1a73e8;">📍 Operator Location (You)</strong><br/>
-                <span style="font-size: 11px; color: #555;">Live GPS coordinates</span><br/>
-                <span>${operatorLocation.latitude.toFixed(5)}, ${operatorLocation.longitude.toFixed(5)}</span>
-              </div>
-            `)
-            .addTo(operatorLayerGroupRef.current);
-        }
-      }
-
-      // Update markers on the map
-      if (mapInstanceRef.current && markersLayerGroupRef.current) {
-        markersLayerGroupRef.current.clearLayers();
-
-        const latLngs: [number, number][] = [];
-
-        if (operatorLocation) {
-          latLngs.push([operatorLocation.latitude, operatorLocation.longitude]);
-        }
-
-        // Add campus blocks as markers
+        const isDark = currentView === 'dark' || currentView === 'satellite' || currentView === 'hybrid';
         CAMPUS_BLOCKS.forEach((block) => {
           if (block.latitude && block.longitude) {
-            latLngs.push([block.latitude, block.longitude]);
-            const isDark = currentView === 'dark' || currentView === 'satellite' || currentView === 'hybrid';
             const blockIcon = L.divIcon({
               className: 'custom-block-marker',
               html: `
@@ -255,139 +188,17 @@ export function CampusMap({
 
             L.marker([block.latitude, block.longitude], { icon: blockIcon })
               .bindPopup(`<b>${block.name}</b><br/>Campus Building #${block.id}`)
-              .addTo(markersLayerGroupRef.current);
+              .addTo(blocksLayer);
           }
         });
 
-        // Add dynamic markers (Incidents, Responders, Devices)
-        markers.forEach((marker) => {
-          if (marker.latitude && marker.longitude) {
-            latLngs.push([marker.latitude, marker.longitude]);
+        const markersLayer = L.layerGroup().addTo(map);
+        markersLayerGroupRef.current = markersLayer;
 
-            const isIncident = marker.type === 'incident';
-            const isResponder = marker.type === 'responder';
-            const isSelected = selectedMarkerId === marker.id;
+        const operatorLayer = L.layerGroup().addTo(map);
+        operatorLayerGroupRef.current = operatorLayer;
 
-            const markerColor = isIncident ? '#ba1a1a' : isResponder ? '#00236f' : '#10b981';
-            const markerEmoji = isIncident ? '🚨' : isResponder ? '🛡️' : '📡';
-
-            const customIcon = L.divIcon({
-              className: `custom-live-marker ${isSelected ? 'scale-125' : ''}`,
-              html: `
-                <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; cursor: pointer;">
-                  ${
-                    isIncident
-                      ? `<div style="
-                          position: absolute;
-                          width: 36px;
-                          height: 36px;
-                          border-radius: 50%;
-                          background: rgba(186, 26, 26, 0.35);
-                          animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-                        "></div>`
-                      : ''
-                  }
-                  ${
-                    isSelected
-                      ? `<div style="
-                          position: absolute;
-                          width: 44px;
-                          height: 44px;
-                          border-radius: 50%;
-                          border: 2px dashed ${markerColor};
-                          animation: spin 6s linear infinite;
-                        "></div>`
-                      : ''
-                  }
-                  <div style="
-                    width: ${isSelected ? '32px' : '28px'};
-                    height: ${isSelected ? '32px' : '28px'};
-                    border-radius: 50%;
-                    background: ${markerColor};
-                    border: 2.5px solid #ffffff;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: ${isSelected ? '15px' : '13px'};
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-                  ">
-                    ${markerEmoji}
-                  </div>
-                </div>
-              `,
-              iconSize: [38, 38],
-              iconAnchor: [19, 19],
-            });
-
-            const m = L.marker([marker.latitude, marker.longitude], {
-              icon: customIcon,
-              zIndexOffset: isSelected ? 500 : 0,
-            });
-
-            m.on('click', () => {
-              onMarkerClick?.(marker);
-            });
-
-            m.bindPopup(`
-              <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
-                <strong style="color: ${markerColor};">${marker.label}</strong><br/>
-                <span>Type: ${marker.type.toUpperCase()}</span><br/>
-                <span>Coordinates: ${marker.latitude.toFixed(4)}, ${marker.longitude.toFixed(4)}</span>
-              </div>
-            `);
-
-            m.addTo(markersLayerGroupRef.current);
-          }
-        });
-
-        // Calculate and Draw Optimal Route from Operator to Selected Incident
-        if (routeLineRef.current) {
-          mapInstanceRef.current.removeLayer(routeLineRef.current);
-          routeLineRef.current = null;
-        }
-
-        if (operatorLocation && selectedMarkerId) {
-          const selectedMarker = markers.find((m) => m.id === selectedMarkerId);
-          if (selectedMarker && selectedMarker.latitude && selectedMarker.longitude) {
-            getBestRoute(
-              operatorLocation.latitude,
-              operatorLocation.longitude,
-              selectedMarker.latitude,
-              selectedMarker.longitude
-            ).then((route) => {
-              if (!isMounted || !mapInstanceRef.current) return;
-              onRouteCalculated?.(route);
-
-              if (routeLineRef.current) {
-                mapInstanceRef.current.removeLayer(routeLineRef.current);
-              }
-
-              // Draw path polyline (with subtle glow and dashed style)
-              const polyline = L.polyline(route.coordinates, {
-                color: '#2563eb',
-                weight: 4,
-                opacity: 0.9,
-                dashArray: route.isRealRoadRoute ? undefined : '6, 8',
-                lineJoin: 'round',
-              }).addTo(mapInstanceRef.current);
-
-              routeLineRef.current = polyline;
-            });
-          } else {
-            onRouteCalculated?.(null);
-          }
-        } else {
-          onRouteCalculated?.(null);
-        }
-
-        // Auto-fit bounds if we have valid marker coordinates
-        if (latLngs.length > 0) {
-          try {
-            mapInstanceRef.current.fitBounds(latLngs, { padding: [50, 50], maxZoom: 17 });
-          } catch {
-            // Keep default center
-          }
-        }
+        mapInstanceRef.current = map;
       }
     }
 
@@ -396,7 +207,268 @@ export function CampusMap({
     return () => {
       isMounted = false;
     };
-  }, [markers, currentView, operatorLocation, selectedMarkerId]);
+  }, []);
+
+  // Update Operator Location Beacon
+  useEffect(() => {
+    let isMounted = true;
+
+    async function updateOperator() {
+      if (!mapInstanceRef.current || !operatorLayerGroupRef.current) return;
+      const L = (await import('leaflet')).default;
+      if (!isMounted) return;
+
+      operatorLayerGroupRef.current.clearLayers();
+
+      if (operatorLocation) {
+        // Google Maps Blue Dot Marker with Accuracy Circle
+        if (operatorLocation.accuracy && operatorLocation.accuracy > 0) {
+          L.circle([operatorLocation.latitude, operatorLocation.longitude], {
+            radius: Math.min(operatorLocation.accuracy, 100),
+            color: '#4285F4',
+            weight: 1,
+            opacity: 0.4,
+            fillColor: '#4285F4',
+            fillOpacity: 0.12,
+          }).addTo(operatorLayerGroupRef.current);
+        }
+
+        const operatorIcon = L.divIcon({
+          className: 'operator-gps-dot',
+          html: `
+            <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+              <div style="
+                position: absolute;
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background: rgba(66, 133, 244, 0.4);
+                animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+              "></div>
+              <div style="
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #1a73e8;
+                border: 3px solid #ffffff;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+                position: relative;
+                z-index: 2;
+              "></div>
+            </div>
+          `,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+
+        L.marker([operatorLocation.latitude, operatorLocation.longitude], {
+          icon: operatorIcon,
+          zIndexOffset: 1000,
+        })
+          .bindPopup(`
+            <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
+              <strong style="color: #1a73e8;">📍 Operator Location (You)</strong><br/>
+              <span style="font-size: 11px; color: #555;">Live GPS coordinates</span><br/>
+              <span>${operatorLocation.latitude.toFixed(5)}, ${operatorLocation.longitude.toFixed(5)}</span>
+            </div>
+          `)
+          .addTo(operatorLayerGroupRef.current);
+      }
+    }
+
+    updateOperator();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [operatorLocation?.latitude, operatorLocation?.longitude, operatorLocation?.accuracy]);
+
+  // Update Dynamic Markers (Incidents, Responders, Devices) — without resetting view or zooming out!
+  useEffect(() => {
+    let isMounted = true;
+
+    async function updateMarkers() {
+      if (!mapInstanceRef.current || !markersLayerGroupRef.current) return;
+      const L = (await import('leaflet')).default;
+      if (!isMounted) return;
+
+      markersLayerGroupRef.current.clearLayers();
+
+      markers.forEach((marker) => {
+        if (marker.latitude && marker.longitude) {
+          const isIncident = marker.type === 'incident';
+          const isResponder = marker.type === 'responder';
+          const isSelected = selectedMarkerId === marker.id;
+
+          const markerColor = isIncident ? '#ba1a1a' : isResponder ? '#00236f' : '#10b981';
+          const markerEmoji = isIncident ? '🚨' : isResponder ? '🛡️' : '📡';
+
+          const customIcon = L.divIcon({
+            className: `custom-live-marker ${isSelected ? 'scale-125' : ''}`,
+            html: `
+              <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; cursor: pointer;">
+                ${
+                  isIncident
+                    ? `<div style="
+                        position: absolute;
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 50%;
+                        background: rgba(186, 26, 26, 0.35);
+                        animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+                      "></div>`
+                    : ''
+                }
+                ${
+                  isSelected
+                    ? `<div style="
+                        position: absolute;
+                        width: 44px;
+                        height: 44px;
+                        border-radius: 50%;
+                        border: 2px dashed ${markerColor};
+                        animation: spin 6s linear infinite;
+                      "></div>`
+                    : ''
+                }
+                <div style="
+                  width: ${isSelected ? '32px' : '28px'};
+                  height: ${isSelected ? '32px' : '28px'};
+                  border-radius: 50%;
+                  background: ${markerColor};
+                  border: 2.5px solid #ffffff;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: ${isSelected ? '15px' : '13px'};
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+                ">
+                  ${markerEmoji}
+                </div>
+              </div>
+            `,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+          });
+
+          const m = L.marker([marker.latitude, marker.longitude], {
+            icon: customIcon,
+            zIndexOffset: isSelected ? 500 : 0,
+          });
+
+          m.on('click', () => {
+            onMarkerClick?.(marker);
+          });
+
+          m.bindPopup(`
+            <div style="font-family: sans-serif; font-size: 12px; padding: 2px;">
+              <strong style="color: ${markerColor};">${marker.label}</strong><br/>
+              <span>Type: ${marker.type.toUpperCase()}</span><br/>
+              <span>Coordinates: ${marker.latitude.toFixed(4)}, ${marker.longitude.toFixed(4)}</span>
+            </div>
+          `);
+
+          m.addTo(markersLayerGroupRef.current);
+        }
+      });
+    }
+
+    updateMarkers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [markers, selectedMarkerId]);
+
+  // Update Route Polyline: Steady, non-blinking line from effective origin (dispatched responder or operator) to selected incident
+  useEffect(() => {
+    let isMounted = true;
+
+    async function updateRoute() {
+      if (!mapInstanceRef.current) return;
+      const L = (await import('leaflet')).default;
+      if (!isMounted) return;
+
+      const effectiveOrigin = routeOrigin || (operatorLocation ? { latitude: operatorLocation.latitude, longitude: operatorLocation.longitude } : null);
+      const selectedMarker = markers.find((m) => m.id === selectedMarkerId);
+
+      if (!effectiveOrigin || !selectedMarker || !selectedMarker.latitude || !selectedMarker.longitude) {
+        if (routeLineRef.current && mapInstanceRef.current) {
+          mapInstanceRef.current.removeLayer(routeLineRef.current);
+          routeLineRef.current = null;
+        }
+        lastRouteKeyRef.current = null;
+        onRouteCalculated?.(null);
+        return;
+      }
+
+      // Check key to avoid re-fetching on minor jitters (~10m precision)
+      const routeKey = `${effectiveOrigin.latitude.toFixed(4)},${effectiveOrigin.longitude.toFixed(4)}->${selectedMarker.latitude.toFixed(4)},${selectedMarker.longitude.toFixed(4)}`;
+
+      if (lastRouteKeyRef.current === routeKey && routeLineRef.current) {
+        // Points are virtually identical; adjust start point smoothly without re-querying OSRM
+        const currentPoints = routeLineRef.current.getLatLngs();
+        if (Array.isArray(currentPoints) && currentPoints.length >= 2) {
+          currentPoints[0] = [effectiveOrigin.latitude, effectiveOrigin.longitude];
+          routeLineRef.current.setLatLngs(currentPoints);
+        }
+        return;
+      }
+
+      lastRouteKeyRef.current = routeKey;
+
+      try {
+        const route = await getBestRoute(
+          effectiveOrigin.latitude,
+          effectiveOrigin.longitude,
+          selectedMarker.latitude,
+          selectedMarker.longitude
+        );
+
+        if (!isMounted || !mapInstanceRef.current) return;
+        onRouteCalculated?.(route);
+
+        // Update polyline in-place (DO NOT remove beforehand — avoids blinking completely!)
+        if (routeLineRef.current) {
+          routeLineRef.current.setLatLngs(route.coordinates);
+          routeLineRef.current.setStyle({
+            color: '#2563eb', // Steady vibrant royal blue
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: undefined, // Steady, solid line (no dashing/blinking)
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
+        } else {
+          const polyline = L.polyline(route.coordinates, {
+            color: '#2563eb',
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: undefined, // Steady solid line
+            lineCap: 'round',
+            lineJoin: 'round',
+          }).addTo(mapInstanceRef.current);
+
+          routeLineRef.current = polyline;
+        }
+      } catch (err) {
+        console.warn('Failed to calculate route:', err);
+      }
+    }
+
+    updateRoute();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    routeOrigin?.latitude,
+    routeOrigin?.longitude,
+    operatorLocation?.latitude,
+    operatorLocation?.longitude,
+    selectedMarkerId,
+    markers,
+  ]);
 
 
   // Switch Tile Layer when currentView changes
