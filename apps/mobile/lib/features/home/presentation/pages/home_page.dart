@@ -55,6 +55,8 @@ class HomePage extends ConsumerWidget {
                                 (authState.email != null ? authState.email!.split('@').first : (isGuest ? 'Guest' : 'Student'));
                             return Text(
                               'Hello, $displayName',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
@@ -86,12 +88,16 @@ class HomePage extends ConsumerWidget {
                                 isPulsing: true,
                               ),
                               SizedBox(width: 6),
-                              Text(
-                                'ASTU Campus: Secure & Active',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurface,
+                              Flexible(
+                                child: Text(
+                                  'ASTU Campus: Secure & Active',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.onSurface,
+                                  ),
                                 ),
                               ),
                             ],
@@ -320,26 +326,32 @@ class HomePage extends ConsumerWidget {
                       // Info row with responder badge & GPS tracking text
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerLow,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.security_rounded, size: 14, color: AppColors.primary),
-                                SizedBox(width: 5),
-                                Text(
-                                  '3 Responders Active',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.onSurface,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.security_rounded, size: 14, color: AppColors.primary),
+                                  SizedBox(width: 5),
+                                  Flexible(
+                                    child: Text(
+                                      '3 Responders Active',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.onSurface,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),

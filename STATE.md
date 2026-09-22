@@ -35,12 +35,16 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 
 ## 2. Completed Features & Verified Functionality
 
+- **HomePage Layout & RenderFlex Overflow Resolution**:
+  - Resolved `RenderBox was not laid out` crash on physical Android devices (e.g. `720x1344` screen resolution / compact screen widths) caused by horizontal RenderFlex overflow in `HomePage` header status badge and `SmartwatchVitalCard` fall status footer.
+  - Wrapped header status text in `Flexible` with `TextOverflow.ellipsis`, wrapped greeting display name with `maxLines: 1` and `TextOverflow.ellipsis`, and wrapped responder active badge and smartwatch fall status footer in `Flexible`/`Expanded` to prevent flex overflow.
+  - Added multi-resolution test coverage in `apps/mobile/test/features/home/home_page_test.dart` covering 720x1344 physical device size and ultra-compact 320px width device with 1.3x text scaling.
+  - Full test coverage across entire mobile app suite (80/80 unit and widget tests passing with 0 analyzer issues).
 - **HomePage White Screen & Resilient Supabase Initialization Resolution**:
   - Resolved blank white screen on `HomePage` caused by an unhandled assertion failure (`You must initialize the supabase instance before calling Supabase.instance`) when `ProfileNotifier` and repository providers accessed `Env.supabase` before Supabase was initialized or when offline.
   - Hardened `Env.isConfigured` in `apps/mobile/lib/core/config/env.dart` to check that `Supabase.instance` is safely initialized, preventing premature client access and enabling graceful offline/mock fallback.
   - Wrapped `Env.init()` in `main.dart` with `try-catch` to eliminate startup exceptions.
   - Added widget test suite in `apps/mobile/test/features/home/home_page_test.dart` verifying `HomePage` rendering, greetings, SOS triggers, vital sentinel cards, emergency type tiles, and guest mode banners.
-  - Full test coverage across entire mobile app suite (78/78 unit and widget tests passing with 0 analyzer issues).
 - **Privacy-First Informed Consent & Sensor Opt-In Architecture**:
   - Re-architected mobile registration onboarding into a **5-step flow** (`Account` → `Role` → `Contacts` → `Consent` → `Campus`).
   - Strict **opt-in by default** for phone motion sensors (Shake-to-SOS) and wear biometric telemetry (Smartwatch Vital Sentinel). Both default to `false` for healthy students/staff who do not require health sensor monitoring.

@@ -350,36 +350,43 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      vitals.fallDetected
-                          ? Icons.warning_rounded
-                          : Icons.health_and_safety_rounded,
-                      size: 15,
-                      color: vitals.fallDetected
-                          ? AppColors.critical
-                          : (vitals.isConnected
-                              ? AppColors.primary
-                              : AppColors.onSurfaceVariant),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      vitals.fallDetected
-                          ? 'FALL DETECTED'
-                          : (vitals.isConnected
-                              ? 'Hard Fall & Collapse Sentinel: Armed'
-                              : 'Hard Fall Sentinel: Standby (Watch Disconnected)'),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        vitals.fallDetected
+                            ? Icons.warning_rounded
+                            : Icons.health_and_safety_rounded,
+                        size: 15,
                         color: vitals.fallDetected
                             ? AppColors.critical
-                            : AppColors.onSurfaceVariant,
+                            : (vitals.isConnected
+                                ? AppColors.primary
+                                : AppColors.onSurfaceVariant),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          vitals.fallDetected
+                              ? 'FALL DETECTED'
+                              : (vitals.isConnected
+                                  ? 'Hard Fall & Collapse Sentinel: Armed'
+                                  : 'Hard Fall Sentinel: Standby (Watch Disconnected)'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: vitals.fallDetected
+                                ? AppColors.critical
+                                : AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: () => _showVitalSimulationSheet(context, ref),
                   borderRadius: BorderRadius.circular(6),
