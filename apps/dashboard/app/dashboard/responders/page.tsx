@@ -91,7 +91,7 @@ export default function RespondersPage() {
                           responder.status === 'available' ? 'bg-success/10 text-success' :
                           responder.status === 'responding' ? 'bg-error/10 text-error' :
                           responder.status === 'offline' ? 'bg-surface-variant text-on-surface-variant' :
-                          'bg-warning/10 text-warning-dark';
+                          'bg-warning/10 text-amber-700';
                         
                         return (
                           <tr key={responder.id} className="hover:bg-surface-variant/30 transition-colors group">

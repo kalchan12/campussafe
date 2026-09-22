@@ -68,11 +68,15 @@ export async function updateReportStatus(
 }
 
 export async function getPendingReportsCount(): Promise<number> {
-  const { count, error } = await supabase
-    .from('safety_reports')
-    .select('*', { count: 'exact', head: true })
-    .in('status', ['submitted', 'under_review']);
+  try {
+    const { count, error } = await supabase
+      .from('safety_reports')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['submitted', 'under_review']);
 
-  if (error) throw error;
-  return count || 0;
+    if (error) return 0;
+    return count || 0;
+  } catch (err) {
+    return 0;
+  }
 }

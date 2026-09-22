@@ -12,14 +12,31 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<SafetyReport[]>([]);
   const [filter, setFilter] = useState<ReportFilter>({});
   const [search, setSearch] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      const data = await fetchReports({ ...filter, search });
-      setReports(data);
+      try {
+        setError(null);
+        const data = await fetchReports({ ...filter, search });
+        setReports(data);
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Failed to load reports');
+      }
     }
     load();
   }, [filter, search]);
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="p-4 bg-error text-on-error rounded">
+          <p>Error loading reports: {error}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const getReportStatusVariant = (status: SafetyReport['status']) => {
     switch (status) {

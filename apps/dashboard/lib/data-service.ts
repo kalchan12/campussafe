@@ -80,10 +80,10 @@ export async function fetchReports(filter?: ReportFilter): Promise<SafetyReport[
 export async function fetchDashboardStats() {
   const [activeIncidents, availableResponders, onlineDevices, pendingReports] =
     await Promise.all([
-      backendIncidents.getActiveIncidentsCount(),
-      backendResponders.getAvailableRespondersCount(),
-      backendDevices.getOnlineDevicesCount(),
-      backendReports.getPendingReportsCount(),
+      backendIncidents.getActiveIncidentsCount().catch(() => 0),
+      backendResponders.getAvailableRespondersCount().catch(() => 0),
+      backendDevices.getOnlineDevicesCount().catch(() => 0),
+      backendReports.getPendingReportsCount().catch(() => 0),
     ]);
 
   return {

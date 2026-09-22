@@ -265,11 +265,15 @@ export async function updateResponderLocation(
 }
 
 export async function getAvailableRespondersCount(): Promise<number> {
-  const { count, error } = await supabase
-    .from('responders')
-    .select('*', { count: 'exact', head: true })
-    .eq('availability', 'available');
+  try {
+    const { count, error } = await supabase
+      .from('responders')
+      .select('*', { count: 'exact', head: true })
+      .eq('availability', 'available');
 
-  if (error) throw error;
-  return count || 0;
+    if (error) return 0;
+    return count || 0;
+  } catch (err) {
+    return 0;
+  }
 }

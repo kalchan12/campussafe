@@ -48,19 +48,27 @@ export default function UserManagementPage() {
     });
   }, [router, supabase]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadData = async () => {
-    const filter: UserFilter = {
-      search: search || undefined,
-      role: selectedRole ? [selectedRole as UserRole] : undefined,
-      is_active: selectedStatus === 'active' ? true : selectedStatus === 'inactive' ? false : undefined,
-      campus_block: selectedBlock || undefined,
-    };
-    const [userData, statsData] = await Promise.all([
-      fetchUsers(filter),
-      fetchUserStats(),
-    ]);
-    setUsers(userData);
-    setStats(statsData);
+    try {
+      setError(null);
+      const filter: UserFilter = {
+        search: search || undefined,
+        role: selectedRole ? [selectedRole as UserRole] : undefined,
+        is_active: selectedStatus === 'active' ? true : selectedStatus === 'inactive' ? false : undefined,
+        campus_block: selectedBlock || undefined,
+      };
+      const [userData, statsData] = await Promise.all([
+        fetchUsers(filter),
+        fetchUserStats(),
+      ]);
+      setUsers(userData);
+      setStats(statsData);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load users');
+    }
   };
 
   useEffect(() => {
@@ -99,6 +107,16 @@ export default function UserManagementPage() {
   const campusBlocks = useMemo(() => {
     return Array.from(new Set(users.map((u) => u.campus_block).filter(Boolean)));
   }, [users]);
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="p-4 bg-error text-on-error rounded">
+          <p>Error loading users: {error}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="User & Access Administration"
