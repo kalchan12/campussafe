@@ -46,7 +46,11 @@ Normal users (Students & Staff) can:
 - Rely on automated dual-channel offline resilience:
   - Local SQLite queue (`campussafe_queue.db`) for automatic incident retry upon reconnection.
   - Automated carrier SMS dispatch (`EmergencySmsService`): automatically transmits standardized distress messages containing exact GPS coordinates and clickable Google Maps links directly to both the **Parent** and **University Emergency Admin (`0920304050`)** in the background when mobile data/Wi-Fi is unavailable.
-- Configure emergency preferences (Shake-to-SOS on/off) and edit emergency contacts in Safety Profile.
+- Wearable & Smartwatch Vital Organ Monitoring Sentinel:
+  - Continuous biometric monitoring via PPG (heart rate, SpO2), ECG (arrhythmia, cardiac arrest), IMU (hard falls, immobility), and skin temperature.
+  - 15-second pre-alert countdown with "I'm OK" false-alarm dismissal, escalating automatically to a Medical SOS with clinical diagnostics.
+  - Zeroed organ values (`0 BPM`, `0.0% SpO2`, `0.0°C Temp`) with alarm suppression when disconnected, accompanied by a pairing guidance prompt and connect controls.
+- Configure emergency preferences (Shake-to-SOS on/off, Smartwatch Vitals on/off) and edit emergency contacts in Safety Profile.
 - Track active incidents in real time.
 - Receive safety notifications.
 - View incident history.

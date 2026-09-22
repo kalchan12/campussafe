@@ -56,11 +56,23 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
     - **Skin Temperature Sensor**: Core thermal monitoring detecting hypothermia ($<35.0^\circ\text{C}$) and heatstroke / hyperthermia ($>39.5^\circ\text{C}$).
     - **Electrodermal Activity (EDA / GSR)**: Sympathetic nervous system arousal & acute trauma shock.
   - Implemented `SmartwatchVitalService` (`apps/mobile/lib/core/sensors/smartwatch_vital_service.dart`) evaluating clinical emergency thresholds, streaming telemetry, and orchestrating a 15-second pre-alert grace period countdown with an "I'm OK" dismissal button to prevent accidental false alarms.
+  - **Disconnected State & Zeroed Organ Values**:
+    - When a smartwatch is not paired or disconnected, organ metric readings are zeroed (`0 BPM`, `0.0% SpO2`, `0.0°C Temp`, and `0.0 ms HRV`).
+    - Emergency alarm thresholds explicitly check `isConnected`: 0 readings when disconnected are safely suppressed and never trigger accidental medical dispatch.
+    - Clinical summary returns `No Smartwatch Connected (Vitals Unavailable - Sensor Offline)`.
+    - `SmartwatchVitalCard` displays a persistent guidance banner: *"Connect your smartwatch to see live vital data"* with a quick-action **[Connect Watch]** button.
+    - Added interactive **[Connect Smartwatch Sensor]** and **[Disconnect Smartwatch]** toggles in the bottom testing sheet.
+    - Resolved async preference loading race conditions ensuring state changes and test simulations are reliably retained.
   - Automated Medical SOS escalation via `SosNotifier.triggerAutomatedVitalSos()`, attaching clinical telemetry diagnostics to the incident description, notifying responders, and alerting Parent & Campus Admin (`0920304050`) via online API or background SMS fallback.
   - Created `SmartwatchVitalCard` on `HomePage` featuring live pulsing heart rate, SpO2 badge, temperature indicator, fall sentinel arming, and an interactive sensor simulation test suite.
   - Configured settings in `SettingsPage` under "EMERGENCY TRIGGERS & HARDWARE SENSING" with persistence in `SharedPreferences`.
   - Displayed live patient vital telemetry on `ActiveEmergencyPage`.
-  - Full test coverage with 15 dedicated unit tests (`smartwatch_vitals_test.dart` and `smartwatch_vital_service_test.dart`) - total 72/72 tests passing.
+  - Full test coverage with 18 dedicated unit tests (`smartwatch_vitals_test.dart` and `smartwatch_vital_service_test.dart`) - total 75/75 tests passing across entire mobile app suite with 0 analyzer issues.
+- **SOS Page Layout & Text RenderFlex Overflow Resolution**:
+  - Resolved RenderFlex overflow warnings on compact mobile screens (320px–360px widths) across all SOS page views (`apps/mobile/lib/features/sos/presentation/pages/sos_page.dart`):
+    - Wrapped long action button labels (`Direct Dial Campus Dispatch (0920304050)`, `Send Offline Emergency SMS (Parent & Admin)`, `Continue to Location Confirmation`, `Open SMS Messenger...`, `Track Active Emergency on Map`, etc.) in `FittedBox(fit: BoxFit.scaleDown)` to guarantee dynamic downscaling without clipping.
+    - Replaced fixed padding columns in `_buildSendingView` and `_buildReceivedView` with `SingleChildScrollView` to prevent vertical overflows on small devices.
+    - Constrained header title and situation details with `Expanded` and `TextOverflow.ellipsis`.
 - **System Actors & Onboarding Streamlining**:
   - Defined two primary campus user actors: **Student** (undergraduate, graduate, or resident student) and **Staff** (faculty professors, administrative staff, technicians, and campus personnel).
   - Streamlined mobile registration affiliation step to directly offer **Student** and **Staff** options.
@@ -101,6 +113,9 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+81b90392 feat(mobile): zero organ readings when smartwatch is disconnected with pairing banner
+c1da7c06 fix(mobile): resolve layout and text RenderFlex overflow issues in SOS page views
+15e3d6ec feat(mobile): add smartwatch vital organs and health monitoring sentinel with automated emergency escalation
 8cf3ccd4 fix(mobile): resolve all static analyzer issues, unawaited futures, unused imports, and deprecation warnings
 11255c39 fix(mobile): resolve FCM token registration race condition, notification channel meta-data, and deep-link tap routing
 732e1c49 feat(mobile): configure Firebase Cloud Messaging and update 11-member team matrix

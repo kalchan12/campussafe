@@ -154,10 +154,12 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 - [x] SOS activation (press-and-hold with progress ring).
 - [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation).
 - [x] Wearable & Smartwatch Vital Sentinel: Continuous biometric monitoring via PPG (Heart Rate, SpO2), ECG (Arrhythmia/Cardiac Arrest), IMU (Hard Fall & Immobility), and Skin Temperature. Features 15-second pre-alert countdown to prevent false alarms, automated Medical SOS dispatch with clinical telemetry attached, interactive HomePage vital card, simulation testing suite, and unit test coverage.
+  - [x] Disconnected / un-paired state: Organ readings zero out (`0 BPM`, `0.0% SpO2`, `0.0°C Temp`), clinical summary marks sensor offline, medical alarms are safely suppressed when disconnected to eliminate false alarms, and a pairing banner guides users with a `"Connect your smartwatch to see live vital data"` prompt and quick-connect action.
+  - [x] SOS Screen Layout & Text Overflow Fix: Resolved RenderFlex bottom and horizontal overflows across ready, emergency type selection, location confirmation, sent, and failed views on compact screen dimensions using `FittedBox(fit: BoxFit.scaleDown)` and `SingleChildScrollView`.
 - [x] Direct emergency category selection flow without intermediate confirmation dialogs; user-facing emergency categories streamlined to Medical & Security, with Fire & Accident designated for proactive campus IoT sensors.
 - [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + automated background/carrier cellular SMS fallback (EmergencySmsService) with GPS link to Parent and University Admin (`0920304050`).
 - [x] Mandatory onboarding emergency contacts: Parent phone (user-filled) and University Admin phone (pre-filled with `0920304050`).
-- [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off) and SMS fallback indicators.
+- [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off), smartwatch vital sentinel toggle, and SMS fallback indicators.
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
 - [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
