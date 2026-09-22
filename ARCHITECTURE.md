@@ -1068,3 +1068,77 @@ AUDIT + HISTORY
 ```
 
 The architecture is successful when the three major components behave as parts of **one system**, rather than three unrelated applications.
+
+---
+
+# 20. Privacy, Data Protection & Zero Passive Tracking Architecture
+
+CampusSafe enforces strict privacy boundaries and medical data minimization principles across all mobile, dashboard, and backend layers.
+
+```text
+                          ┌─────────────────────────────┐
+                          │   STUDENT PERSONAL DEVICE   │
+                          │                             │
+                          │  • Accelerometer Motion     │
+                          │  • Wearable PPG / SpO2      │
+                          │  • Skin Temp / Fall IMU     │
+                          │  • Local GPS Sensor         │
+                          │              │              │
+                          │              ▼              │
+                          │      ON-DEVICE EDGE         │
+                          │    HEURISTIC ENGINE         │
+                          │  (100% Local Processing)    │
+                          └──────────────┬──────────────┘
+                                         │
+                         Emergency Event │ (Only on Active SOS)
+                                         ▼
+                          ┌─────────────────────────────┐
+                          │     SUPABASE BACKEND        │
+                          │                             │
+                          │  • Emergency Incidents      │
+                          │  • Transmitted Vitals       │
+                          │  • Incident Location        │
+                          └──────────────┬──────────────┘
+                                         │
+                                         ▼
+                          ┌─────────────────────────────┐
+                          │  CAMPUS DISPATCH DASHBOARD  │
+                          │                             │
+                          │  • Incident Dispatch Only   │
+                          │  • ZERO Passive Tracking    │
+                          │    of Student Population    │
+                          └─────────────────────────────┘
+```
+
+## Zero Passive Tracking Guarantee
+
+1. **No Student Surveillance**:
+   - CampusSafe does **NOT** passively monitor, track, poll, or record the real-time location or health vitals of students during normal campus routines.
+   - University administrators, campus security, and dispatch operators have **zero technical capability** within the Web Dashboard or API to view a student's live location or vitals in standby mode.
+   - The campus GIS map exclusively monitors on-duty emergency responders (campus police, medical squads) for dispatch routing.
+
+2. **On-Device Edge Processing**:
+   - Inertial motion detection (Shake-to-SOS via `sensors_plus`) runs 100% on the student's smartphone processor.
+   - Biometric telemetry (Heart rate PPG, SpO2, ECG, Fall IMU) is evaluated locally via the `SmartwatchVitalService`.
+   - Raw health and sensor telemetry is strictly retained in local device memory and is never streamed or uploaded to the cloud during normal daily activities.
+
+3. **Emergency-Only Transmission**:
+   - Location coordinates and biometric diagnostics are packaged and transmitted to the database **only and strictly** when an active emergency occurs (manual 3-second hold SOS, confirmed fall/cardiac spike, or hands-free shake trigger).
+   - Once an incident is marked `RESOLVED` or `CANCELLED`, real-time location and vital telemetry transmission terminates immediately.
+
+## Informed Consent & Strict Opt-In Model
+
+1. **Disabled by Default**:
+   - In adherence with data protection regulations (GDPR, HIPAA, and educational privacy standards), all sensor tracking capabilities are **strictly opt-in** and default to `false`.
+   - Healthy students and staff who do not require automated medical or motion monitoring can register and use CampusSafe without ever activating device sensors.
+
+2. **5-Step Onboarding Consent**:
+   - The registration workflow incorporates a dedicated informed consent step (`Account` → `Role` → `Contacts` → `Consent` → `Campus`).
+   - Clearly discloses how sensor data is analyzed locally and outlines the Zero Passive Tracking Guarantee.
+   - Explicit informed consent checkbox is mandatory only if the user chooses to enable either Shake-to-SOS or the Smartwatch Vital Sentinel.
+
+3. **User Autonomy & Consent Revocation**:
+   - Students can toggle sensor features ON or OFF at any time in `SettingsPage`.
+   - Disabling a sensor instantly disarms the background monitoring loop and updates local encrypted preferences (`SharedPreferences`).
+   - A dedicated *"Sensor Consent & Legal Rights"* dialog is accessible in Settings to inform students of their rights to data minimization, privacy boundaries, and consent revocation.
+

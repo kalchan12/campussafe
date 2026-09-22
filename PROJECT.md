@@ -36,20 +36,29 @@ Built with Flutter/Dart.
 - **Staff**: Faculty professors, university administrative staff, lab technicians, and campus personnel representing all non-student members of the university community.
 
 Normal users (Students & Staff) can:
-- Register and onboard by selecting their campus affiliation (**Student** or **Staff**).
+- Register and onboard through a transparent **5-step flow** (`Account` → `Role` → `Contacts` → `Consent` → `Campus`).
 - Configure two primary life-safety emergency contacts during registration:
   - **Parent / Guardian Phone**: Filled in by the user for immediate family notification.
   - **University Emergency Admin Phone**: Pre-filled with the campus emergency dispatch hotline (`0920304050`).
-- Allow location access and capture high-accuracy GPS coordinates.
-- Send SOS alerts via 3-second hold or hands-free accelerometer shake detection (`sensors_plus`) for sudden incapacitating accidents.
+- Privacy-First, Zero Passive Tracking Architecture:
+  - University operators and administrators have **zero technical capability** to passively track, monitor, or poll real-time GPS locations or biometric vitals of students during normal campus routines.
+  - Device motion (Shake-to-SOS) and wearable telemetry (Smartwatch Vital Sentinel) are evaluated 100% locally on the student's personal phone (edge heuristics).
+  - Location coordinates and vitals leave the personal device **strictly and solely** when an emergency occurs and an SOS is dispatched.
+- Strict Opt-In Sensor Defaults & Informed Consent:
+  - All health and motion sensor monitoring defaults to **OFF (`false`)**. Healthy students and staff can skip sensor activation entirely during onboarding.
+  - Individuals with pre-existing medical conditions (e.g., cardiac arrhythmia, asthma/hypoxia risk, epilepsy, fall risks) can choose to opt-in during registration or toggle sensors ON/OFF anytime in Settings.
+  - Mandatory informed consent checkbox and legal rights disclosure prior to activating sensitive sensors.
+- Allow location access and capture high-accuracy GPS coordinates during active SOS.
+- Send SOS alerts via 3-second hold or hands-free accelerometer shake detection (`sensors_plus`) for sudden incapacitating accidents (if opted in).
 - Direct emergency type selection without intermediate confirmation dialogs, focusing user-initiated emergencies on **Medical** and **Security**, while **Fire Hazard** and **Accident Hazard** are designated for proactive automated campus IoT sensor triggers.
 - Rely on automated dual-channel offline resilience:
   - Local SQLite queue (`campussafe_queue.db`) for automatic incident retry upon reconnection.
   - Automated carrier SMS dispatch (`EmergencySmsService`): automatically transmits standardized distress messages containing exact GPS coordinates and clickable Google Maps links directly to both the **Parent** and **University Emergency Admin (`0920304050`)** in the background when mobile data/Wi-Fi is unavailable.
 - Wearable & Smartwatch Vital Organ Monitoring Sentinel:
-  - Continuous biometric monitoring via PPG (heart rate, SpO2), ECG (arrhythmia, cardiac arrest), IMU (hard falls, immobility), and skin temperature.
+  - Continuous biometric monitoring via PPG (heart rate, SpO2), ECG (arrhythmia, cardiac arrest), IMU (hard falls, immobility), and skin temperature (opt-in).
   - 15-second pre-alert countdown with "I'm OK" false-alarm dismissal, escalating automatically to a Medical SOS with clinical diagnostics.
   - Zeroed organ values (`0 BPM`, `0.0% SpO2`, `0.0°C Temp`) with alarm suppression when disconnected, accompanied by a pairing guidance prompt and connect controls.
+  - Non-intrusive Home Page opt-in card for users with medical conditions who wish to enable vital monitoring after registration.
 - Configure emergency preferences (Shake-to-SOS on/off, Smartwatch Vitals on/off) and edit emergency contacts in Safety Profile.
 - Track active incidents in real time.
 - Receive safety notifications.

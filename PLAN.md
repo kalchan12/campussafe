@@ -140,7 +140,7 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 ## Foundation
 - [x] Welcome/splash (Animated splash screen with router transition).
 - [x] Login (Supabase Auth connected — real signIn with dev bypass; loading state; error snackbar).
-- [x] Registration (Supabase Auth connected — real signUp with 4-step onboarding; dev bypass).
+- [x] Registration (Supabase Auth connected — real signUp with 5-step onboarding including privacy-first sensor consent; dev bypass).
 - [x] Role selection (Streamlined to Student & Staff actors during registration; full affiliation options).
 - [x] Profile (UI implemented; ProfileRepository with emergency contacts synced to backend & local storage).
 - [ ] Permissions.
@@ -152,14 +152,15 @@ Created → Received → Assigned → Responding → Arrived → Resolved
 ## User Features
 - [x] Home (per Stitch design with SOS, emergency types, safety network).
 - [x] SOS activation (press-and-hold with progress ring).
-- [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation).
-- [x] Wearable & Smartwatch Vital Sentinel: Continuous biometric monitoring via PPG (Heart Rate, SpO2), ECG (Arrhythmia/Cardiac Arrest), IMU (Hard Fall & Immobility), and Skin Temperature. Features 15-second pre-alert countdown to prevent false alarms, automated Medical SOS dispatch with clinical telemetry attached, interactive HomePage vital card, simulation testing suite, and unit test coverage.
+- [x] Privacy-First Informed Consent & Sensor Opt-In Architecture: Re-architected mobile onboarding to a 5-step flow (Account → Role → Contacts → Consent → Campus). Strict opt-in default (false) for Shake-to-SOS and Smartwatch Sentinel. Zero Passive Tracking Guarantee ensures admins/dispatchers cannot passively track students in standby. Edge heuristic processing ensures sensor data remains 100% on-device unless active SOS is triggered. Revocable anytime via Settings with legal rights modal.
+- [x] Hands-free emergency trigger (Shake-to-SOS via sensors_plus accelerometer stream detecting multi-spike acceleration >24 m/s² for sudden accidents/incapacitation, opt-in default).
+- [x] Wearable & Smartwatch Vital Sentinel: Continuous biometric monitoring via PPG (Heart Rate, SpO2), ECG (Arrhythmia/Cardiac Arrest), IMU (Hard Fall & Immobility), and Skin Temperature (opt-in default). Features 15-second pre-alert countdown to prevent false alarms, automated Medical SOS dispatch with clinical telemetry attached, interactive HomePage vital card with opt-in prompt, simulation testing suite, and unit test coverage.
   - [x] Disconnected / un-paired state: Organ readings zero out (`0 BPM`, `0.0% SpO2`, `0.0°C Temp`), clinical summary marks sensor offline, medical alarms are safely suppressed when disconnected to eliminate false alarms, and a pairing banner guides users with a `"Connect your smartwatch to see live vital data"` prompt and quick-connect action.
   - [x] SOS Screen Layout & Text Overflow Fix: Resolved RenderFlex bottom and horizontal overflows across ready, emergency type selection, location confirmation, sent, and failed views on compact screen dimensions using `FittedBox(fit: BoxFit.scaleDown)` and `SingleChildScrollView`.
 - [x] Direct emergency category selection flow without intermediate confirmation dialogs; user-facing emergency categories streamlined to Medical & Security, with Fire & Accident designated for proactive campus IoT sensors.
 - [x] Dual-channel offline resilience: SQLite queue (campussafe_queue.db) for reconnect retry + automated background/carrier cellular SMS fallback (EmergencySmsService) with GPS link to Parent and University Admin (`0920304050`).
 - [x] Mandatory onboarding emergency contacts: Parent phone (user-filled) and University Admin phone (pre-filled with `0920304050`).
-- [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off), smartwatch vital sentinel toggle, and SMS fallback indicators.
+- [x] Emergency settings panel with hands-free trigger toggle (Shake-to-SOS on/off), smartwatch vital sentinel toggle, Zero Passive Tracking banner, Sensor Consent & Legal Rights dialog, and SMS fallback indicators.
 - [ ] Incident submission.
 - [x] Active incident tracking (per Stitch tracking design).
 - [x] Realtime GPS Incident Map & Live Navigation (Interactive FlutterMap with live user pulsing beacon, 380px full-width embedded map, fullscreen modal, and native Google Maps navigation launcher).
@@ -434,7 +435,7 @@ ESP8266 → Serial → Arduino → LCD 2 (SENSOR ALERT)
 ## Screens Implemented
 - **Splash Screen** - Animated splash with CampusSafe branding
 - **Login Page** - Per Stitch design with email/phone, password, forgot password, guest mode, emergency SOS button
-- **Registration Page** - 4-step onboarding (Account → Campus → Role → Prefs) with side-by-side layout on wide screens
+- **Registration Page** - 5-step onboarding (Account → Role → Contacts → Consent → Campus) with side-by-side layout on wide screens, Zero Passive Tracking guarantee, and informed consent verification
 - **Home Page** - Per Stitch design with:
   - Greeting & campus status
   - Emergency SOS button (press-and-hold 3s with progress ring and pulse animation)

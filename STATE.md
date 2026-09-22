@@ -36,6 +36,14 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 2. Completed Features & Verified Functionality
 
 ### A. Mobile Application (`apps/mobile/`)
+- **Privacy-First Informed Consent & Sensor Opt-In Architecture**:
+  - Re-architected mobile registration onboarding into a **5-step flow** (`Account` → `Role` → `Contacts` → `Consent` → `Campus`).
+  - Strict **opt-in by default** for phone motion sensors (Shake-to-SOS) and wear biometric telemetry (Smartwatch Vital Sentinel). Both default to `false` for healthy students/staff who do not require health sensor monitoring.
+  - Transparent informed consent agreement: *"I give informed consent for local emergency sensor processing on this device. I understand my data is processed on-device and I can toggle or revoke this consent at any time in Settings."*
+  - **Zero Passive Tracking Guarantee**: University operators and administrators CANNOT passively track real-time locations or monitor student health vitals during normal routines. Accelerometer spikes and smartwatch biometrics are evaluated strictly on-device, and are transmitted ONLY when an emergency occurs and an active SOS is dispatched.
+  - **Revocable Consent & Settings Controls**: Added *"Zero Passive Tracking Architecture"* banner in `SettingsPage`, allowing students to toggle sensors ON/OFF anytime. Added *"Sensor Consent & Legal Rights"* dialog detailing GDPR/medical data minimization principles.
+  - **HomePage Opt-In Card**: When monitoring is disabled, `SmartwatchVitalCard` displays a non-intrusive opt-in card with an *"Opt In"* button and informed consent modal dialog for users with medical conditions.
+  - Created widget test `apps/mobile/test/features/auth/registration_consent_test.dart` verifying 5-step flow and consent step.
 - **Emergency Taxonomy Streamlining & Sensor Distinction**:
   - User-initiated mobile emergency categories are focused directly on:
     - 🚑 **Medical**: Severe trauma, acute medical emergencies, ambulance & first aid.
@@ -67,7 +75,7 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
   - Created `SmartwatchVitalCard` on `HomePage` featuring live pulsing heart rate, SpO2 badge, temperature indicator, fall sentinel arming, and an interactive sensor simulation test suite.
   - Configured settings in `SettingsPage` under "EMERGENCY TRIGGERS & HARDWARE SENSING" with persistence in `SharedPreferences`.
   - Displayed live patient vital telemetry on `ActiveEmergencyPage`.
-  - Full test coverage with 18 dedicated unit tests (`smartwatch_vitals_test.dart` and `smartwatch_vital_service_test.dart`) - total 75/75 tests passing across entire mobile app suite with 0 analyzer issues.
+  - Full test coverage across entire mobile app suite (76/76 unit and widget tests passing with 0 analyzer issues).
 - **SOS Page Layout & Text RenderFlex Overflow Resolution**:
   - Resolved RenderFlex overflow warnings on compact mobile screens (320px–360px widths) across all SOS page views (`apps/mobile/lib/features/sos/presentation/pages/sos_page.dart`):
     - Wrapped long action button labels (`Direct Dial Campus Dispatch (0920304050)`, `Send Offline Emergency SMS (Parent & Admin)`, `Continue to Location Confirmation`, `Open SMS Messenger...`, `Track Active Emergency on Map`, etc.) in `FittedBox(fit: BoxFit.scaleDown)` to guarantee dynamic downscaling without clipping.
@@ -113,6 +121,8 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+a8c2d651 feat(privacy): enforce opt-in default for phone and wear sensors with zero passive tracking guarantee
+23e49ca3 feat(auth): add 5-step registration onboarding with opt-in health sensors and informed consent
 81b90392 feat(mobile): zero organ readings when smartwatch is disconnected with pairing banner
 c1da7c06 fix(mobile): resolve layout and text RenderFlex overflow issues in SOS page views
 15e3d6ec feat(mobile): add smartwatch vital organs and health monitoring sentinel with automated emergency escalation
