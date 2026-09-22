@@ -30,17 +30,18 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
 
   void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(userSafetyReportsListProvider.notifier).submitReport(
-        isAnonymous: _isAnonymous,
-        type: _selectedType,
-        description: _descriptionController.text.trim(),
-        locationDescription: _locationController.text.trim().isNotEmpty
-            ? _locationController.text.trim()
-            : 'Campus Area',
-      );
+      try {
+        await ref.read(userSafetyReportsListProvider.notifier).submitReport(
+          isAnonymous: _isAnonymous,
+          type: _selectedType,
+          description: _descriptionController.text.trim(),
+          locationDescription: _locationController.text.trim().isNotEmpty
+              ? _locationController.text.trim()
+              : 'Campus Area',
+        );
 
-      if (!mounted) return;
-      ref.read(alertsTabSegmentProvider.notifier).state = AlertsTabMode.myReports;
+        if (!mounted) return;
+        ref.read(alertsTabSegmentProvider.notifier).state = AlertsTabMode.myReports;
 
       showDialog(
         context: context,
@@ -97,6 +98,16 @@ class _SubmitReportPageState extends ConsumerState<SubmitReportPage> {
           ],
         ),
       );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit report: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppColors.critical,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

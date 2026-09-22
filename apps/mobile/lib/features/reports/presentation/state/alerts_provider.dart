@@ -153,7 +153,23 @@ class UserSafetyReportsNotifier extends StateNotifier<List<SafetyReport>> {
         },
       );
     } else {
-      throw Exception('App is offline or not configured');
+      // Offline: create a local placeholder so the user gets feedback
+      final localReport = SafetyReport(
+        id: 'local_${DateTime.now().millisecondsSinceEpoch}',
+        reporterId: isAnonymous ? null : userId,
+        isAnonymous: isAnonymous,
+        type: type,
+        description: description,
+        locationDescription: locationDescription,
+        latitude: latitude,
+        longitude: longitude,
+        imageUrl: imageUrl,
+        status: ReportStatus.submitted,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      state = [localReport, ...state];
+      return localReport;
     }
   }
 

@@ -50,7 +50,7 @@ class _CampusSafeAppState extends ConsumerState<CampusSafeApp>
             .triggerAutomatedVitalSos(vitals, reason);
         final createdIncident = ref.read(sosNotifierProvider).createdIncident;
         if (createdIncident != null) {
-          router.push('/sos/active/${createdIncident.id}');
+          router.push('/emergency/active/${createdIncident.id}');
         } else {
           router.push('/sos');
         }
