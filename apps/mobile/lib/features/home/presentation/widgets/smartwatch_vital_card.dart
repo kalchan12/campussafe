@@ -90,17 +90,20 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                 ],
               ),
             ),
-            ElevatedButton(
-              onPressed: () => _showConsentAndEnableDialog(context, ref),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                elevation: 0,
-                visualDensity: VisualDensity.compact,
+            Flexible(
+              child: ElevatedButton(
+                onPressed: () => _showConsentAndEnableDialog(context, ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Opt In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
-              child: const Text('Opt In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -317,27 +320,30 @@ class _SmartwatchVitalCardState extends ConsumerState<SmartwatchVitalCard>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref
-                          .read(smartwatchVitalsNotifierProvider.notifier)
-                          .connectSmartwatch();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Flexible(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref
+                            .read(smartwatchVitalsNotifierProvider.notifier)
+                            .connectSmartwatch();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      elevation: 0,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    child: const Text(
-                      'Connect Watch',
-                      style:
-                          TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      child: const Text(
+                        'Connect Watch',
+                        style:
+                            TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
