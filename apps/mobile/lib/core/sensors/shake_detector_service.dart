@@ -33,7 +33,7 @@ class ShakeDetectorService {
 
   StreamSubscription<AccelerometerEvent>? _subscription;
   VoidCallback? _onShakeDetected;
-  bool _isEnabled = true;
+  bool _isEnabled = false; // Opt-in default for motion sensor privacy
   int _shakeCount = 0;
   int _lastShakeTimestamp = 0;
   int _lastTriggerTimestamp = 0;
@@ -52,9 +52,9 @@ class ShakeDetectorService {
     _onShakeDetected = onShakeDetected;
     try {
       final prefs = await SharedPreferences.getInstance();
-      _isEnabled = prefs.getBool(prefKeyShakeEnabled) ?? true;
+      _isEnabled = prefs.getBool(prefKeyShakeEnabled) ?? false;
     } catch (_) {
-      _isEnabled = true;
+      _isEnabled = false;
     }
 
     if (_isEnabled) {

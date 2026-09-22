@@ -15,9 +15,9 @@ void main() {
       service.dispose();
     });
 
-    test('initializes with monitoring enabled and disconnected vitals', () {
-      expect(service.isMonitoringEnabled, isTrue);
-      expect(service.isAutoSosEnabled, isTrue);
+    test('initializes with monitoring disabled for privacy and disconnected vitals', () {
+      expect(service.isMonitoringEnabled, isFalse);
+      expect(service.isAutoSosEnabled, isFalse);
       expect(service.currentVitals.isConnected, isFalse);
       expect(service.currentVitals.heartRateBpm, 0);
       expect(service.currentVitals.isCriticalEmergency, isFalse);
@@ -43,22 +43,25 @@ void main() {
     });
 
     test('setting monitoring enabled modifies state correctly', () async {
-      await service.setMonitoringEnabled(false);
-      expect(service.isMonitoringEnabled, isFalse);
-
       await service.setMonitoringEnabled(true);
       expect(service.isMonitoringEnabled, isTrue);
+
+      await service.setMonitoringEnabled(false);
+      expect(service.isMonitoringEnabled, isFalse);
     });
 
     test('setting auto SOS enabled modifies state correctly', () async {
-      await service.setAutoSosEnabled(false);
-      expect(service.isAutoSosEnabled, isFalse);
-
       await service.setAutoSosEnabled(true);
       expect(service.isAutoSosEnabled, isTrue);
+
+      await service.setAutoSosEnabled(false);
+      expect(service.isAutoSosEnabled, isFalse);
     });
 
-    test('tachycardia simulation emits alert tick and triggers critical status', () async {
+    test('tachycardia simulation emits alert tick and triggers critical status when opted in', () async {
+      await service.setMonitoringEnabled(true);
+      await service.setAutoSosEnabled(true);
+
       final alertEvents = <SmartwatchAlertEvent>[];
       final subscription = service.alertStream.listen(alertEvents.add);
 
@@ -75,6 +78,9 @@ void main() {
     });
 
     test('dismissEmergencyAlert resets vitals to healthy and sends dismissed event', () async {
+      await service.setMonitoringEnabled(true);
+      await service.setAutoSosEnabled(true);
+
       final alertEvents = <SmartwatchAlertEvent>[];
       final subscription = service.alertStream.listen(alertEvents.add);
 
@@ -92,6 +98,9 @@ void main() {
     });
 
     test('triggerImmediateEmergencyDispatch invokes onEmergencyTriggered callback', () async {
+      await service.setMonitoringEnabled(true);
+      await service.setAutoSosEnabled(true);
+
       SmartwatchVitals? triggeredVitals;
       String? triggeredReason;
 

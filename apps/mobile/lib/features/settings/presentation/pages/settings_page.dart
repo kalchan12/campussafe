@@ -11,7 +11,7 @@ import '../../../profile/presentation/state/profile_notifier.dart';
 
 final pushNotificationsSettingProvider = StateProvider<bool>((ref) => true);
 final locationServiceSettingProvider = StateProvider<bool>((ref) => true);
-final shakeToSosSettingProvider = StateProvider<bool>((ref) => true);
+final shakeToSosSettingProvider = StateProvider<bool>((ref) => false);
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -58,13 +58,50 @@ class SettingsPage extends ConsumerWidget {
           _SettingsSection(
             title: 'EMERGENCY TRIGGERS & HARDWARE SENSING',
             children: [
+              // Zero Passive Tracking Guarantee Shield Banner
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.security_rounded, color: Color(0xFF16A34A), size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Zero Passive Tracking Architecture',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Admins & dispatch operators CANNOT track your location or read your vitals passively. All sensor tracking is opt-in, processed on this device, and shared only during an active emergency SOS.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF166534), height: 1.35),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               _SettingsTile(
                 icon: Icons.watch_rounded,
                 iconColor: const Color(0xFFDC2626),
                 title: 'Smartwatch Vital Sentinel',
                 subtitle: smartwatchState.isMonitoringEnabled
                     ? 'Active: Real-time PPG, ECG, SpO2 & Fall monitoring'
-                    : 'Disabled (No health sensor telemetry)',
+                    : 'Disabled (Opt-in for health/medical telemetry)',
                 trailing: Switch.adaptive(
                   value: smartwatchState.isMonitoringEnabled,
                   activeTrackColor: const Color(0xFFDC2626),
@@ -279,6 +316,13 @@ class SettingsPage extends ConsumerWidget {
                 title: 'Privacy & Data Protection',
                 onTap: () => _showPrivacyDialog(context),
               ),
+              _SettingsTile(
+                icon: Icons.health_and_safety_outlined,
+                iconColor: AppColors.primary,
+                title: 'Sensor Consent & Legal Rights',
+                subtitle: 'Review GDPR/medical privacy terms and revoke consent',
+                onTap: () => _showSensorConsentDialog(context),
+              ),
             ],
           ),
 
@@ -463,6 +507,57 @@ class SettingsPage extends ConsumerWidget {
           child: Text(
             'Your privacy is strictly safeguarded under University Data Protection standards.\n\n• Location data is only shared with verified responders when you actively trigger an SOS or submit a safety report.\n• Anonymous safety reports do not record your user identity or phone number.\n• Medical information is encrypted and accessible only to responding medical units.',
             style: TextStyle(fontSize: 13, height: 1.4),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSensorConsentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 22),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Sensor Consent & Privacy Rights',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Legal & Medical Privacy Guarantee',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF15803D),
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                '• Zero Passive Monitoring: Campus administrators and dispatch operators have NO ability to track your real-time location or monitor biometric sensor feeds during normal operations.\n\n'
+                '• Strictly Local Processing: Accelerometer motion spikes and smartwatch vitals (PPG, ECG, SpO2, Temperature) are evaluated 100% locally on this device.\n\n'
+                '• Emergency-Only Activation: GPS coordinates and health telemetry are transmitted ONLY if you trigger an active SOS or if an automated medical sentinel detects life-threatening distress.\n\n'
+                '• Instant Revocation of Consent: You may revoke consent at any time by toggling off the Smartwatch Vital Sentinel or Shake-to-SOS switches above. When disabled, all sensor listeners are immediately terminated and no biometric data is processed.',
+                style: TextStyle(fontSize: 12, height: 1.45),
+              ),
+            ],
           ),
         ),
         actions: [

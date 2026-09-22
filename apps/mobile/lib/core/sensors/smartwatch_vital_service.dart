@@ -177,10 +177,10 @@ class SmartwatchVitalService {
   SmartwatchVitals _currentVitals = SmartwatchVitals.disconnected();
   SmartwatchVitals get currentVitals => _currentVitals;
 
-  bool _isMonitoringEnabled = true;
+  bool _isMonitoringEnabled = false; // Opt-in default for legal & health privacy
   bool get isMonitoringEnabled => _isMonitoringEnabled;
 
-  bool _isAutoSosEnabled = true;
+  bool _isAutoSosEnabled = false; // Opt-in default
   bool get isAutoSosEnabled => _isAutoSosEnabled;
 
   Timer? _telemetryTimer;
@@ -199,11 +199,12 @@ class SmartwatchVitalService {
   Future<void> _loadPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _isMonitoringEnabled = prefs.getBool(prefKeyMonitoringEnabled) ?? true;
-      _isAutoSosEnabled = prefs.getBool(prefKeyAutoSosEnabled) ?? true;
-      final isConnected = prefs.getBool(prefKeyIsConnected) ?? false;
 
       if (!_preferencesLoaded) {
+        _isMonitoringEnabled = prefs.getBool(prefKeyMonitoringEnabled) ?? false;
+        _isAutoSosEnabled = prefs.getBool(prefKeyAutoSosEnabled) ?? false;
+        final isConnected = prefs.getBool(prefKeyIsConnected) ?? false;
+
         if (isConnected) {
           _currentVitals = SmartwatchVitals.healthy();
         } else {
@@ -212,9 +213,9 @@ class SmartwatchVitalService {
         _preferencesLoaded = true;
       }
     } catch (_) {
-      _isMonitoringEnabled = true;
-      _isAutoSosEnabled = true;
       if (!_preferencesLoaded) {
+        _isMonitoringEnabled = false;
+        _isAutoSosEnabled = false;
         _currentVitals = SmartwatchVitals.disconnected();
         _preferencesLoaded = true;
       }
@@ -262,6 +263,7 @@ class SmartwatchVitalService {
   }
 
   Future<void> setMonitoringEnabled(bool enabled) async {
+    _preferencesLoaded = true;
     _isMonitoringEnabled = enabled;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -279,6 +281,7 @@ class SmartwatchVitalService {
   }
 
   Future<void> setAutoSosEnabled(bool enabled) async {
+    _preferencesLoaded = true;
     _isAutoSosEnabled = enabled;
     try {
       final prefs = await SharedPreferences.getInstance();
