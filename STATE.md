@@ -119,6 +119,11 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 - **Interactive Live Movement Simulation**:
   - **In-Browser Map Simulation**: Added `[▶ Simulate Responders]` / `[⏸ Pause Simulation]` and `[↺ Reset]` controls to the map toolbar. Responders smoothly patrol campus routes or converge dynamically towards active emergencies with real-time ETA and status updates.
   - **Terminal Simulator Script**: Upgraded `simulate_responders.js` for standalone background database simulation matching the `public.responders` schema.
+- **Stable Route Polyline & View Lock (`components/maps/campus-map.tsx`)**:
+  - Split monolithic `useEffect` (that re-ran on every marker/view change) into 4 isolated effects: map init, operator beacon, dynamic markers, and route polyline.
+  - **Fixed blinking route line**: Route polyline now uses in-place `setLatLngs()` updates with route-key deduplication (~10m precision) instead of remove→refetch→redraw cycles that caused visible blinking during dispatch.
+  - **Fixed unwanted zoom-out**: Eliminated `fitBounds()` call from the dynamic markers effect that was zooming out to fit all campus blocks every time a new incident arrived via realtime.
+  - Added `RouteOrigin` interface for future dispatched-responder-as-origin routing support.
 - **Incident Management Console (`app/dashboard/incidents/page.tsx`)**:
   - **Direct Table Action Buttons**: Operators can now advance incident states (**`[⚡ Dispatch]`**, **`[En Route]`**, **`[Arrived]`**, **`[Resolve]`**) and assign responders directly on table rows *before* opening the full modal.
   - **Inline Responder Assignment**: Unassigned incidents provide a compact inline selector for instant dispatch.
@@ -130,6 +135,8 @@ CampusSafe is an integrated, unified emergency-response and physical-safety plat
 ## 3. Current Git Commit History (Recent Significant Commits)
 
 ```text
+2ddc099  fix(dashboard): stabilize map route line and prevent zoom-out on incident receipt
+b8867f5  docs: update project proposal and system state to newest architecture
 17c24044 fix(dashboard): fix 5 critical bugs and 5 warnings across dashboard and DB
 1e934771 fix(mobile): fix critical SOS route crash, null safety, and offline report handling
 d6b0e659 fix(mobile): constrain ElevatedButton width in SmartwatchVitalCard to prevent layout crash
