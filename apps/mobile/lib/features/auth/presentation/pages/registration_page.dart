@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../core/config/env.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/design_tokens.dart';
+import '../../../../core/sensors/shake_detector_service.dart';
+import '../../../../core/sensors/smartwatch_vital_service.dart';
 import '../../../../core/services/emergency_sms_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/buttons.dart';
@@ -39,8 +43,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   String? _selectedRole = 'student';
   String _selectedCampus = 'main_campus';
 
-  static const _totalSteps = 4;
-  static const _stepLabels = ['Account', 'Role', 'Contacts', 'Campus'];
+  // Optional sensor & health monitoring opt-in (defaults to OFF for privacy)
+  bool _enableSmartwatchVitals = false;
+  bool _enableShakeToSos = false;
+  bool _hasConsentedToSensors = false;
+
+  static const _totalSteps = 5;
+  static const _stepLabels = ['Account', 'Role', 'Contacts', 'Consent', 'Campus'];
 
   @override
   void dispose() {
@@ -80,6 +89,28 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         parentName: parentName.isNotEmpty ? parentName : 'Parent / Guardian',
         campusAdminPhone: campusAdminPhone,
       );
+
+      // Persist sensor opt-in and informed consent preferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(
+            SmartwatchVitalService.prefKeyMonitoringEnabled, _enableSmartwatchVitals);
+        await prefs.setBool(
+            SmartwatchVitalService.prefKeyAutoSosEnabled, _enableSmartwatchVitals);
+        await prefs.setBool(
+            ShakeDetectorService.prefKeyShakeEnabled, _enableShakeToSos);
+        await prefs.setBool('pref_sensor_consent_granted', _hasConsentedToSensors);
+        if (_hasConsentedToSensors) {
+          await prefs.setString(
+              'pref_sensor_consent_timestamp', DateTime.now().toIso8601String());
+        }
+      } catch (_) {}
+
+      // Update runtime sensor services
+      ref
+          .read(smartwatchVitalsNotifierProvider.notifier)
+          .setMonitoringEnabled(_enableSmartwatchVitals);
+      ref.read(shakeDetectorServiceProvider).setEnabled(_enableShakeToSos);
 
       if (!mounted) return;
 
@@ -135,6 +166,20 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please enter your parent/guardian emergency contact number.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return false;
+      }
+      return true;
+    } else if (_currentStep == 3) {
+      // Health & Motion Sensors (Opt-In Consent) step
+      if ((_enableSmartwatchVitals || _enableShakeToSos) && !_hasConsentedToSensors) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please confirm informed consent for emergency sensor analysis, or turn off the sensor toggles to skip.',
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -402,6 +447,8 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       case 2:
         return _buildContactsStep();
       case 3:
+        return _buildSensorsConsentStep();
+      case 4:
         return _buildCampusStep();
       default:
         return const SizedBox();
@@ -727,7 +774,260 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     );
   }
 
-  /// Step 3: Campus Location & Preferences
+  /// Step 3: Health & Motion Sensors (Privacy-First Opt-In with Informed Consent)
+  Widget _buildSensorsConsentStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Privacy Guarantee & Zero Passive Tracking Shield
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 24),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Zero Passive Tracking Guarantee',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'University operators and administrators CANNOT passively track your real-time location or monitor health sensors. All motion and biometric processing occurs 100% locally on your device.\n\nData is only shared when an emergency or accident occurs and you actively dispatch an SOS.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF166534), height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        Text(
+          'HEALTH & MOTION SENSORS (OPTIONAL)',
+          style: AppTypography.labelMd.copyWith(
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+            color: AppColors.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // 1. Smartwatch Vital Sentinel (Medical Opt-In)
+        _buildSensorOptInCard(
+          icon: Icons.watch_rounded,
+          iconColor: const Color(0xFFDC2626),
+          title: 'Smartwatch Vital Sentinel',
+          badge: 'MEDICAL OPT-IN',
+          badgeColor: const Color(0xFFDC2626),
+          description:
+              'Analyzes heart rate (PPG), ECG rhythm, SpO2, and hard falls with immobility. Ideal for users with heart conditions, asthma, or seizure risks. Automatically escalates to Medical SOS if life-threatening vitals occur.',
+          value: _enableSmartwatchVitals,
+          onChanged: (val) {
+            setState(() {
+              _enableSmartwatchVitals = val;
+              if (!_enableSmartwatchVitals && !_enableShakeToSos) {
+                _hasConsentedToSensors = false;
+              }
+            });
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        // 2. Hands-Free Shake-to-SOS (Motion Sensor Opt-In)
+        _buildSensorOptInCard(
+          icon: Icons.vibration_rounded,
+          iconColor: const Color(0xFFE65100),
+          title: 'Hands-Free Shake-to-SOS',
+          badge: 'PHONE ACCELEROMETER',
+          badgeColor: const Color(0xFFE65100),
+          description:
+              'Monitors phone motion to trigger emergency SOS upon 3 violent shakes if suddenly attacked or physically incapacitated.',
+          value: _enableShakeToSos,
+          onChanged: (val) {
+            setState(() {
+              _enableShakeToSos = val;
+              if (!_enableSmartwatchVitals && !_enableShakeToSos) {
+                _hasConsentedToSensors = false;
+              }
+            });
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Informed Consent Box or Skippable Guidance Banner
+        if (_enableSmartwatchVitals || _enableShakeToSos)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: _hasConsentedToSensors,
+                  activeColor: AppColors.primary,
+                  onChanged: (val) {
+                    setState(() {
+                      _hasConsentedToSensors = val ?? false;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _hasConsentedToSensors = !_hasConsentedToSensors;
+                      });
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'I give informed consent for local emergency sensor processing on this device. I understand my data is processed on-device and I can toggle or revoke this consent at any time in Settings.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E3A8A),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.outlineVariant),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded, size: 18, color: AppColors.onSurfaceVariant),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Healthy users can leave sensors disabled and continue. You can always opt in later in Settings if your health needs change.',
+                    style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSensorOptInCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String badge,
+    required Color badgeColor,
+    required String description,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: value ? iconColor.withValues(alpha: 0.05) : AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value ? iconColor.withValues(alpha: 0.5) : AppColors.outlineVariant,
+          width: value ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconColor.withValues(alpha: 0.12),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: value ? iconColor : AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: value,
+                activeTrackColor: iconColor,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 11.5,
+              color: AppColors.onSurfaceVariant,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Step 4: Campus Location & Preferences
   Widget _buildCampusStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
